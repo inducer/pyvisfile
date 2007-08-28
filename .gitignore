@@ -1,0 +1,15 @@
+*~
+.*.sw[po]
+*.dat
+*.pyc
+build
+*.prof
+siteconf.py
+doc/hedge-notes.pdf
+*.vtk
+*.silo
+*.session
+dump.py
+*.orig
+Makefile
+tags
