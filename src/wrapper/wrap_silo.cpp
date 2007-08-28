@@ -4,13 +4,15 @@
 
 
 
+#include <boost/foreach.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/python.hpp>
+#include <boost/python/stl_iterator.hpp>
 #include <vector>
 #include <stdexcept>
 #include <iostream>
-#include <boost/python.hpp>
 
 #include <silo.h>
 
@@ -267,10 +269,18 @@ namespace
   if (NAME ARGLIST) \
     throw std::runtime_error(#NAME " failed");
 
-#define CONVERT_INT_LIST(NAME) \
-  std::vector<int> NAME; \
-  for (unsigned i = 0; i < unsigned(len(NAME##_py)); i++) \
-      NAME.push_back(extract<int>(NAME##_py[i]));
+#define COPY_PY_LIST(TYPE, NAME) \
+  std::vector<TYPE> NAME; \
+  std::copy(stl_input_iterator<TYPE>(NAME##_py), \
+        stl_input_iterator<TYPE>(), \
+        back_inserter(NAME)); \
+
+#define MAKE_STRING_POINTER_VECTOR(NAME) \
+  std::vector<const char *> NAME##_ptrs; \
+  BOOST_FOREACH(const std::string &s, NAME) \
+    NAME##_ptrs.push_back(s.data());
+
+
 
   class DBoptlistWrapper : boost::noncopyable
   {
@@ -354,10 +364,6 @@ namespace
 
 
 
-#define ENSURE_DB_OPEN \
-  if (!m_db_is_open) \
-    throw std::runtime_error("silo db is already closed");
-
 
 
 
@@ -388,9 +394,15 @@ namespace
           close();
       }
 
+      void ensure_db_open()
+      {
+        if (!m_db_is_open)
+          throw std::runtime_error("silo db is already closed");
+      }
+
       void close()
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
         CALL_GUARDED(DBClose, (m_dbfile));
         m_db_is_open = false;
       }
@@ -399,7 +411,7 @@ namespace
 
       operator DBfile *()
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
         return m_dbfile;
       }
 
@@ -410,11 +422,11 @@ namespace
           object nodelist_py, object shapesize_py,
           object shapecounts_py)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
-        CONVERT_INT_LIST(nodelist);
-        CONVERT_INT_LIST(shapesize);
-        CONVERT_INT_LIST(shapecounts);
+        COPY_PY_LIST(int, nodelist);
+        COPY_PY_LIST(int, shapesize);
+        COPY_PY_LIST(int, shapecounts);
         CALL_GUARDED(DBPutZonelist, (m_dbfile, name, nzones, ndims, nodelist.data(),
             len(nodelist_py), 0, shapesize.data(), shapecounts.data(),
             len(shapesize_py)));
@@ -428,19 +440,19 @@ namespace
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
         typedef double value_type;
         int datatype = DB_DOUBLE;
 
         int nnodes = len(coords_py)/ndims;
         std::vector<value_type> coords;
-        for (unsigned d = 0; d < unsigned(ndims); d++)
-          for (unsigned i = 0; i < unsigned(nnodes); i++)
+        for (int d = 0; d < ndims; d++)
+          for (int i = 0; i < nnodes; i++)
             coords.push_back(extract<value_type>(coords_py[d*nnodes+i]));
 
         std::vector<value_type *> coord_starts;
-        for (unsigned d = 0; d < unsigned(ndims); d++)
+        for (int d = 0; d < ndims; d++)
           coord_starts.push_back(coords.data()+d*nnodes);
 
         CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims, 
@@ -457,7 +469,7 @@ namespace
              /*float *mixvar, int mixlen, */int centering,
              DBoptlistWrapper &optlist)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
         typedef vector value_type;
         int datatype = DB_DOUBLE; // FIXME: should depend on real data type
@@ -479,7 +491,7 @@ namespace
           int centering, 
           DBoptlistWrapper &optlist)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
         typedef vector value_type;
         int datatype = DB_DOUBLE; // FIXME: should depend on real data type
@@ -487,18 +499,13 @@ namespace
         if (len(varnames_py) != len(vars_py))
           PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
 
-        std::vector<std::string> varnames_container;
-        std::vector<const char *> varnames;
-        for (unsigned i = 0; i < unsigned(len(varnames_py)); i++)
-          varnames_container.push_back(
-              extract<std::string>(varnames_py[i]));
-        for (unsigned i = 0; i < unsigned(len(varnames_py)); i++)
-          varnames.push_back(varnames_container[i].data());
-
+        COPY_PY_LIST(std::string, varnames);
+        MAKE_STRING_POINTER_VECTOR(varnames);
+        
         std::vector<float *> vars;
         bool first = true;
-        unsigned vlength = 0;
-        for (unsigned i = 0; i < unsigned(len(vars_py)); i++)
+        int vlength = 0;
+        for (int i = 0; i < len(vars_py); i++)
         {
           vector &v = extract<vector &>(vars_py[i]);
           if (first)
@@ -506,13 +513,15 @@ namespace
             vlength = v.size();
             first = false;
           }
-          else if (vlength != v.size())
+          else if (vlength != int(v.size()))
             PYTHON_ERROR(ValueError, "field components need to have matching lengths");
           vars.push_back((float *) traits::vector_storage(v));
         }
 
         CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname, 
-            len(vars_py), (char **) varnames.data(), vars.data(), 
+            len(vars_py), 
+            const_cast<char **>(varnames_ptrs.data()), 
+            vars.data(), 
             vlength, 
             /* mixvar */ NULL, /* mixlen */ 0, 
             datatype, centering, optlist.get_optlist()));
@@ -523,7 +532,7 @@ namespace
 
       void put_defvars(std::string id, object vars_py)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
         std::vector<std::string> varnames_container;
         std::vector<const char *> varnames;
@@ -532,7 +541,7 @@ namespace
         std::vector<int> vartypes;
         std::vector<DBoptlist *> varopts;
 
-        for (unsigned i = 0; i < unsigned(len(vars_py)); i++)
+        for (int i = 0; i < len(vars_py); i++)
         {
           object entry = vars_py[i];
           varnames_container.push_back(extract<std::string>(entry[0]));
@@ -549,7 +558,7 @@ namespace
           }
         }
 
-        for (unsigned i = 0; i < unsigned(len(vars_py)); i++)
+        for (int i = 0; i < len(vars_py); i++)
         {
           varnames.push_back(varnames_container[i].data());
           vardefs.push_back(vardefs_container[i].data());
@@ -565,7 +574,7 @@ namespace
       void put_pointmesh(const char *id, int ndims, object coords_py,
           DBoptlistWrapper &optlist)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
         typedef double value_type;
         std::vector<value_type> coords;
@@ -573,12 +582,12 @@ namespace
 
         int npoints = len(coords_py)/ndims;
 
-        for (unsigned d = 0; d < unsigned(ndims); d++)
-          for (unsigned i = 0; i < unsigned(npoints); i++)
+        for (int d = 0; d < ndims; d++)
+          for (int i = 0; i < npoints; i++)
             coords.push_back(extract<value_type>(coords_py[d*npoints+i]));
 
         std::vector<float *> coord_starts;
-        for (unsigned d = 0; d < unsigned(ndims); d++)
+        for (int d = 0; d < ndims; d++)
           coord_starts.push_back((float *) (coords.data()+d*npoints));
 
         CALL_GUARDED(DBPutPointmesh, (m_dbfile, id, 
@@ -593,7 +602,7 @@ namespace
           vector &v,
           DBoptlistWrapper &optlist)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
         int datatype = DB_DOUBLE; // FIXME: should depend on real data type
 
@@ -609,14 +618,14 @@ namespace
           object vars_py,
           DBoptlistWrapper &optlist)
       {
-        ENSURE_DB_OPEN;
+        ensure_db_open();
 
         int datatype = DB_DOUBLE; // FIXME: should depend on real data type
 
         std::vector<float *> vars;
         bool first = true;
-        unsigned vlength = 0;
-        for (unsigned i = 0; i < unsigned(len(vars_py)); i++)
+        int vlength = 0;
+        for (int i = 0; i < len(vars_py); i++)
         {
           vector &v = extract<vector &>(vars_py[i]);
           if (first)
@@ -624,7 +633,7 @@ namespace
             vlength = v.size();
             first = false;
           }
-          else if (vlength != v.size())
+          else if (vlength != int(v.size()))
             PYTHON_ERROR(ValueError, "field components need to have matching lengths");
 
           vars.push_back((float *) traits::vector_storage(v));
@@ -634,6 +643,57 @@ namespace
               len(vars_py), vars.data(), vlength, datatype,
               optlist.get_optlist()));
       }
+
+
+
+
+      void put_multimesh(const char *name, object names_and_types,
+          DBoptlistWrapper &optlist)
+      {
+        ensure_db_open();
+
+        std::vector<std::string> meshnames;
+        std::vector<int> meshtypes;
+        for (int i = 0; i < len(names_and_types); i++)
+        {
+          object name_and_type = names_and_types[i];
+          meshnames.push_back(extract<std::string>(name_and_type[0]));
+          meshtypes.push_back(extract<int>(name_and_type[1]));
+        }
+        MAKE_STRING_POINTER_VECTOR(meshnames)
+
+        CALL_GUARDED(DBPutMultimesh, (m_dbfile, name,
+              meshnames.size(), 
+              const_cast<char **>(meshnames_ptrs.data()),
+              meshtypes.data(),
+              optlist.get_optlist()));
+      }
+
+
+
+
+      void put_multivar(const char *name, object names_and_types,
+          DBoptlistWrapper &optlist)
+      {
+        ensure_db_open();
+
+        std::vector<std::string> varnames;
+        std::vector<int> vartypes;
+        for (int i = 0; i < len(names_and_types); i++)
+        {
+          object name_and_type = names_and_types[i];
+          varnames.push_back(extract<std::string>(name_and_type[0]));
+          vartypes.push_back(extract<int>(name_and_type[1]));
+        }
+        MAKE_STRING_POINTER_VECTOR(varnames)
+
+        CALL_GUARDED(DBPutMultivar, (m_dbfile, name,
+              varnames.size(), 
+              const_cast<char **>(varnames_ptrs.data()),
+              vartypes.data(),
+              optlist.get_optlist()));
+      }
+
     private:
       bool m_db_is_open;
       DBfile *m_dbfile;
