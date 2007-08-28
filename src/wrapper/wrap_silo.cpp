@@ -1,22 +1,10 @@
-// Hedge - the Hybrid'n'Easy DG Environment
+// Pylo - A Python wrapper around Silo
 // Copyright (C) 2007 Andreas Kloeckner
-// 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
 
+#include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/scoped_array.hpp>
 #include <vector>
@@ -24,9 +12,16 @@
 #include <iostream>
 #include <boost/python.hpp>
 
-#ifdef USE_SILO
 #include <silo.h>
-#endif
+
+
+
+
+#define PYTHON_ERROR(TYPE, REASON) \
+{ \
+  PyErr_SetString(PyExc_##TYPE, REASON); \
+  throw boost::python::error_already_set(); \
+}
 
 
 
@@ -49,16 +44,8 @@ namespace traits = boost::numeric::bindings::traits;
 
 namespace 
 {
-  bool have_silo()
-  {
-#ifdef USE_SILO
-    return true;
-#else
-    return false;
-#endif
-  }
+  typedef boost::numeric::ublas::vector<double> vector;
 
-#ifdef USE_SILO
   dict symbols()
   {
     dict result;
@@ -466,13 +453,13 @@ namespace
 
 
 
-      void put_ucdvar1(const char *vname, const char *mname, hedge::vector &v,
+      void put_ucdvar1(const char *vname, const char *mname, vector &v,
              /*float *mixvar, int mixlen, */int centering,
              DBoptlistWrapper &optlist)
       {
         ENSURE_DB_OPEN;
 
-        typedef hedge::vector::value_type value_type;
+        typedef vector value_type;
         int datatype = DB_DOUBLE; // FIXME: should depend on real data type
 
         CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname, 
@@ -494,7 +481,7 @@ namespace
       {
         ENSURE_DB_OPEN;
 
-        typedef hedge::vector::value_type value_type;
+        typedef vector value_type;
         int datatype = DB_DOUBLE; // FIXME: should depend on real data type
 
         if (len(varnames_py) != len(vars_py))
@@ -513,7 +500,7 @@ namespace
         unsigned vlength = 0;
         for (unsigned i = 0; i < unsigned(len(vars_py)); i++)
         {
-          hedge::vector &v = extract<hedge::vector &>(vars_py[i]);
+          vector &v = extract<vector &>(vars_py[i]);
           if (first)
           {
             vlength = v.size();
@@ -603,7 +590,7 @@ namespace
 
 
       void put_pointvar1(const char *vname, const char *mname, 
-          hedge::vector &v,
+          vector &v,
           DBoptlistWrapper &optlist)
       {
         ENSURE_DB_OPEN;
@@ -631,7 +618,7 @@ namespace
         unsigned vlength = 0;
         for (unsigned i = 0; i < unsigned(len(vars_py)); i++)
         {
-          hedge::vector &v = extract<hedge::vector &>(vars_py[i]);
+          vector &v = extract<vector &>(vars_py[i]);
           if (first)
           {
             vlength = v.size();
@@ -651,18 +638,13 @@ namespace
       bool m_db_is_open;
       DBfile *m_dbfile;
   };
-
-#endif
 }
 
 
 
 
-BOOST_PYTHON_MODULE(_silo)
+BOOST_PYTHON_MODULE(_internal)
 {
-  DEF_SIMPLE_FUNCTION(have_silo);
-
-#ifdef USE_SILO
   DEF_SIMPLE_FUNCTION(symbols);
 
   enum_<DBdatatype>("DBdatatype")
@@ -699,5 +681,4 @@ BOOST_PYTHON_MODULE(_silo)
       .def("add_option", (void (cl::*)(int, const std::string &)) &cl::add_option)
       ;
   }
-#endif
 }

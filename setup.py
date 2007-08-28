@@ -39,6 +39,16 @@ EXTRA_INCLUDE_DIRS = []
 EXTRA_LIBRARY_DIRS = []
 EXTRA_LIBRARIES = []
 
+def handle_component(comp):
+    if globals()["USE_"+comp]:
+        globals()["EXTRA_DEFINES"]["USE_"+comp] = 1
+        globals()["EXTRA_INCLUDE_DIRS"] += globals()[comp+"_INCLUDE_DIRS"]
+        globals()["EXTRA_LIBRARY_DIRS"] += globals()[comp+"_LIBRARY_DIRS"]
+        globals()["EXTRA_LIBRARIES"] += globals()[comp+"_LIBRARIES"]
+
+USE_SILO = True
+handle_component("SILO")
+
 setup(name="pylo",
       version="0.90",
       description="A wrapper around libsilo",
