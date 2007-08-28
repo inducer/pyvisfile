@@ -13,3 +13,5 @@ dump.py
 *.orig
 Makefile
 tags
+dist
+MANIFEST

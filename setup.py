@@ -39,7 +39,6 @@ EXTRA_INCLUDE_DIRS = []
 EXTRA_LIBRARY_DIRS = []
 EXTRA_LIBRARIES = []
 
-print glob.glob("src/silo/*/*.c")
 setup(name="pylo",
       version="0.90",
       description="A wrapper around libsilo",

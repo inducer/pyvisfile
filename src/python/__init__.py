@@ -17,12 +17,12 @@
 
 
 
-import hedge._silo
+import pylo._internal as _internal
 
 
 
 
-for name, value in hedge._silo.symbols().iteritems():
+for name, value in _internal.symbols().iteritems():
     globals()[name] = value
 
 
@@ -30,7 +30,7 @@ for name, value in hedge._silo.symbols().iteritems():
 
 def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
-    ol = hedge._silo.DBOptlist(optcount, optcount * 150)
+    ol = _internal.DBOptlist(optcount, optcount * 150)
 
     for key, value in ol_dict.iteritems():
         if isinstance(value, int):
@@ -43,7 +43,7 @@ def _convert_optlist(ol_dict):
 
 
 
-class SiloFile(hedge._silo.DBFile):
+class SiloFile(_internal.DBFile):
     def __enter__(self):
         return self
 
@@ -58,28 +58,28 @@ class SiloFile(hedge._silo.DBFile):
                 mode = DB_NOCLOBBER
             if filetype is None:
                 filetype = DB_PDB
-            hedge._silo.DBFile.__init__(self, pathname, mode, target,
+            _internal.DBFile.__init__(self, pathname, mode, target,
                     fileinfo, filetype)
         else:
             if mode is None:
                 mode = DB_APPEND
             if filetype is None:
                 filetype = DB_UNKNOWN
-            hedge._silo.DBFile.__init__(self, pathname, mode, filetype)
+            _internal.DBFile.__init__(self, pathname, mode, filetype)
 
     def put_ucdmesh(self, name, ndims, coordnames, coords, 
             nzones, zonel_name, facel_name,
             optlist={}):
-        hedge._silo.DBFile.put_ucdmesh(self, name, ndims, coordnames, coords, 
+        _internal.DBFile.put_ucdmesh(self, name, ndims, coordnames, coords, 
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
-        hedge._silo.DBFile.put_ucdvar1(self, vname, mname, vec, centering, 
+        _internal.DBFile.put_ucdvar1(self, vname, mname, vec, centering, 
                 _convert_optlist(optlist))
 
     def put_ucdvar(self, vname, mname, varnames, vars, 
             centering, optlist={}):
-        hedge._silo.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering, 
+        _internal.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering, 
                 _convert_optlist(optlist))
 
     def put_defvars(self, vname, vars):
@@ -94,17 +94,17 @@ class SiloFile(hedge._silo.DBFile):
         If the type is not specified, scalar is assumed.
         """
         
-        hedge._silo.DBFile.put_defvars(self, vname, vars)
+        _internal.DBFile.put_defvars(self, vname, vars)
 
     def put_pointmesh(self, mname, ndims, coords, optlist={}):
-        hedge._silo.DBFile.put_pointmesh(self, mname, ndims, coords,
+        _internal.DBFile.put_pointmesh(self, mname, ndims, coords,
                 _convert_optlist(optlist))
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
-        hedge._silo.DBFile.put_pointvar1(self, vname, mname, var,
+        _internal.DBFile.put_pointvar1(self, vname, mname, var,
                 _convert_optlist(optlist))
 
     def put_pointvar(self, vname, mname, vars, optlist={}):
-        hedge._silo.DBFile.put_pointvar(self, vname, mname, vars,
+        _internal.DBFile.put_pointvar(self, vname, mname, vars,
                 _convert_optlist(optlist))
 
