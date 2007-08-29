@@ -67,7 +67,7 @@ class SiloFile(_internal.DBFile):
                 filetype = DB_UNKNOWN
             _internal.DBFile.__init__(self, pathname, mode, filetype)
 
-    def put_ucdmesh(self, name, ndims, coordnames, coords, 
+    def put_ucdmesh(self, mname, ndims, coordnames, coords, 
             nzones, zonel_name, facel_name,
             optlist={}):
         _internal.DBFile.put_ucdmesh(self, name, ndims, coordnames, coords, 
@@ -107,4 +107,118 @@ class SiloFile(_internal.DBFile):
     def put_pointvar(self, vname, mname, vars, optlist={}):
         _internal.DBFile.put_pointvar(self, vname, mname, vars,
                 _convert_optlist(optlist))
+
+    def put_multimesh(self, mname, mnames_and_types, optlist={}):
+        _internal.DBFile.put_multimesh(self, mname,
+                names_and_types, _convert_optlist(optlist))
+
+    def put_multivar(self, vname, vnames_and_types, optlist={}):
+        _internal.DBFile.put_multivar(self, vname,
+                vnames_and_types, _convert_optlist(optlist))
+
+
+
+
+
+class ParallelSiloFile:
+    """A SiloFile that automatically creates a parallel master file.
+
+    This class is meant to be instantiated on every rank of the
+    computation. It creates one data file per rank, and it
+    automatically chooses a rank that writes a master file.
+
+    The contents of the master file is automatically built,
+    without any further user intervention.
+
+    A .silo extension is automatically appended to the `pathname'
+    for the master file, as are rank numbers and the extension
+    for each individual rank.
+    """
+
+    def __init__(self, pathname, rank, ranks, *args, **kwargs):
+        self.rank = rank
+        self.ranks = ranks
+
+        rank_pathname_pattern = "%s-%05d.silo"
+        rank_pathname = proc_path_name_pattern % (pathname, rank)
+
+        self.data_file = SiloFile(rank_pathname, *args, **kwargs)
+        self.pcontext = pcontext
+
+        if self.rank == self.ranks[0]:
+            head_pathname = "%s.silo" % (pathname, rank)
+            self.master_file = pylo.SiloFile(head_pathname, *args, **kwargs)
+
+            self.rank_filenames = [rank_pathname_pattern % (pathname, rank)
+                    for rank in ranks]
+        else:
+            self.master_file = None
+
+    # -------------------------------------------------------------------------
+    def put_ucdmesh(self, mname, ndims, coordnames, coords, 
+            nzones, zonel_name, facel_name, optlist):
+        self.data_file.put_ucdmesh(mname, ndims, coordnames, coords, 
+            nzones, zonel_name, facel_name, optlist)
+
+        self._added_mesh(mname, pylo.DB_UCDMESH, optlist)
+
+    def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
+        self.data_file.put_ucdvar1(vname, mname, vec, centering, optlist)
+        self._added_variable(vname, pylo.DB_UCDVAR, optlist)
+
+    def put_ucdvar(self, vname, mname, varnames, vars, 
+            centering, optlist={}):
+        self.data_file.put_ucdvar(vname, mname, varnames, vars, 
+            centering, optlist={})
+        self._added_variable(vname, pylo.DB_UCDVAR, optlist)
+
+    def put_defvars(self, vname, vars):
+        """Add an defined variable ("expression") to this database.
+
+        The `vars' argument consists of a list of tuples of type
+          (name, definition)
+        or
+          (name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR).
+        or even
+          (name, definition, DB_VARTYPE_XXX, {options}).
+        If the type is not specified, scalar is assumed.
+        """
+        if self.master_file is not None:
+            self.master_file.put_defvars(vname, vars)
+
+    def put_pointmesh(self, mname, ndims, coords, optlist={}):
+        self.data_file.put_pointmesh(mname, ndims, coords, optlist)
+        self._added_mesh(vname, pylo.DB_POINTMESH, optlist)
+
+    def put_pointvar1(self, vname, mname, var, optlist={}):
+        self.data_file.put_pointvar1(vname, mname, var, optlist)
+        self._added_variable(vname, pylo.DB_POINTVAR, optlist)
+
+    def put_pointvar(self, vname, mname, vars, optlist={}):
+        self.data_file.put_pointvar(vname, mname, vars, optlist)
+        self._added_variable(vname, pylo.DB_POINTVAR, optlist)
+
+    # -------------------------------------------------------------------------
+    def _added_mesh(self, mname, type, optlist):
+        if self.master_file:
+            self.master_file.put_multimesh(mname, 
+                    [("%s:%s" % (rank_fn, mname), type)
+                        for rank_fn in self.rank_filenames],
+                    optlist)
+
+    def _added_variable(self, vname, type, optlist):
+        if self.master_file:
+            self.master_file.put_multivar(vname, 
+                    [("%s:%s" % (rank_fn, mname), type)
+                        for rank_fn in self.rank_filenames],
+                    optlist)
+
+
+
+
+
+
+
+
+
 

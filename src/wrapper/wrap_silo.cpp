@@ -271,14 +271,22 @@ namespace
 
 #define COPY_PY_LIST(TYPE, NAME) \
   std::vector<TYPE> NAME; \
-  std::copy(stl_input_iterator<TYPE>(NAME##_py), \
-        stl_input_iterator<TYPE>(), \
-        back_inserter(NAME)); \
+  std::copy( \
+      stl_input_iterator<TYPE>(NAME##_py), \
+      stl_input_iterator<TYPE>(), \
+      back_inserter(NAME)); \
 
 #define MAKE_STRING_POINTER_VECTOR(NAME) \
   std::vector<const char *> NAME##_ptrs; \
   BOOST_FOREACH(const std::string &s, NAME) \
     NAME##_ptrs.push_back(s.data());
+
+#define PYTHON_FOREACH(NAME, ITERABLE) \
+  BOOST_FOREACH(object NAME, \
+      std::make_pair( \
+        stl_input_iterator<object>(ITERABLE), \
+        stl_input_iterator<object>()))
+
 
 
 
@@ -505,9 +513,11 @@ namespace
         std::vector<float *> vars;
         bool first = true;
         int vlength = 0;
-        for (int i = 0; i < len(vars_py); i++)
+
+
+        PYTHON_FOREACH(var_py, vars_py)
         {
-          vector &v = extract<vector &>(vars_py[i]);
+          vector &v = extract<vector &>(var_py);
           if (first)
           {
             vlength = v.size();
@@ -541,9 +551,8 @@ namespace
         std::vector<int> vartypes;
         std::vector<DBoptlist *> varopts;
 
-        for (int i = 0; i < len(vars_py); i++)
+        PYTHON_FOREACH(entry, vars_py)
         {
-          object entry = vars_py[i];
           varnames_container.push_back(extract<std::string>(entry[0]));
           vardefs_container.push_back(extract<std::string>(entry[1]));
           if (len(entry) == 2)
@@ -625,9 +634,10 @@ namespace
         std::vector<float *> vars;
         bool first = true;
         int vlength = 0;
-        for (int i = 0; i < len(vars_py); i++)
+
+        PYTHON_FOREACH(var_py, vars_py)
         {
-          vector &v = extract<vector &>(vars_py[i]);
+          vector &v = extract<vector &>(var_py);
           if (first)
           {
             vlength = v.size();
@@ -654,9 +664,9 @@ namespace
 
         std::vector<std::string> meshnames;
         std::vector<int> meshtypes;
-        for (int i = 0; i < len(names_and_types); i++)
+
+        PYTHON_FOREACH(name_and_type, names_and_types)
         {
-          object name_and_type = names_and_types[i];
           meshnames.push_back(extract<std::string>(name_and_type[0]));
           meshtypes.push_back(extract<int>(name_and_type[1]));
         }
@@ -679,12 +689,13 @@ namespace
 
         std::vector<std::string> varnames;
         std::vector<int> vartypes;
-        for (int i = 0; i < len(names_and_types); i++)
+
+        PYTHON_FOREACH(name_and_type, names_and_types)
         {
-          object name_and_type = names_and_types[i];
           varnames.push_back(extract<std::string>(name_and_type[0]));
           vartypes.push_back(extract<int>(name_and_type[1]));
         }
+
         MAKE_STRING_POINTER_VECTOR(varnames)
 
         CALL_GUARDED(DBPutMultivar, (m_dbfile, name,
