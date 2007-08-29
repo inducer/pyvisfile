@@ -22,8 +22,13 @@ import pylo._internal as _internal
 
 
 
-for name, value in _internal.symbols().iteritems():
-    globals()[name] = value
+def _export_symbols():
+    for name, value in _internal.symbols().iteritems():
+        globals()[name] = value
+_export_symbols()
+
+DBObjectType = _internal.DBObjectType
+DBdatatype = _internal.DBdatatype
 
 
 
@@ -70,7 +75,7 @@ class SiloFile(_internal.DBFile):
     def put_ucdmesh(self, mname, ndims, coordnames, coords, 
             nzones, zonel_name, facel_name,
             optlist={}):
-        _internal.DBFile.put_ucdmesh(self, name, ndims, coordnames, coords, 
+        _internal.DBFile.put_ucdmesh(self, mname, ndims, coordnames, coords, 
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
@@ -110,7 +115,7 @@ class SiloFile(_internal.DBFile):
 
     def put_multimesh(self, mname, mnames_and_types, optlist={}):
         _internal.DBFile.put_multimesh(self, mname,
-                names_and_types, _convert_optlist(optlist))
+                mnames_and_types, _convert_optlist(optlist))
 
     def put_multivar(self, vname, vnames_and_types, optlist={}):
         _internal.DBFile.put_multivar(self, vname,
@@ -140,14 +145,13 @@ class ParallelSiloFile:
         self.ranks = ranks
 
         rank_pathname_pattern = "%s-%05d.silo"
-        rank_pathname = proc_path_name_pattern % (pathname, rank)
+        rank_pathname = rank_pathname_pattern % (pathname, rank)
 
         self.data_file = SiloFile(rank_pathname, *args, **kwargs)
-        self.pcontext = pcontext
 
         if self.rank == self.ranks[0]:
-            head_pathname = "%s.silo" % (pathname, rank)
-            self.master_file = pylo.SiloFile(head_pathname, *args, **kwargs)
+            head_pathname = "%s.silo" % pathname
+            self.master_file = SiloFile(head_pathname, *args, **kwargs)
 
             self.rank_filenames = [rank_pathname_pattern % (pathname, rank)
                     for rank in ranks]
@@ -155,22 +159,25 @@ class ParallelSiloFile:
             self.master_file = None
 
     # -------------------------------------------------------------------------
+    def put_zonelist(self, *args, **kwargs):
+        self.data_file.put_zonelist(*args, **kwargs)
+
     def put_ucdmesh(self, mname, ndims, coordnames, coords, 
             nzones, zonel_name, facel_name, optlist):
         self.data_file.put_ucdmesh(mname, ndims, coordnames, coords, 
             nzones, zonel_name, facel_name, optlist)
 
-        self._added_mesh(mname, pylo.DB_UCDMESH, optlist)
+        self._added_mesh(mname, DBObjectType.DB_UCDMESH, optlist)
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
         self.data_file.put_ucdvar1(vname, mname, vec, centering, optlist)
-        self._added_variable(vname, pylo.DB_UCDVAR, optlist)
+        self._added_variable(vname, DBObjectType.DB_UCDVAR, optlist)
 
     def put_ucdvar(self, vname, mname, varnames, vars, 
             centering, optlist={}):
         self.data_file.put_ucdvar(vname, mname, varnames, vars, 
             centering, optlist={})
-        self._added_variable(vname, pylo.DB_UCDVAR, optlist)
+        self._added_variable(vname, DBObjectType.DB_UCDVAR, optlist)
 
     def put_defvars(self, vname, vars):
         """Add an defined variable ("expression") to this database.
@@ -188,15 +195,15 @@ class ParallelSiloFile:
 
     def put_pointmesh(self, mname, ndims, coords, optlist={}):
         self.data_file.put_pointmesh(mname, ndims, coords, optlist)
-        self._added_mesh(vname, pylo.DB_POINTMESH, optlist)
+        self._added_mesh(vname, DBObjectType.DB_POINTMESH, optlist)
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
         self.data_file.put_pointvar1(vname, mname, var, optlist)
-        self._added_variable(vname, pylo.DB_POINTVAR, optlist)
+        self._added_variable(vname, DBObjectType.DB_POINTVAR, optlist)
 
     def put_pointvar(self, vname, mname, vars, optlist={}):
         self.data_file.put_pointvar(vname, mname, vars, optlist)
-        self._added_variable(vname, pylo.DB_POINTVAR, optlist)
+        self._added_variable(vname, DBObjectType.DB_POINTVAR, optlist)
 
     # -------------------------------------------------------------------------
     def _added_mesh(self, mname, type, optlist):
@@ -209,16 +216,6 @@ class ParallelSiloFile:
     def _added_variable(self, vname, type, optlist):
         if self.master_file:
             self.master_file.put_multivar(vname, 
-                    [("%s:%s" % (rank_fn, mname), type)
+                    [("%s:%s" % (rank_fn, vname), type)
                         for rank_fn in self.rank_filenames],
                     optlist)
-
-
-
-
-
-
-
-
-
-
