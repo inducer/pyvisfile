@@ -1,4 +1,4 @@
-# Hedge - the Hybrid'n'Easy DG Environment
+# Pylo - a Python wrapper around libsilo
 # Copyright (C) 2007 Andreas Kloeckner
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,6 +13,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+
+"""Pylo exposes the functionality of libsilo to Python using the
+Boost.Python wrapper library.
+
+To use pylo, you would typically create a SiloFile instance and then
+write different entities (variables and meshes, for the most part) to
+this file.
+
+If you are running on a parallel machine, you might want to use 
+ParallelSiloFile to automatically create a master file along with your
+SiloFile.
+"""
 
 
 
