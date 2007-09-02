@@ -556,7 +556,10 @@ namespace
           varnames_container.push_back(extract<std::string>(entry[0]));
           vardefs_container.push_back(extract<std::string>(entry[1]));
           if (len(entry) == 2)
+          {
             vartypes.push_back(DB_VARTYPE_SCALAR);
+            varopts.push_back(NULL);
+          }
           else 
           {
             vartypes.push_back(extract<int>(entry[2]));

@@ -158,6 +158,17 @@ class ParallelSiloFile:
         else:
             self.master_file = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
+        self.data_file.close()
+        if self.master_file:
+            self.master_file.close()
+
     # -------------------------------------------------------------------------
     def put_zonelist(self, *args, **kwargs):
         self.data_file.put_zonelist(*args, **kwargs)
