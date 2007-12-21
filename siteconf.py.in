@@ -22,5 +22,5 @@ SILO_LIBRARIES = ["silo"]
 # --------------------------------------------------------------------
 # Compiler flags
 # --------------------------------------------------------------------
-EXTRA_COMPILE_ARGS = [$str{CXXFLAGS}]
-
+from pytools import flatten
+EXTRA_COMPILE_ARGS = list(flatten([eca.split() for eca in [$str{CXXFLAGS}]]))

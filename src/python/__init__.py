@@ -32,6 +32,14 @@ SiloFile.
 
 
 
+def _ignore_extra_int_vector_warning():
+    from warnings import filterwarnings
+    filterwarnings("ignore", module="pylo", category=RuntimeWarning, lineno=43)
+_ignore_extra_int_vector_warning()
+
+
+
+
 import pylo._internal as _internal
 
 
@@ -44,6 +52,7 @@ _export_symbols()
 
 DBObjectType = _internal.DBObjectType
 DBdatatype = _internal.DBdatatype
+IntVector = _internal.IntVector
 
 
 

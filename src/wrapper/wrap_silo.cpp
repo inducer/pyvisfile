@@ -7,6 +7,7 @@
 #include <boost/foreach.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/bindings/traits/traits.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
@@ -46,8 +47,28 @@ namespace traits = boost::numeric::bindings::traits;
 
 namespace 
 {
+  // basics -------------------------------------------------------------------
   typedef boost::numeric::ublas::vector<double> vector;
 
+
+
+
+  template <class T>
+  std::auto_ptr<std::vector<T> > construct_vector(object iterable)
+  {
+    std::auto_ptr<std::vector<T> > result(new std::vector<T>());
+    copy(
+        stl_input_iterator<T>(iterable),
+        stl_input_iterator<T>(),
+        back_inserter(*result));
+    return result;
+  }
+
+
+
+
+
+  // constants ----------------------------------------------------------------
   dict symbols()
   {
     dict result;
@@ -265,6 +286,9 @@ namespace
     return result;
   }
 
+
+
+
 #define CALL_GUARDED(NAME, ARGLIST) \
   if (NAME ARGLIST) \
     throw std::runtime_error(#NAME " failed");
@@ -427,24 +451,26 @@ namespace
 
 
       void put_zonelist(const char *name, int nzones, int ndims,
-          object nodelist_py, object shapesize_py,
-          object shapecounts_py)
+          const std::vector<int> &nodelist, 
+          const std::vector<int> &shapesize,
+          const std::vector<int> &shapecounts)
       {
         ensure_db_open();
 
-        COPY_PY_LIST(int, nodelist);
-        COPY_PY_LIST(int, shapesize);
-        COPY_PY_LIST(int, shapecounts);
-        CALL_GUARDED(DBPutZonelist, (m_dbfile, name, nzones, ndims, nodelist.data(),
-            len(nodelist_py), 0, shapesize.data(), shapecounts.data(),
-            len(shapesize_py)));
+        CALL_GUARDED(DBPutZonelist, (m_dbfile, name, nzones, ndims, 
+              const_cast<int *>(nodelist.data()),
+              nodelist.size(), 0, 
+              const_cast<int *>(shapesize.data()), 
+              const_cast<int *>(shapecounts.data()),
+              shapesize.size()
+            ));
       }
 
 
 
 
       void put_ucdmesh(const char *name, int ndims,
-             object coordnames_py, object coords_py, 
+             object coordnames_py, const vector &coords, 
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {
@@ -453,15 +479,10 @@ namespace
         typedef double value_type;
         int datatype = DB_DOUBLE;
 
-        int nnodes = len(coords_py)/ndims;
-        std::vector<value_type> coords;
+        int nnodes = coords.size()/ndims;
+        std::vector<const value_type *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          for (int i = 0; i < nnodes; i++)
-            coords.push_back(extract<value_type>(coords_py[d*nnodes+i]));
-
-        std::vector<value_type *> coord_starts;
-        for (int d = 0; d < ndims; d++)
-          coord_starts.push_back(coords.data()+d*nnodes);
+          coord_starts.push_back(traits::vector_storage(coords)+d*nnodes);
 
         CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims, 
             /* coordnames*/ NULL,
@@ -513,7 +534,6 @@ namespace
         std::vector<float *> vars;
         bool first = true;
         int vlength = 0;
-
 
         PYTHON_FOREACH(var_py, vars_py)
         {
@@ -583,24 +603,19 @@ namespace
 
 
 
-      void put_pointmesh(const char *id, int ndims, object coords_py,
+      void put_pointmesh(const char *id, int ndims, const vector &coords,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         typedef double value_type;
-        std::vector<value_type> coords;
         int datatype = DB_DOUBLE; // FIXME: should depend on real data type
 
-        int npoints = len(coords_py)/ndims;
-
-        for (int d = 0; d < ndims; d++)
-          for (int i = 0; i < npoints; i++)
-            coords.push_back(extract<value_type>(coords_py[d*npoints+i]));
+        int npoints = coords.size()/ndims;
 
         std::vector<float *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          coord_starts.push_back((float *) (coords.data()+d*npoints));
+          coord_starts.push_back((float *) (traits::vector_storage(coords)+d*npoints));
 
         CALL_GUARDED(DBPutPointmesh, (m_dbfile, id, 
               ndims, coord_starts.data(), npoints, datatype, 
@@ -787,6 +802,15 @@ BOOST_PYTHON_MODULE(_internal)
       .def("add_int_option", (void (cl::*)(int, int)) &cl::add_option)
       .def("add_option", (void (cl::*)(int, double)) &cl::add_option)
       .def("add_option", (void (cl::*)(int, const std::string &)) &cl::add_option)
+      ;
+  }
+
+  {
+    typedef std::vector<int> cl;
+    class_<cl>("IntVector")
+      .def("__init__", make_constructor(construct_vector<int>))
+      .def("reserve", &cl::reserve, arg("advised_size"))
+      .def(vector_indexing_suite<cl> ())
       ;
   }
 }
