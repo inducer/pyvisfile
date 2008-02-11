@@ -399,6 +399,16 @@ namespace
 
 
 
+  int get_datatype(int) { return DB_INT; }
+  int get_datatype(short) { return DB_SHORT; }
+  int get_datatype(long) { return DB_LONG; }
+  int get_datatype(float) { return DB_FLOAT; }
+  int get_datatype(double) { return DB_DOUBLE; }
+  int get_datatype(char) { return DB_CHAR; }
+
+
+
+
   class DBfileWrapper : boost::noncopyable
   {
     public:
@@ -477,7 +487,7 @@ namespace
         ensure_db_open();
 
         typedef double value_type;
-        int datatype = DB_DOUBLE;
+        int datatype = get_datatype(value_type());
 
         int nnodes = coords.size()/ndims;
         std::vector<const value_type *> coord_starts;
@@ -500,8 +510,7 @@ namespace
       {
         ensure_db_open();
 
-        typedef vector value_type;
-        int datatype = DB_DOUBLE; // FIXME: should depend on real data type
+        int datatype = get_datatype(vector::value_type());
 
         CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname, 
             (float *) traits::vector_storage(v),
@@ -522,8 +531,7 @@ namespace
       {
         ensure_db_open();
 
-        typedef vector value_type;
-        int datatype = DB_DOUBLE; // FIXME: should depend on real data type
+        int datatype = get_datatype(vector::value_type());
 
         if (len(varnames_py) != len(vars_py))
           PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
@@ -608,8 +616,7 @@ namespace
       {
         ensure_db_open();
 
-        typedef double value_type;
-        int datatype = DB_DOUBLE; // FIXME: should depend on real data type
+        int datatype = get_datatype(vector::value_type());
 
         int npoints = coords.size()/ndims;
 
@@ -631,7 +638,7 @@ namespace
       {
         ensure_db_open();
 
-        int datatype = DB_DOUBLE; // FIXME: should depend on real data type
+        int datatype = get_datatype(vector::value_type());
 
         CALL_GUARDED(DBPutPointvar1, (m_dbfile, vname, mname,
               (float *) traits::vector_storage(v), v.size(), datatype,
@@ -647,7 +654,7 @@ namespace
       {
         ensure_db_open();
 
-        int datatype = DB_DOUBLE; // FIXME: should depend on real data type
+        int datatype = get_datatype(vector::value_type());
 
         std::vector<float *> vars;
         bool first = true;
@@ -723,6 +730,28 @@ namespace
               optlist.get_optlist()));
       }
 
+
+
+
+      void put_curve(const char *curvename, 
+          const vector &xvals,
+          const vector &yvals,
+          DBoptlistWrapper &optlist)
+      {
+        if (xvals.size() != yvals.size())
+          PYTHON_ERROR(ValueError, "xvals and yvals must have the same length");
+        int npoints = xvals.size();
+        CALL_GUARDED(DBPutCurve, (m_dbfile, curvename,
+              const_cast<void *>(reinterpret_cast<const void *>(traits::vector_storage(xvals))),
+              const_cast<void *>(reinterpret_cast<const void *>(traits::vector_storage(yvals))),
+              get_datatype(vector::value_type()),
+              npoints,
+              optlist.get_optlist()));
+      }
+
+
+
+
     private:
       bool m_db_is_open;
       DBfile *m_dbfile;
@@ -793,6 +822,7 @@ BOOST_PYTHON_MODULE(_internal)
       .DEF_SIMPLE_METHOD(put_pointvar)
       .DEF_SIMPLE_METHOD(put_multimesh)
       .DEF_SIMPLE_METHOD(put_multivar)
+      .DEF_SIMPLE_METHOD(put_curve)
       ;
   }
 

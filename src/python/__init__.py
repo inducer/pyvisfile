@@ -145,6 +145,9 @@ class SiloFile(_internal.DBFile):
         _internal.DBFile.put_multivar(self, vname,
                 vnames_and_types, _convert_optlist(optlist))
 
+    def put_curve(self, curvename, xvals, yvals, optlist={}):
+        _internal.DBFile.put_curve(self, curvename, xvals, yvals,
+                _convert_optlist(optlist))
 
 
 
