@@ -4,6 +4,7 @@
 
 
 
+#include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/bindings/traits/traits.hpp>
@@ -552,7 +553,10 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
+            PYTHON_ERROR(ValueError, 
+                boost::str(boost::format(
+                    "field components of '%s' need to have matching lengths")
+                  % vname).c_str());
           vars.push_back((float *) traits::vector_storage(v));
         }
 
@@ -669,7 +673,10 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
+            PYTHON_ERROR(ValueError, 
+                boost::str(boost::format(
+                    "field components of '%s' need to have matching lengths")
+                  % vname).c_str());
 
           vars.push_back((float *) traits::vector_storage(v));
         }
