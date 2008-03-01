@@ -469,10 +469,10 @@ namespace
         ensure_db_open();
 
         CALL_GUARDED(DBPutZonelist, (m_dbfile, name, nzones, ndims, 
-              const_cast<int *>(nodelist.data()),
+              const_cast<int *>(&nodelist.front()),
               nodelist.size(), 0, 
-              const_cast<int *>(shapesize.data()), 
-              const_cast<int *>(shapecounts.data()),
+              const_cast<int *>(&shapesize.front()), 
+              const_cast<int *>(&shapecounts.front()),
               shapesize.size()
             ));
       }
@@ -497,7 +497,7 @@ namespace
 
         CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims, 
             /* coordnames*/ NULL,
-            (float **) coord_starts.data(), nnodes,
+            (float **) &coord_starts.front(), nnodes,
             nzones, zonel_name, facel_name,
             datatype, optlist.get_optlist()));
       }
@@ -562,8 +562,8 @@ namespace
 
         CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname, 
             len(vars_py), 
-            const_cast<char **>(varnames_ptrs.data()), 
-            vars.data(), 
+            const_cast<char **>(&varnames_ptrs.front()), 
+            &vars.front(), 
             vlength, 
             /* mixvar */ NULL, /* mixlen */ 0, 
             datatype, centering, optlist.get_optlist()));
@@ -609,7 +609,7 @@ namespace
         }
 
         CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py), 
-            varnames.data(), vartypes.data(), vardefs.data(), varopts.data()));
+            &varnames.front(), &vartypes.front(), &vardefs.front(), &varopts.front()));
       }
 
 
@@ -629,7 +629,7 @@ namespace
           coord_starts.push_back((float *) (traits::vector_storage(coords)+d*npoints));
 
         CALL_GUARDED(DBPutPointmesh, (m_dbfile, id, 
-              ndims, coord_starts.data(), npoints, datatype, 
+              ndims, &coord_starts.front(), npoints, datatype, 
               optlist.get_optlist()));
       }
 
@@ -682,7 +682,7 @@ namespace
         }
 
         CALL_GUARDED(DBPutPointvar, (m_dbfile, vname, mname,
-              len(vars_py), vars.data(), vlength, datatype,
+              len(vars_py), &vars.front(), vlength, datatype,
               optlist.get_optlist()));
       }
 
@@ -706,8 +706,8 @@ namespace
 
         CALL_GUARDED(DBPutMultimesh, (m_dbfile, name,
               meshnames.size(), 
-              const_cast<char **>(meshnames_ptrs.data()),
-              meshtypes.data(),
+              const_cast<char **>(&meshnames_ptrs.front()),
+              &meshtypes.front(),
               optlist.get_optlist()));
       }
 
@@ -732,8 +732,8 @@ namespace
 
         CALL_GUARDED(DBPutMultivar, (m_dbfile, name,
               varnames.size(), 
-              const_cast<char **>(varnames_ptrs.data()),
-              vartypes.data(),
+              const_cast<char **>(&varnames_ptrs.front()),
+              &vartypes.front(),
               optlist.get_optlist()));
       }
 
