@@ -6,7 +6,7 @@
 
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
-#include <boost/numeric/ublas/vector.hpp>
+#include <pyublas/numpy.hpp>
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/scoped_array.hpp>
@@ -49,7 +49,7 @@ namespace traits = boost::numeric::bindings::traits;
 namespace 
 {
   // basics -------------------------------------------------------------------
-  typedef boost::numeric::ublas::vector<double> vector;
+  typedef pyublas::numpy_vector<double> vector;
 
 
 
@@ -505,7 +505,7 @@ namespace
 
 
 
-      void put_ucdvar1(const char *vname, const char *mname, vector &v,
+      void put_ucdvar1(const char *vname, const char *mname, const vector &v,
              /*float *mixvar, int mixlen, */int centering,
              DBoptlistWrapper &optlist)
       {
@@ -546,7 +546,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          vector &v = extract<vector &>(var_py);
+          vector v = extract<vector>(var_py);
           if (first)
           {
             vlength = v.size();
