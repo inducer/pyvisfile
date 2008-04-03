@@ -637,7 +637,7 @@ namespace
 
 
       void put_pointvar1(const char *vname, const char *mname, 
-          vector &v,
+          const vector &v,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -666,7 +666,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          vector &v = extract<vector &>(var_py);
+          vector v = extract<vector>(var_py);
           if (first)
           {
             vlength = v.size();
