@@ -8,6 +8,9 @@ vars = [
     ("BOOST_BINDINGS_INC_DIR", None,
         "The include directory for the Boost bindings library"),
     # -------------------------------------------------------------------------
+    ("NUMPY_INC_DIR", None,
+        "Include directory for NumPy"),
+    # -------------------------------------------------------------------------
     ("SILO_INC_DIR", None,
         "The include directory for libsilo"),
     ("SILO_LIB_DIR", None,

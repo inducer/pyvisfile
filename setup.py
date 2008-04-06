@@ -29,7 +29,8 @@ def main():
 
     INCLUDE_DIRS = ["src/silo/include"] \
             + conf["BOOST_INCLUDE_DIRS"] \
-            + conf["BOOST_BINDINGS_INCLUDE_DIRS"]
+            + conf["BOOST_BINDINGS_INCLUDE_DIRS"] \
+            + conf["NUMPY_INC_DIRS"]
 
     LIBRARY_DIRS = conf["BOOST_LIBRARY_DIRS"]
     LIBRARIES = conf["BPL_LIBRARIES"]

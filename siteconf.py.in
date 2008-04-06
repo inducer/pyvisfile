@@ -19,6 +19,15 @@ SILO_INCLUDE_DIRS = [$str{SILO_INC_DIR}]
 SILO_LIBRARY_DIRS = [$str{SILO_LIB_DIR}]
 SILO_LIBRARIES = ["silo"]
 
+NUMPY_INC_DIRS=[$str{NUMPY_INC_DIR}]
+if not NUMPY_INC_DIRS:
+    try:
+        import numpy
+        from os.path import join
+        NUMPY_INC_DIRS.append(
+            join(numpy.__path__[0], "core", "include"))
+    except:
+        pass
 # --------------------------------------------------------------------
 # Compiler flags
 # --------------------------------------------------------------------
