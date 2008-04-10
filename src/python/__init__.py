@@ -137,6 +137,19 @@ class SiloFile(_internal.DBFile):
         _internal.DBFile.put_pointvar(self, vname, mname, vars,
                 _convert_optlist(optlist))
 
+    def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist={}):
+        _internal.DBFile.put_quadmesh(self, mname, coords, coordtype,
+                _convert_optlist(optlist))
+
+    def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
+        _internal.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
+                _convert_optlist(optlist))
+
+    def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
+        _internal.DBFile.put_quadvar(self, vname, mname,
+                varnames, vars, dims, centering,
+                _convert_optlist(optlist))
+
     def put_multimesh(self, mname, mnames_and_types, optlist={}):
         _internal.DBFile.put_multimesh(self, mname,
                 mnames_and_types, _convert_optlist(optlist))
@@ -233,7 +246,7 @@ class ParallelSiloFile:
 
     def put_pointmesh(self, mname, ndims, coords, optlist={}):
         self.data_file.put_pointmesh(mname, ndims, coords, optlist)
-        self._added_mesh(vname, DBObjectType.DB_POINTMESH, optlist)
+        self._added_mesh(mname, DBObjectType.DB_POINTMESH, optlist)
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
         self.data_file.put_pointvar1(vname, mname, var, optlist)
@@ -242,6 +255,19 @@ class ParallelSiloFile:
     def put_pointvar(self, vname, mname, vars, optlist={}):
         self.data_file.put_pointvar(vname, mname, vars, optlist)
         self._added_variable(vname, DBObjectType.DB_POINTVAR, optlist)
+
+    def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist={}):
+        self.data_file.put_quadmesh(mname, coords, coordtype, optlist)
+        self._added_mesh(mname, DBObjectType.DB_QUADMESH, optlist)
+
+    def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
+        self.data_file.put_quadvar1(vname, mname, var, dims, centering, optlist)
+        self._added_mesh(vname, DBObjectType.DB_QUADVAR, optlist)
+
+    def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
+        self.data_file.put_quadvar(vname, mname, varnames, vars, 
+                dims, centering, optlist)
+        self._added_mesh(vname, DBObjectType.DB_QUADVAR, optlist)
 
     # -------------------------------------------------------------------------
     def _added_mesh(self, mname, type, optlist):

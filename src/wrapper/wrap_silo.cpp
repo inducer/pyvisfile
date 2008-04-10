@@ -488,7 +488,6 @@ namespace
         ensure_db_open();
 
         typedef double value_type;
-        int datatype = get_datatype(value_type());
 
         int nnodes = coords.size()/ndims;
         std::vector<const value_type *> coord_starts;
@@ -499,7 +498,7 @@ namespace
             /* coordnames*/ NULL,
             (float **) &coord_starts.front(), nnodes,
             nzones, zonel_name, facel_name,
-            datatype, optlist.get_optlist()));
+            get_datatype(value_type()), optlist.get_optlist()));
       }
 
 
@@ -511,13 +510,11 @@ namespace
       {
         ensure_db_open();
 
-        int datatype = get_datatype(vector::value_type());
-
         CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname, 
             (float *) traits::vector_storage(v),
             v.size(), 
             /* mixvar */ NULL, /* mixlen */ 0, 
-            datatype, centering,
+            get_datatype(vector::value_type()), centering,
             optlist.get_optlist()));
       }
 
@@ -531,8 +528,6 @@ namespace
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
-
-        int datatype = get_datatype(vector::value_type());
 
         if (len(varnames_py) != len(vars_py))
           PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
@@ -566,7 +561,7 @@ namespace
             &vars.front(), 
             vlength, 
             /* mixvar */ NULL, /* mixlen */ 0, 
-            datatype, centering, optlist.get_optlist()));
+            get_datatype(vector::value_type()), centering, optlist.get_optlist()));
       }
 
 
@@ -620,8 +615,6 @@ namespace
       {
         ensure_db_open();
 
-        int datatype = get_datatype(vector::value_type());
-
         int npoints = coords.size()/ndims;
 
         std::vector<float *> coord_starts;
@@ -629,8 +622,8 @@ namespace
           coord_starts.push_back((float *) (traits::vector_storage(coords)+d*npoints));
 
         CALL_GUARDED(DBPutPointmesh, (m_dbfile, id, 
-              ndims, &coord_starts.front(), npoints, datatype, 
-              optlist.get_optlist()));
+              ndims, &coord_starts.front(), npoints, 
+              get_datatype(vector::value_type()), optlist.get_optlist()));
       }
 
 
@@ -642,10 +635,9 @@ namespace
       {
         ensure_db_open();
 
-        int datatype = get_datatype(vector::value_type());
-
         CALL_GUARDED(DBPutPointvar1, (m_dbfile, vname, mname,
-              (float *) traits::vector_storage(v), v.size(), datatype,
+              (float *) traits::vector_storage(v), v.size(), 
+              get_datatype(vector::value_type()),
               optlist.get_optlist()));
       }
 
@@ -657,8 +649,6 @@ namespace
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
-
-        int datatype = get_datatype(vector::value_type());
 
         std::vector<float *> vars;
         bool first = true;
@@ -682,7 +672,103 @@ namespace
         }
 
         CALL_GUARDED(DBPutPointvar, (m_dbfile, vname, mname,
-              len(vars_py), &vars.front(), vlength, datatype,
+              len(vars_py), &vars.front(), vlength, 
+              get_datatype(vector::value_type()),
+              optlist.get_optlist()));
+      }
+
+
+
+
+      void put_quadmesh(const char *name, object coords_py,
+          int coordtype, DBoptlistWrapper &optlist)
+      {
+        std::vector<int> dims;
+        std::vector<float *> coords;
+
+        PYTHON_FOREACH(coord_dim_py, coords_py)
+        {
+          vector coord_dim = extract<vector>(coord_dim_py);
+          dims.push_back(coord_dim.size());
+          coords.push_back((float *) traits::vector_storage(coord_dim));
+        }
+
+        CALL_GUARDED(DBPutQuadmesh, (m_dbfile, name, 
+              /* coordnames */ NULL,
+              &coords.front(),
+              &dims.front(),
+              dims.size(),
+              get_datatype(vector::value_type()),
+              coordtype,
+              optlist.get_optlist()));
+      }
+
+
+
+
+
+      void put_quadvar(const char *vname, const char *mname, 
+          object varnames_py, object vars_py, object dims_py,
+          /*float *mixvar, int mixlen, */int centering,
+          DBoptlistWrapper &optlist)
+      {
+        COPY_PY_LIST(int, dims);
+
+        if (len(varnames_py) != len(vars_py))
+          PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
+
+        COPY_PY_LIST(std::string, varnames);
+        MAKE_STRING_POINTER_VECTOR(varnames);
+        
+        std::vector<float *> vars;
+        bool first = true;
+        int vlength = 0;
+
+        PYTHON_FOREACH(var_py, vars_py)
+        {
+          vector v = extract<vector>(var_py);
+          if (first)
+          {
+            vlength = v.size();
+            first = false;
+          }
+          else if (vlength != int(v.size()))
+            PYTHON_ERROR(ValueError, 
+                boost::str(boost::format(
+                    "field components of '%s' need to have matching lengths")
+                  % vname).c_str());
+          vars.push_back((float *) traits::vector_storage(v));
+        }
+
+        CALL_GUARDED(DBPutQuadvar, (m_dbfile, vname, mname,
+              vars.size(),
+              const_cast<char **>(&varnames_ptrs.front()),
+              &vars.front(),
+              &dims.front(),
+              dims.size(),
+              /* mix stuff */ NULL, 0,
+              get_datatype(vector::value_type()),
+              centering,
+              optlist.get_optlist()));
+      }
+
+
+
+
+      void put_quadvar1(const char *vname, const char *mname, 
+          vector var, object dims_py,
+          /*float *mixvar, int mixlen, */int centering,
+          DBoptlistWrapper &optlist)
+      {
+        COPY_PY_LIST(int, dims);
+
+        CALL_GUARDED(DBPutQuadvar1, (m_dbfile, vname, mname,
+              (float *) traits::vector_storage(var),
+              &dims.front(),
+              dims.size(),
+              /* mix stuff */ NULL, 0,
+              get_datatype(vector::value_type()),
+              centering,
               optlist.get_optlist()));
       }
 
@@ -820,13 +906,21 @@ BOOST_PYTHON_MODULE(_internal)
       .def(init<const char *, int, int, const char *, int>())
       .DEF_SIMPLE_METHOD(close)
       .DEF_SIMPLE_METHOD(put_zonelist)
+
       .DEF_SIMPLE_METHOD(put_ucdmesh)
       .DEF_SIMPLE_METHOD(put_ucdvar1)
       .DEF_SIMPLE_METHOD(put_ucdvar)
+
       .DEF_SIMPLE_METHOD(put_defvars)
+
       .DEF_SIMPLE_METHOD(put_pointmesh)
       .DEF_SIMPLE_METHOD(put_pointvar1)
       .DEF_SIMPLE_METHOD(put_pointvar)
+
+      .DEF_SIMPLE_METHOD(put_quadmesh)
+      .DEF_SIMPLE_METHOD(put_quadvar1)
+      .DEF_SIMPLE_METHOD(put_quadvar)
+
       .DEF_SIMPLE_METHOD(put_multimesh)
       .DEF_SIMPLE_METHOD(put_multivar)
       .DEF_SIMPLE_METHOD(put_curve)
