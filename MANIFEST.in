@@ -1,5 +1,3 @@
 include configure
 include Makefile.in
-include configvars.py
-include siteconf.py.in
 include LICENSE

@@ -1,39 +1,55 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
-import glob
-import os
-import os.path
-import sys
+
+
+
+def get_config_schema():
+    from aksetup_helper import ConfigSchema, Option, \
+            IncludeDir, LibraryDir, Libraries, \
+            Switch, StringListOption
+
+    return ConfigSchema([
+        IncludeDir("BOOST", []),
+        LibraryDir("BOOST", []),
+        Libraries("BOOST_PYTHON", ["boost_python-gcc42-mt"]),
+
+        IncludeDir("NUMPY"),
+
+        IncludeDir("BOOST_BINDINGS", []),
+
+        IncludeDir("SILO", []),
+        LibraryDir("SILO", []),
+        Libraries("SILO", ["silo"]),
+
+        StringListOption("CXXFLAGS", [], 
+            help="Any extra C++ compiler options to include"),
+        ])
+
+
+
 
 def main():
-    try:
-        conf = {}
-        execfile("siteconf.py", conf)
-    except IOError:
-        print "*** Please run configure first."
-        sys.exit(1)
+    from aksetup_helper import hack_distutils, get_config, setup, Extension
 
-    from distutils.core import setup,Extension
+    hack_distutils()
+    conf = get_config()
 
-    def non_matching_config():
-        print "*** The version of your configuration template does not match"
-        print "*** the version of the setup script. Please re-run configure."
-        sys.exit(1)
-
-    if "PYLO_CONF_TEMPLATE_VERSION" not in conf:
-        non_matching_config()
-
-    if conf["PYLO_CONF_TEMPLATE_VERSION"] != 1:
-        non_matching_config()
+    if conf["NUMPY_INC_DIR"] is None:
+        try:
+            import numpy
+            from os.path import join
+            conf["NUMPY_INC_DIR"] = [join(numpy.__path__[0], "core", "include")]
+        except:
+            pass
 
     INCLUDE_DIRS = ["src/silo/include"] \
-            + conf["BOOST_INCLUDE_DIRS"] \
-            + conf["BOOST_BINDINGS_INCLUDE_DIRS"] \
-            + conf["NUMPY_INC_DIRS"]
+            + conf["BOOST_INC_DIR"] \
+            + conf["BOOST_BINDINGS_INC_DIR"] \
+            + conf["NUMPY_INC_DIR"]
 
-    LIBRARY_DIRS = conf["BOOST_LIBRARY_DIRS"]
-    LIBRARIES = conf["BPL_LIBRARIES"]
+    LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
+    LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
 
     EXTRA_DEFINES = {}
     EXTRA_INCLUDE_DIRS = []
@@ -43,30 +59,37 @@ def main():
     def handle_component(comp):
         if conf["USE_"+comp]:
             EXTRA_DEFINES["USE_"+comp] = 1
-            EXTRA_INCLUDE_DIRS.extend(conf[comp+"_INCLUDE_DIRS"])
-            EXTRA_LIBRARY_DIRS.extend(conf[comp+"_LIBRARY_DIRS"])
-            EXTRA_LIBRARIES.extend(conf[comp+"_LIBRARIES"])
+            EXTRA_INCLUDE_DIRS.extend(conf[comp+"_INC_DIR"])
+            EXTRA_LIBRARY_DIRS.extend(conf[comp+"_LIB_DIR"])
+            EXTRA_LIBRARIES.extend(conf[comp+"_LIBNAME"])
 
     conf["USE_SILO"] = True
     handle_component("SILO")
 
     setup(name="pylo",
-          version="0.90",
-          description="A wrapper around libsilo",
-          author=u"Andreas Kloeckner",
-          author_email="inform@tiker.net",
-          license = "BSD",
-          url="http://news.tiker.net/software/pylo",
-          packages=["pylo"],
-          package_dir={"pylo": "src/python"},
-          ext_package="pylo",
-          ext_modules=[
+            version="0.90",
+            description="A wrapper around libsilo",
+            author=u"Andreas Kloeckner",
+            author_email="inform@tiker.net",
+            license = "BSD",
+            url="http://news.tiker.net/software/pylo",
+
+            # dependencies
+            setup_requires=[
+                "PyUblas>=0.92",
+                ],
+            zip_safe=False,
+
+            packages=["pylo"],
+            package_dir={"pylo": "src/python"},
+            ext_package="pylo",
+            ext_modules=[
                 Extension("_internal", 
                     [ "src/wrapper/wrap_silo.cpp", ],
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + EXTRA_LIBRARY_DIRS,
                     libraries=LIBRARIES + EXTRA_LIBRARIES,
-                    extra_compile_args=conf["EXTRA_COMPILE_ARGS"],
+                    extra_compile_args=conf["CXXFLAGS"],
                     define_macros=list(EXTRA_DEFINES.iteritems()),
                     )],
          )
@@ -75,25 +98,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # hack distutils.sysconfig to eliminate debug flags
-    # stolen from mpi4py
-    import sys
-    if not sys.platform.lower().startswith("win"):
-        from distutils import sysconfig
-
-        cvars = sysconfig.get_config_vars()
-        cflags = cvars.get('OPT')
-        if cflags:
-            cflags = cflags.split()
-            for bad_prefix in ('-g', '-O', '-Wstrict-prototypes'):
-                for i, flag in enumerate(cflags):
-                    if flag.startswith(bad_prefix):
-                        cflags.pop(i)
-                        break
-                if flag in cflags:
-                    cflags.remove(flag)
-            cflags.append("-O3")
-            cvars['OPT'] = str.join(' ', cflags)
-            cvars["CFLAGS"] = cvars["BASECFLAGS"] + " " + cvars["OPT"]
-    # and now call main
     main()
