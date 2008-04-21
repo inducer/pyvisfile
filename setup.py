@@ -68,11 +68,47 @@ def main():
 
     setup(name="pylo",
             version="0.90",
-            description="A wrapper around libsilo",
+            description="Large-scale Visualization Data Storage",
+            long_description="""
+            Pylo allows you to write SILO visualization files, as
+            introduced by LLNL's 
+            `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
+            more recently used by the 
+            `VisIt <https://wci.llnl.gov/codes/visit/>`_ 
+            large-scale visualization program.
+
+            Pylo supports the majority of datatypes allowed in 
+            SILO files, such as unstructured and rectangular
+            structured meshes, particle meshes, as well as 
+            scalar and vector variables on them. In addition,
+            Pylo supports expressions of scalar variables and
+            semi-automatic writing of parallelization-segmented
+            SILO files.
+
+            Pylo uses `Boost.Python <http://www.boost.org>`_. 
+            """,
+            classifiers=[
+              'Development Status :: 4 - Beta',
+              'Intended Audience :: Developers',
+              'Intended Audience :: Other Audience',
+              'Intended Audience :: Science/Research',
+              'License :: OSI Approved :: MIT License',
+              'License :: Free for non-commercial use',
+              'Natural Language :: English',
+              'Programming Language :: C++',
+              'Programming Language :: Python',
+              'Topic :: Multimedia :: Graphics :: 3D Modeling',
+              'Topic :: Scientific/Engineering',
+              'Topic :: Scientific/Engineering :: Mathematics',
+              'Topic :: Scientific/Engineering :: Physics',
+              'Topic :: Scientific/Engineering :: Visualization',
+              'Topic :: Software Development :: Libraries',
+              ],
+
             author=u"Andreas Kloeckner",
             author_email="inform@tiker.net",
-            license = "BSD",
-            url="http://news.tiker.net/software/pylo",
+            license = "MIT",
+            url="http://mathema.tician.de/software/pylo",
 
             # dependencies
             setup_requires=[
