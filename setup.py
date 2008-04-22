@@ -56,7 +56,7 @@ def main():
     handle_component("SILO")
 
     setup(name="pylo",
-            version="0.90",
+            version="0.90.1",
             description="Large-scale Visualization Data Storage",
             long_description="""
             Pylo allows you to write SILO visualization files, as
