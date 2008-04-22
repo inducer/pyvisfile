@@ -14,8 +14,6 @@ def get_config_schema():
         LibraryDir("BOOST", []),
         Libraries("BOOST_PYTHON", ["boost_python-gcc42-mt"]),
 
-        IncludeDir("NUMPY"),
-
         IncludeDir("BOOST_BINDINGS", []),
 
         IncludeDir("SILO", []),
@@ -30,23 +28,14 @@ def get_config_schema():
 
 
 def main():
-    from aksetup_helper import hack_distutils, get_config, setup, Extension
+    from aksetup_helper import hack_distutils, get_config, setup, \
+            PyUblasExtension
 
     hack_distutils()
     conf = get_config()
 
-    if conf["NUMPY_INC_DIR"] is None:
-        try:
-            import numpy
-            from os.path import join
-            conf["NUMPY_INC_DIR"] = [join(numpy.__path__[0], "core", "include")]
-        except:
-            pass
-
-    INCLUDE_DIRS = ["src/silo/include"] \
-            + conf["BOOST_INC_DIR"] \
-            + conf["BOOST_BINDINGS_INC_DIR"] \
-            + conf["NUMPY_INC_DIR"]
+    INCLUDE_DIRS = conf["BOOST_INC_DIR"] \
+            + conf["BOOST_BINDINGS_INC_DIR"]
 
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
@@ -112,15 +101,19 @@ def main():
 
             # dependencies
             setup_requires=[
-                "PyUblas>=0.92",
+                "PyUblas>=0.92.1",
                 ],
+            install_requires=[
+                "PyUblas>=0.92.1",
+                ],
+
             zip_safe=False,
 
             packages=["pylo"],
             package_dir={"pylo": "src/python"},
             ext_package="pylo",
             ext_modules=[
-                Extension("_internal", 
+                PyUblasExtension("_internal", 
                     [ "src/wrapper/wrap_silo.cpp", ],
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + EXTRA_LIBRARY_DIRS,
