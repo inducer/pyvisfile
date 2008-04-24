@@ -59,7 +59,7 @@ def main():
             version="0.90.2",
             description="Large-scale Visualization Data Storage",
             long_description="""
-            Pylo allows you to write SILO visualization files, as
+            Pylo allows you to write Silo visualization files, as
             introduced by LLNL's 
             `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
             more recently used by the 
@@ -67,14 +67,18 @@ def main():
             large-scale visualization program.
 
             Pylo supports the majority of datatypes allowed in 
-            SILO files, such as unstructured and rectangular
+            Silo files, such as unstructured and rectangular
             structured meshes, particle meshes, as well as 
             scalar and vector variables on them. In addition,
             Pylo supports expressions of scalar variables and
             semi-automatic writing of parallelization-segmented
-            SILO files.
+            Silo files.
 
-            Pylo uses `Boost.Python <http://www.boost.org>`_. 
+            Pylo uses `Boost.Python <http://www.boost.org>`_ and `PyUblas
+            <http://mathema.tician.de/software/pyublas>`_.  To build it, please
+            refer to the `PyUblas documentation <http://tiker.net/doc/pyublas>`_
+            for build instructions first. After that, building pylo should be
+            straightforward.
             """,
             classifiers=[
               'Development Status :: 4 - Beta',
