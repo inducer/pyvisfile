@@ -32,7 +32,7 @@ def main():
             PyUblasExtension
 
     hack_distutils()
-    conf = get_config()
+    conf = get_config(get_config_schema())
 
     INCLUDE_DIRS = conf["BOOST_INC_DIR"] \
             + conf["BOOST_BINDINGS_INC_DIR"]
@@ -40,7 +40,7 @@ def main():
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
 
-    EXTRA_DEFINES = {}
+    EXTRA_DEFINES = { "PYUBLAS_HAVE_BOOST_BINDINGS":1 }
     EXTRA_INCLUDE_DIRS = []
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
@@ -56,7 +56,7 @@ def main():
     handle_component("SILO")
 
     setup(name="pylo",
-            version="0.90.1",
+            version="0.90.2",
             description="Large-scale Visualization Data Storage",
             long_description="""
             Pylo allows you to write SILO visualization files, as
