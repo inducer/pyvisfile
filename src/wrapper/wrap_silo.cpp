@@ -43,6 +43,8 @@
   def(#NAME, &NAME)
 #define DEF_SIMPLE_METHOD(NAME) \
   def(#NAME, &cl::NAME)
+#define DEF_SIMPLE_METHOD_WITH_ARGS(NAME, ARGS) \
+  def(#NAME, &cl::NAME, args ARGS)
 
 
 
@@ -291,6 +293,19 @@ namespace
     EXPORT_CONSTANT(DBCSG_COMPLIMENT);
     EXPORT_CONSTANT(DBCSG_XFORM);
     EXPORT_CONSTANT(DBCSG_SWEEP);
+
+#if PYLO_SILO_VERSION_GE(4,6,1)
+    /* Shape types */
+    EXPORT_CONSTANT(DB_ZONETYPE_BEAM);
+    EXPORT_CONSTANT(DB_ZONETYPE_TRIANGLE);
+    EXPORT_CONSTANT(DB_ZONETYPE_QUAD);
+    EXPORT_CONSTANT(DB_ZONETYPE_POLYHEDRON);
+    EXPORT_CONSTANT(DB_ZONETYPE_TET);
+    EXPORT_CONSTANT(DB_ZONETYPE_PYRAMID);
+    EXPORT_CONSTANT(DB_ZONETYPE_PRISM);
+    EXPORT_CONSTANT(DB_ZONETYPE_HEX);
+#endif
+
 #undef EXPORT_CONSTANT
     return result;
   }
@@ -508,6 +523,32 @@ namespace
               shapesize.size()
             ));
       }
+
+
+
+
+#if PYLO_SILO_VERSION_GE(4,6,1)
+      void put_zonelist_2(const char *name, int nzones, int ndims,
+          const std::vector<int> &nodelist, int lo_offset, int hi_offset,
+          const std::vector<int> &shapetype,
+          const std::vector<int> &shapesize,
+          const std::vector<int> &shapecounts,
+          DBoptlistWrapper &optlist
+          )
+      {
+        ensure_db_open();
+
+        CALL_GUARDED(DBPutZonelist2, (m_dbfile, name, nzones, ndims, 
+              const_cast<int *>(&nodelist.front()), nodelist.size(), 
+              0, lo_offset, hi_offset,
+              const_cast<int *>(&shapetype.front()), 
+              const_cast<int *>(&shapesize.front()), 
+              const_cast<int *>(&shapecounts.front()),
+              shapesize.size(),
+              optlist.get_optlist()
+            ));
+      }
+#endif
 
 
 
@@ -988,6 +1029,25 @@ namespace
       bool m_db_is_open;
       DBfile *m_dbfile;
   };
+
+
+
+
+  tuple get_silo_version()
+  {
+#if PYLO_SILO_VERSION_GE(4,6,1)
+    return make_tuple(SILO_VERS_MAJ, SILO_VERS_MIN, SILO_VERS_PAT);
+#else
+    return make_tuple(4,5,1);
+#endif
+  }
+
+
+
+  int set_dep_warning_dummy(int)
+  { 
+    return 0;
+  }
 }
 
 
@@ -1046,6 +1106,10 @@ BOOST_PYTHON_MODULE(_internal)
       .DEF_SIMPLE_METHOD(close)
       .DEF_SIMPLE_METHOD(put_zonelist)
 
+#if PYLO_SILO_VERSION_GE(4,6,1)
+      .DEF_SIMPLE_METHOD(put_zonelist_2)
+#endif
+
       .def("put_ucdmesh", &cl::put_ucdmesh<float>)
       .def("put_ucdmesh", &cl::put_ucdmesh<double>)
       .def("put_ucdvar1", &cl::put_ucdvar1<float>)
@@ -1090,4 +1154,11 @@ BOOST_PYTHON_MODULE(_internal)
       .def(vector_indexing_suite<cl> ())
       ;
   }
+
+#if PYLO_SILO_VERSION_GE(4,6,1)
+  def("set_deprecate_warnings", DBSetDeprecateWarnings);
+#else
+  def("set_deprecate_warnings", set_dep_warning_dummy);
+#endif
+  DEF_SIMPLE_FUNCTION(get_silo_version);
 }

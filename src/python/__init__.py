@@ -53,6 +53,8 @@ _export_symbols()
 DBObjectType = _internal.DBObjectType
 DBdatatype = _internal.DBdatatype
 IntVector = _internal.IntVector
+get_silo_version = _internal.get_silo_version
+set_deprecate_warnings = _internal.set_deprecate_warnings
 
 
 
@@ -95,6 +97,12 @@ class SiloFile(_internal.DBFile):
             if filetype is None:
                 filetype = DB_UNKNOWN
             _internal.DBFile.__init__(self, pathname, mode, filetype)
+
+    def put_zonelist_2(self, names, nzones, ndims, nodelist, lo_offset, hi_offset,
+            shapetype, shapesize, shapecounts, optlist={}):
+        _internal.DBFile.put_zonelist_2(self, names, nzones, ndims, 
+                nodelist, lo_offset, hi_offset,
+                shapetype, shapesize, shapecounts, _convert_optlist(optlist))
 
     def put_ucdmesh(self, mname, coordnames, coords, 
             nzones, zonel_name, facel_name,
@@ -212,6 +220,9 @@ class ParallelSiloFile:
     # -------------------------------------------------------------------------
     def put_zonelist(self, *args, **kwargs):
         self.data_file.put_zonelist(*args, **kwargs)
+
+    def put_zonelist_2(self, *args, **kwargs):
+        self.data_file.put_zonelist_2(*args, **kwargs)
 
     def put_ucdmesh(self, mname, coordnames, coords, 
             nzones, zonel_name, facel_name, optlist):
