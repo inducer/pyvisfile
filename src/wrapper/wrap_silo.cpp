@@ -6,9 +6,8 @@
 
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
-#include <pyublas/numpy.hpp>
-#include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <pyublas/numpy.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
@@ -20,6 +19,9 @@
 
 
 
+#ifndef SILO_VERSION_GE
+#define SILO_VERSION_GE(n,n,n) 0
+#endif
 
 #define PYTHON_ERROR(TYPE, REASON) \
 { \
@@ -41,7 +43,7 @@
 
 
 using namespace boost::python;
-namespace traits = boost::numeric::bindings::traits;
+using namespace pyublas;
 
 
 
@@ -49,11 +51,6 @@ namespace traits = boost::numeric::bindings::traits;
 namespace 
 {
   // basics -------------------------------------------------------------------
-  typedef pyublas::numpy_vector<double> vector;
-
-
-
-
   template <class T>
   std::auto_ptr<std::vector<T> > construct_vector(object iterable)
   {
@@ -84,11 +81,13 @@ namespace
     EXPORT_CONSTANT(DB_DEBUG);
     EXPORT_CONSTANT(DB_HDF5);
 
+#if SILO_VERSION_GE(4,6,1)
     EXPORT_CONSTANT(DB_HDF5_SEC2);
     EXPORT_CONSTANT(DB_HDF5_STDIO);
     EXPORT_CONSTANT(DB_HDF5_CORE);
     EXPORT_CONSTANT(DB_HDF5_MPIO);
     EXPORT_CONSTANT(DB_HDF5_MPIOP);
+#endif
 
     /* Flags for DBCreate */
     EXPORT_CONSTANT(DB_CLOBBER);
@@ -316,6 +315,30 @@ namespace
         stl_input_iterator<object>(ITERABLE), \
         stl_input_iterator<object>()))
 
+  
+
+
+  NPY_TYPES get_varlist_dtype(object varlist)
+  {
+    bool first = true;
+    NPY_TYPES result = NPY_NOTYPE;
+
+    PYTHON_FOREACH(var, varlist)
+    {
+      if (!PyArray_Check(var.ptr()))
+        PYTHON_ERROR(TypeError, "component of variable list is not numpy array");
+
+      if (first)
+      {
+        result = (NPY_TYPES) PyArray_TYPE(var.ptr());
+        first = false;
+      }
+      else if (result != PyArray_TYPE(var.ptr()))
+        PYTHON_ERROR(TypeError, "components of variable list have non-matching types");
+    }
+
+    return result;
+  }
 
 
 
@@ -484,52 +507,58 @@ namespace
 
 
 
-      void put_ucdmesh(const char *name, int ndims,
-             object coordnames_py, const vector &coords, 
+      template <class T>
+      void put_ucdmesh(const char *name, 
+             object coordnames_py, const numpy_vector<T> &coords, 
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
-        typedef double value_type;
+        if (coords.ndim() != 2)
+          throw std::invalid_argument("need 2d array");
 
-        int nnodes = coords.size()/ndims;
-        std::vector<const value_type *> coord_starts;
+        int ndims = coords.dims()[0];
+        int nnodes = coords.dims()[1];
+
+        std::vector<const T *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          coord_starts.push_back(traits::vector_storage(coords)+d*nnodes);
+          coord_starts.push_back(&coords.sub(d, 0));
 
         CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims, 
             /* coordnames*/ NULL,
             (float **) &coord_starts.front(), nnodes,
             nzones, zonel_name, facel_name,
-            get_datatype(value_type()), optlist.get_optlist()));
+            get_datatype(T()), optlist.get_optlist()));
       }
 
 
 
 
-      void put_ucdvar1(const char *vname, const char *mname, const vector &v,
-             /*float *mixvar, int mixlen, */int centering,
-             DBoptlistWrapper &optlist)
+      template <class T>
+      void put_ucdvar1(const char *vname, const char *mname, 
+          const numpy_vector<T> &v,
+          /*float *mixvar, int mixlen, */int centering,
+          DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname, 
-            (float *) traits::vector_storage(v),
+            (float *) &v.sub(0),
             v.size(), 
             /* mixvar */ NULL, /* mixlen */ 0, 
-            get_datatype(vector::value_type()), centering,
+            get_datatype(T()), centering,
             optlist.get_optlist()));
       }
 
 
 
 
-      void put_ucdvar(const char *vname, const char *mname, 
+      template<class T>
+      void put_ucdvar_backend(const char *vname, const char *mname, 
           object varnames_py, object vars_py, 
           /*float *mixvars[], int mixlen,*/ 
-          int centering, 
-          DBoptlistWrapper &optlist)
+          int centering, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
@@ -545,7 +574,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          vector v = extract<vector>(var_py);
+          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
           if (first)
           {
             vlength = v.size();
@@ -556,7 +585,7 @@ namespace
                 boost::str(boost::format(
                     "field components of '%s' need to have matching lengths")
                   % vname).c_str());
-          vars.push_back((float *) traits::vector_storage(v));
+          vars.push_back((float *) v.data().data());
         }
 
         CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname, 
@@ -565,7 +594,30 @@ namespace
             &vars.front(), 
             vlength, 
             /* mixvar */ NULL, /* mixlen */ 0, 
-            get_datatype(vector::value_type()), centering, optlist.get_optlist()));
+            get_datatype(T()), centering, optlist.get_optlist()));
+      }
+
+
+
+
+      void put_ucdvar(const char *vname, const char *mname, 
+          object varnames_py, object vars_py, 
+          /*float *mixvars[], int mixlen,*/ 
+          int centering, DBoptlistWrapper &optlist)
+      {
+        switch (get_varlist_dtype(vars_py))
+        {
+          case NPY_FLOAT: 
+            put_ucdvar_backend<float>(vname, mname, varnames_py, vars_py,
+                centering, optlist);
+            break;
+          case NPY_DOUBLE: 
+            put_ucdvar_backend<double>(vname, mname, varnames_py, vars_py,
+                centering, optlist);
+            break;
+          default:
+            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+        }
       }
 
 
@@ -616,41 +668,46 @@ namespace
 
 
 
-      void put_pointmesh(const char *id, int ndims, const vector &coords,
+      template <class T>
+      void put_pointmesh(const char *id, const numpy_vector<T> &coords,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
-        int npoints = coords.size()/ndims;
+        if (coords.ndim() != 2)
+          throw std::invalid_argument("need 2d array");
+
+        int ndims = coords.dims()[0];
+        int npoints = coords.dims()[1];
 
         std::vector<float *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          coord_starts.push_back((float *) (traits::vector_storage(coords)+d*npoints));
+          coord_starts.push_back((float *) &coords.sub(d,0));
 
         CALL_GUARDED(DBPutPointmesh, (m_dbfile, id, 
               ndims, &coord_starts.front(), npoints, 
-              get_datatype(vector::value_type()), optlist.get_optlist()));
+              get_datatype(T()), optlist.get_optlist()));
       }
 
 
 
 
+      template <class T>
       void put_pointvar1(const char *vname, const char *mname, 
-          const vector &v,
-          DBoptlistWrapper &optlist)
+          const numpy_vector<T> &v, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         CALL_GUARDED(DBPutPointvar1, (m_dbfile, vname, mname,
-              (float *) traits::vector_storage(v), v.size(), 
-              get_datatype(vector::value_type()),
-              optlist.get_optlist()));
+              (float *) v.data().data(), v.size(), 
+              get_datatype(T()), optlist.get_optlist()));
       }
 
 
 
 
-      void put_pointvar(const char *vname, const char *mname, 
+      template <class T>
+      void put_pointvar_backend(const char *vname, const char *mname, 
           object vars_py,
           DBoptlistWrapper &optlist)
       {
@@ -662,7 +719,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          vector v = extract<vector>(var_py);
+          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
           if (first)
           {
             vlength = v.size();
@@ -674,12 +731,58 @@ namespace
                     "field components of '%s' need to have matching lengths")
                   % vname).c_str());
 
-          vars.push_back((float *) traits::vector_storage(v));
+          vars.push_back((float *) v.data().data());
         }
 
         CALL_GUARDED(DBPutPointvar, (m_dbfile, vname, mname,
               len(vars_py), &vars.front(), vlength, 
-              get_datatype(vector::value_type()),
+              get_datatype(T()),
+              optlist.get_optlist()));
+      }
+
+
+
+
+      void put_pointvar(const char *vname, const char *mname, 
+          object vars_py, DBoptlistWrapper &optlist)
+      {
+        switch (get_varlist_dtype(vars_py))
+        {
+          case NPY_FLOAT: 
+            put_pointvar_backend<float>(vname, mname, vars_py, optlist);
+            break;
+          case NPY_DOUBLE: 
+            put_pointvar_backend<double>(vname, mname, vars_py, optlist);
+            break;
+          default:
+            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+        }
+      }
+
+
+
+
+      template <class T>
+      void put_quadmesh_backend(const char *name, object coords_py,
+          int coordtype, DBoptlistWrapper &optlist)
+      {
+        std::vector<int> dims;
+        std::vector<float *> coords;
+
+        PYTHON_FOREACH(coord_dim_py, coords_py)
+        {
+          numpy_vector<T> coord_dim = extract<numpy_vector<T> >(coord_dim_py);
+          dims.push_back(coord_dim.size());
+          coords.push_back((float *) coord_dim.data().data());
+        }
+
+        CALL_GUARDED(DBPutQuadmesh, (m_dbfile, name, 
+              /* coordnames */ NULL,
+              &coords.front(),
+              &dims.front(),
+              dims.size(),
+              get_datatype(T()),
+              coordtype,
               optlist.get_optlist()));
       }
 
@@ -689,31 +792,25 @@ namespace
       void put_quadmesh(const char *name, object coords_py,
           int coordtype, DBoptlistWrapper &optlist)
       {
-        std::vector<int> dims;
-        std::vector<float *> coords;
-
-        PYTHON_FOREACH(coord_dim_py, coords_py)
+        switch (get_varlist_dtype(coords_py))
         {
-          vector coord_dim = extract<vector>(coord_dim_py);
-          dims.push_back(coord_dim.size());
-          coords.push_back((float *) traits::vector_storage(coord_dim));
+          case NPY_FLOAT: 
+            put_quadmesh_backend<float>(name, coords_py, coordtype, optlist);
+            break;
+          case NPY_DOUBLE: 
+            put_quadmesh_backend<double>(name, coords_py, coordtype, optlist);
+            break;
+          default:
+            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
         }
-
-        CALL_GUARDED(DBPutQuadmesh, (m_dbfile, name, 
-              /* coordnames */ NULL,
-              &coords.front(),
-              &dims.front(),
-              dims.size(),
-              get_datatype(vector::value_type()),
-              coordtype,
-              optlist.get_optlist()));
       }
 
 
 
 
 
-      void put_quadvar(const char *vname, const char *mname, 
+      template <class T>
+      void put_quadvar_backend(const char *vname, const char *mname, 
           object varnames_py, object vars_py, object dims_py,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
@@ -732,7 +829,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          vector v = extract<vector>(var_py);
+          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
           if (first)
           {
             vlength = v.size();
@@ -743,7 +840,7 @@ namespace
                 boost::str(boost::format(
                     "field components of '%s' need to have matching lengths")
                   % vname).c_str());
-          vars.push_back((float *) traits::vector_storage(v));
+          vars.push_back((float *) v.data().data());
         }
 
         CALL_GUARDED(DBPutQuadvar, (m_dbfile, vname, mname,
@@ -753,7 +850,7 @@ namespace
               &dims.front(),
               dims.size(),
               /* mix stuff */ NULL, 0,
-              get_datatype(vector::value_type()),
+              get_datatype(T()),
               centering,
               optlist.get_optlist()));
       }
@@ -761,19 +858,43 @@ namespace
 
 
 
+      void put_quadvar(const char *vname, const char *mname, 
+          object varnames_py, object vars_py, object dims_py,
+          /*float *mixvar, int mixlen, */int centering,
+          DBoptlistWrapper &optlist)
+      {
+        switch (get_varlist_dtype(vars_py))
+        {
+          case NPY_FLOAT: 
+            put_quadvar_backend<float>(vname, mname, varnames_py, vars_py, 
+                dims_py, centering, optlist);
+            break;
+          case NPY_DOUBLE: 
+            put_quadvar_backend<double>(vname, mname, varnames_py, vars_py, 
+                dims_py, centering, optlist);
+            break;
+          default:
+            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+        }
+      }
+
+
+
+
+      template <class T>
       void put_quadvar1(const char *vname, const char *mname, 
-          vector var, object dims_py,
+          numpy_vector<T> var, object dims_py,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         COPY_PY_LIST(int, dims);
 
         CALL_GUARDED(DBPutQuadvar1, (m_dbfile, vname, mname,
-              (float *) traits::vector_storage(var),
+              (float *) var.data().data(),
               &dims.front(),
               dims.size(),
               /* mix stuff */ NULL, 0,
-              get_datatype(vector::value_type()),
+              get_datatype(T()),
               centering,
               optlist.get_optlist()));
       }
@@ -832,18 +953,19 @@ namespace
 
 
 
+      template <class T>
       void put_curve(const char *curvename, 
-          const vector &xvals,
-          const vector &yvals,
+          const numpy_vector<T> &xvals,
+          const numpy_vector<T> &yvals,
           DBoptlistWrapper &optlist)
       {
         if (xvals.size() != yvals.size())
           PYTHON_ERROR(ValueError, "xvals and yvals must have the same length");
         int npoints = xvals.size();
         CALL_GUARDED(DBPutCurve, (m_dbfile, curvename,
-              const_cast<void *>(reinterpret_cast<const void *>(traits::vector_storage(xvals))),
-              const_cast<void *>(reinterpret_cast<const void *>(traits::vector_storage(yvals))),
-              get_datatype(vector::value_type()),
+              const_cast<void *>(reinterpret_cast<const void *>(xvals.data().data())),
+              const_cast<void *>(reinterpret_cast<const void *>(yvals.data().data())),
+              get_datatype(T()),
               npoints,
               optlist.get_optlist()));
       }
@@ -913,23 +1035,30 @@ BOOST_PYTHON_MODULE(_internal)
       .DEF_SIMPLE_METHOD(close)
       .DEF_SIMPLE_METHOD(put_zonelist)
 
-      .DEF_SIMPLE_METHOD(put_ucdmesh)
-      .DEF_SIMPLE_METHOD(put_ucdvar1)
+      .def("put_ucdmesh", &cl::put_ucdmesh<float>)
+      .def("put_ucdmesh", &cl::put_ucdmesh<double>)
+      .def("put_ucdvar1", &cl::put_ucdvar1<float>)
+      .def("put_ucdvar1", &cl::put_ucdvar1<double>)
       .DEF_SIMPLE_METHOD(put_ucdvar)
 
       .DEF_SIMPLE_METHOD(put_defvars)
 
-      .DEF_SIMPLE_METHOD(put_pointmesh)
-      .DEF_SIMPLE_METHOD(put_pointvar1)
+      .def("put_pointmesh", &cl::put_pointmesh<float>)
+      .def("put_pointmesh", &cl::put_pointmesh<double>)
+      .def("put_pointvar1", &cl::put_pointvar1<float>)
+      .def("put_pointvar1", &cl::put_pointvar1<double>)
       .DEF_SIMPLE_METHOD(put_pointvar)
 
       .DEF_SIMPLE_METHOD(put_quadmesh)
-      .DEF_SIMPLE_METHOD(put_quadvar1)
+      .def("put_quadvar1", &cl::put_quadvar1<float>)
+      .def("put_quadvar1", &cl::put_quadvar1<double>)
       .DEF_SIMPLE_METHOD(put_quadvar)
 
       .DEF_SIMPLE_METHOD(put_multimesh)
       .DEF_SIMPLE_METHOD(put_multivar)
-      .DEF_SIMPLE_METHOD(put_curve)
+
+      .def("put_curve", &cl::put_curve<float>)
+      .def("put_curve", &cl::put_curve<double>)
       ;
   }
 
