@@ -19,8 +19,13 @@
 
 
 
-#ifndef SILO_VERSION_GE
-#define SILO_VERSION_GE(m,n,o) 0
+#ifdef SILO_VERS_MAJ
+#define PYLO_SILO_VERSION_GE(Maj,Min,Rel)  \
+        (((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN==Min) && (SILO_VERS_PAT>=Rel)) || \
+         ((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN>Min)) || \
+         (SILO_VERS_MAJ>Maj))
+#else
+#define PYLO_SILO_VERSION_GE(Maj,Min,Rel) 0
 #endif
 
 #define PYTHON_ERROR(TYPE, REASON) \
@@ -81,7 +86,7 @@ namespace
     EXPORT_CONSTANT(DB_DEBUG);
     EXPORT_CONSTANT(DB_HDF5);
 
-#if SILO_VERSION_GE(4,6,1)
+#if PYLO_SILO_VERSION_GE(4,6,1)
     EXPORT_CONSTANT(DB_HDF5_SEC2);
     EXPORT_CONSTANT(DB_HDF5_STDIO);
     EXPORT_CONSTANT(DB_HDF5_CORE);
@@ -659,7 +664,7 @@ namespace
           vardefs.push_back(vardefs_container[i].data());
         }
 
-#if SILO_VERSION_GE(4,6,1)
+#if PYLO_SILO_VERSION_GE(4,6,1)
         CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py), 
             const_cast<char **>(&varnames.front()), 
             &vartypes.front(), 
