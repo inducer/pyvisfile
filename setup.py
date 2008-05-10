@@ -14,8 +14,6 @@ def get_config_schema():
         LibraryDir("BOOST", []),
         Libraries("BOOST_PYTHON", ["boost_python-gcc42-mt"]),
 
-        IncludeDir("BOOST_BINDINGS", []),
-
         IncludeDir("SILO", []),
         LibraryDir("SILO", []),
         Libraries("SILO", ["silo"]),
@@ -35,12 +33,11 @@ def main():
     conf = get_config(get_config_schema())
 
     INCLUDE_DIRS = conf["BOOST_INC_DIR"] \
-            + conf["BOOST_BINDINGS_INC_DIR"]
 
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
 
-    EXTRA_DEFINES = { "PYUBLAS_HAVE_BOOST_BINDINGS":1 }
+    EXTRA_DEFINES = { }
     EXTRA_INCLUDE_DIRS = []
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
@@ -56,7 +53,7 @@ def main():
     handle_component("SILO")
 
     setup(name="pylo",
-            version="0.90.2",
+            version="0.91",
             description="Large-scale Visualization Data Storage",
             long_description="""
             Pylo allows you to write Silo visualization files, as
@@ -64,7 +61,9 @@ def main():
             `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
             more recently used by the 
             `VisIt <https://wci.llnl.gov/codes/visit/>`_ 
-            large-scale visualization program.
+            large-scale visualization program. Check the
+            `VisIt source page<https://wci.llnl.gov/codes/visit/source.html>`_
+            for the latest Silo source code.
 
             Pylo supports the majority of datatypes allowed in 
             Silo files, such as unstructured and rectangular
