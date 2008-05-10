@@ -80,11 +80,15 @@ namespace
     EXPORT_CONSTANT(DB_NETCDF);
     EXPORT_CONSTANT(DB_PDB);
     EXPORT_CONSTANT(DB_TAURUS);
-    EXPORT_CONSTANT(DB_SDX);
     EXPORT_CONSTANT(DB_UNKNOWN);
     EXPORT_CONSTANT(DB_DEBUG);
     EXPORT_CONSTANT(DB_HDF5);
-    EXPORT_CONSTANT(DB_EXODUS);
+
+    EXPORT_CONSTANT(DB_HDF5_SEC2);
+    EXPORT_CONSTANT(DB_HDF5_STDIO);
+    EXPORT_CONSTANT(DB_HDF5_CORE);
+    EXPORT_CONSTANT(DB_HDF5_MPIO);
+    EXPORT_CONSTANT(DB_HDF5_MPIOP);
 
     /* Flags for DBCreate */
     EXPORT_CONSTANT(DB_CLOBBER);
@@ -604,7 +608,9 @@ namespace
         }
 
         CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py), 
-            &varnames.front(), &vartypes.front(), &vardefs.front(), &varopts.front()));
+            const_cast<char **>(&varnames.front()), 
+            &vartypes.front(), 
+            const_cast<char **>(&vardefs.front()), &varopts.front()));
       }
 
 
