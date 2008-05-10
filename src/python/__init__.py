@@ -96,10 +96,10 @@ class SiloFile(_internal.DBFile):
                 filetype = DB_UNKNOWN
             _internal.DBFile.__init__(self, pathname, mode, filetype)
 
-    def put_ucdmesh(self, mname, ndims, coordnames, coords, 
+    def put_ucdmesh(self, mname, coordnames, coords, 
             nzones, zonel_name, facel_name,
             optlist={}):
-        _internal.DBFile.put_ucdmesh(self, mname, ndims, coordnames, coords, 
+        _internal.DBFile.put_ucdmesh(self, mname, coordnames, coords, 
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
@@ -125,8 +125,8 @@ class SiloFile(_internal.DBFile):
         
         _internal.DBFile.put_defvars(self, vname, vars)
 
-    def put_pointmesh(self, mname, ndims, coords, optlist={}):
-        _internal.DBFile.put_pointmesh(self, mname, ndims, coords,
+    def put_pointmesh(self, mname, coords, optlist={}):
+        _internal.DBFile.put_pointmesh(self, mname, coords,
                 _convert_optlist(optlist))
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
@@ -213,9 +213,9 @@ class ParallelSiloFile:
     def put_zonelist(self, *args, **kwargs):
         self.data_file.put_zonelist(*args, **kwargs)
 
-    def put_ucdmesh(self, mname, ndims, coordnames, coords, 
+    def put_ucdmesh(self, mname, coordnames, coords, 
             nzones, zonel_name, facel_name, optlist):
-        self.data_file.put_ucdmesh(mname, ndims, coordnames, coords, 
+        self.data_file.put_ucdmesh(mname, coordnames, coords, 
             nzones, zonel_name, facel_name, optlist)
 
         self._added_mesh(mname, DBObjectType.DB_UCDMESH, optlist)
@@ -244,8 +244,8 @@ class ParallelSiloFile:
         if self.master_file is not None:
             self.master_file.put_defvars(vname, vars)
 
-    def put_pointmesh(self, mname, ndims, coords, optlist={}):
-        self.data_file.put_pointmesh(mname, ndims, coords, optlist)
+    def put_pointmesh(self, mname, coords, optlist={}):
+        self.data_file.put_pointmesh(mname, coords, optlist)
         self._added_mesh(mname, DBObjectType.DB_POINTMESH, optlist)
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
