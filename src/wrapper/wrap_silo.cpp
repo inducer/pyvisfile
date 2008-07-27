@@ -555,7 +555,7 @@ namespace
 
       template <class T>
       void put_ucdmesh(const char *name, 
-             object coordnames_py, const numpy_vector<T> &coords, 
+             object coordnames_py, numpy_vector<T> coords, 
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {

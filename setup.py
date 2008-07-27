@@ -62,7 +62,7 @@ def main():
             more recently used by the 
             `VisIt <https://wci.llnl.gov/codes/visit/>`_ 
             large-scale visualization program. Check the
-            `VisIt source page<https://wci.llnl.gov/codes/visit/source.html>`_
+            `VisIt source page <https://wci.llnl.gov/codes/visit/source.html>`_
             for the latest Silo source code.
 
             Pylo supports the majority of datatypes allowed in 
