@@ -42,7 +42,7 @@ newer. Then unpack, build and install it::
 
     $ tar xfz ~/download/silo-N.N.N.tar.gz
     $ cd silo-N.N.N
-    $ ./configure --prefix=$HOME/pool
+    $ ./configure --prefix=$HOME/pool --enable-shared=yes --enable-static=no
     $ make install
 
 Step 3: Update your build configuration file
@@ -84,13 +84,3 @@ Just type::
     $ sudo python setup.py install
 
 Once that works, congratulations! You've successfully built :mod:`pylo`.
-
-Step 6: Test Pylo
------------------
-
-If you'd like to be extra-careful, you can run :mod:`pylo`'s unit tests::
-
-    $ cd pylo-VERSION/test
-    $ python test.py
-
-If it says "OK" at the end, you're golden.
