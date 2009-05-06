@@ -110,7 +110,6 @@ def main():
             zip_safe=False,
 
             packages=["pylo"],
-            package_dir={"pylo": "src/python"},
             ext_package="pylo",
             ext_modules=[
                 PyUblasExtension("_internal", 
