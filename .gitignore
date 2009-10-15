@@ -20,3 +20,5 @@ MANIFEST
 *.pyd
 *.so
 setuptools*egg
+setuptools.pth
+distribute-*.tar.gz

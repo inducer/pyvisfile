@@ -107,8 +107,6 @@ def main():
                 "PyUblas>=0.92.1",
                 ],
 
-            zip_safe=False,
-
             packages=["pylo"],
             ext_package="pylo",
             ext_modules=[
