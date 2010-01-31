@@ -118,7 +118,8 @@ def main():
                     extra_compile_args=conf["CXXFLAGS"],
                     define_macros=list(EXTRA_DEFINES.iteritems()),
                     )],
-         )
+
+            zip_safe=False)
 
 
 
