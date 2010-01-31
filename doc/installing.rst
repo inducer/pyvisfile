@@ -42,7 +42,7 @@ newer. Then unpack, build and install it::
 
     $ tar xfz ~/download/silo-N.N.N.tar.gz
     $ cd silo-N.N.N
-    $ ./configure --prefix=$HOME/pool --enable-shared=yes --enable-static=no
+    $ ./configure.py --prefix=$HOME/pool --enable-shared=yes --enable-static=no
     $ make install
 
 Step 3: Update your build configuration file
