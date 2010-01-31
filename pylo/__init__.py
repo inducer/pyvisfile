@@ -41,6 +41,7 @@ _ignore_extra_int_vector_warning()
 
 
 import pylo._internal as _internal
+import pyublas
 
 
 
