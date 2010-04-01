@@ -97,7 +97,7 @@ class SiloFile(_internal.DBFile):
                 mode = DB_APPEND
             if filetype is None:
                 filetype = DB_UNKNOWN
-            _internal.DBFile.__init__(self, pathname, mode, filetype)
+            _internal.DBFile.__init__(self, pathname, filetype, mode)
 
     def put_zonelist_2(self, names, nzones, ndims, nodelist, lo_offset, hi_offset,
             shapetype, shapesize, shapecounts, optlist={}):

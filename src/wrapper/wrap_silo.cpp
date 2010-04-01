@@ -45,6 +45,8 @@
   def(#NAME, &cl::NAME)
 #define DEF_SIMPLE_METHOD_WITH_ARGS(NAME, ARGS) \
   def(#NAME, &cl::NAME, args ARGS)
+#define DEF_SIMPLE_RO_PROPERTY(NAME) \
+  add_property(#NAME, &cl::NAME)
 
 
 
@@ -55,7 +57,7 @@ using namespace pyublas;
 
 
 
-namespace 
+namespace
 {
   // basics -------------------------------------------------------------------
   template <class T>
@@ -73,7 +75,7 @@ namespace
 
 
 
-  // constants ----------------------------------------------------------------
+  // {{{ constants ------------------------------------------------------------
   dict symbols()
   {
     dict result;
@@ -310,6 +312,8 @@ namespace
     return result;
   }
 
+  // }}}
+
 
 
 
@@ -335,7 +339,7 @@ namespace
         stl_input_iterator<object>(ITERABLE), \
         stl_input_iterator<object>()))
 
-  
+
 
 
   NPY_TYPES get_varlist_dtype(object varlist)
@@ -362,6 +366,8 @@ namespace
 
 
 
+
+  // {{{ DBoptlist wrapper ----------------------------------------------------
   class DBoptlistWrapper : boost::noncopyable
   {
     private:
@@ -376,7 +382,7 @@ namespace
         m_option_storage(new char[storage_size]),
         m_option_storage_size(storage_size),
         m_option_storage_occupied(0)
-      { 
+      {
         if (m_optlist == NULL)
           throw std::runtime_error("DBMakeOptlist failed");
       }
@@ -387,7 +393,7 @@ namespace
 
       void add_option(int option, int value)
       {
-        CALL_GUARDED(DBAddOption,(m_optlist, option, 
+        CALL_GUARDED(DBAddOption,(m_optlist, option,
               add_storage_data((void *) &value, sizeof(value))
               ));
       }
@@ -398,7 +404,7 @@ namespace
         {
           case DBOPT_DTIME:
             {
-              CALL_GUARDED(DBAddOption,(m_optlist, option, 
+              CALL_GUARDED(DBAddOption,(m_optlist, option,
                     add_storage_data((void *) &value, sizeof(value))
                     ));
               break;
@@ -406,7 +412,7 @@ namespace
           default:
             {
               float cast_val = value;
-              CALL_GUARDED(DBAddOption,(m_optlist, option, 
+              CALL_GUARDED(DBAddOption,(m_optlist, option,
                     add_storage_data((void *) &cast_val, sizeof(cast_val))
                     ));
               break;
@@ -416,7 +422,7 @@ namespace
 
       void add_option(int option, const std::string &value)
       {
-        CALL_GUARDED(DBAddOption,(m_optlist, option, 
+        CALL_GUARDED(DBAddOption,(m_optlist, option,
               add_storage_data((void *) value.data(), value.size()+1)
               ));
       }
@@ -441,8 +447,7 @@ namespace
 
   };
 
-
-
+  // }}}
 
 
 
@@ -454,16 +459,131 @@ namespace
   int get_datatype(double) { return DB_DOUBLE; }
   int get_datatype(char) { return DB_CHAR; }
 
+  int silo_typenum_to_numpy_typenum(int silo_tp)
+  {
+    switch (silo_tp)
+    {
+      case DB_INT:
+        return NPY_INT;
+      case DB_SHORT:
+        return NPY_SHORT;
+      case DB_LONG:
+        return NPY_LONG;
+      case DB_FLOAT:
+          return NPY_FLOAT;
+      case DB_DOUBLE:
+          return NPY_DOUBLE;
+      case DB_CHAR:
+          return NPY_CHAR;
+      case DB_LONG_LONG:
+          return NPY_LONGLONG;
+      default:
+          throw std::runtime_error("invalid silo type code");
+    }
+  }
 
 
 
+
+  // {{{ data wrappers
+#define PYLO_TYPED_ACCESSOR(TYPE,NAME) \
+  TYPE NAME() const { return m_data->NAME; }
+#define PYLO_STRING_ACCESSOR(NAME) \
+  object NAME() const \
+  { \
+    if (m_data) \
+      return object(std::string(m_data->NAME)); \
+    else \
+      return object(); \
+  }
+
+  class DBcurveWrapper : boost::noncopyable
+  {
+    public:
+      DBcurve   *m_data;
+
+      DBcurveWrapper(DBcurve *data)
+        : m_data(data)
+      { }
+      ~DBcurveWrapper()
+      {
+        DBFreeCurve(m_data);
+      }
+
+      PYLO_TYPED_ACCESSOR(int, id);
+      PYLO_TYPED_ACCESSOR(int, origin);
+      PYLO_STRING_ACCESSOR(title);
+      PYLO_STRING_ACCESSOR(xvarname);
+      PYLO_STRING_ACCESSOR(yvarname);
+      PYLO_STRING_ACCESSOR(xlabel);
+      PYLO_STRING_ACCESSOR(ylabel);
+      PYLO_STRING_ACCESSOR(xunits);
+      PYLO_STRING_ACCESSOR(yunits);
+      PYLO_STRING_ACCESSOR(reference);
+  };
+
+#define PYLO_CURVE_DATA_GETTER(COORD) \
+  handle<> curve_##COORD(object py_curve) \
+  { \
+    DBcurveWrapper &curve((extract<DBcurveWrapper &>(py_curve))); \
+    npy_intp dims[] = { curve.m_data->npts }; \
+    handle<> result(PyArray_SimpleNewFromData(1, dims, \
+          silo_typenum_to_numpy_typenum(curve.m_data->datatype), \
+          curve.m_data->COORD)); \
+    PyArray_BASE(result.get()) = py_curve.ptr(); \
+    Py_INCREF(PyArray_BASE(result.get())); \
+    return result; \
+  }
+
+  PYLO_CURVE_DATA_GETTER(x);
+  PYLO_CURVE_DATA_GETTER(y);
+
+  // }}}
+
+
+
+
+  // {{{ DBtoc copy -----------------------------------------------------------
+  struct DBtocCopy : boost::noncopyable
+  {
+    list curve_names;
+    list multimesh_names;
+    list multimeshadj_names;
+    list multivar_names;
+    list multimat_names;
+    list multimatspecies_names;
+    list csgmesh_names;
+    list csgvar_names;
+    list defvars_names;
+    list qmesh_names;
+    list qvar_names;
+    list ucdmesh_names;
+    list ucdvar_names;
+    list ptmesh_names;
+    list ptvar_names;
+    list mat_names;
+    list matspecies_names;
+    list var_names;
+    list obj_names;
+    list dir_names;
+    list array_names;
+    list mrgtree_names;
+    list groupelmap_names;
+    list mrgvar_names;
+  };
+
+  // }}}
+
+
+
+  // {{{ DBfile wrapper -------------------------------------------------------
   class DBfileWrapper : boost::noncopyable
   {
     public:
       DBfileWrapper(const char *name, int target, int mode)
         : m_db_is_open(false),
         m_dbfile(DBOpen(name, target, mode))
-      { 
+      {
         if (m_dbfile == NULL)
           throw std::runtime_error("DBOpen failed");
         m_db_is_open = true;
@@ -472,7 +592,7 @@ namespace
       DBfileWrapper(const char *name, int mode, int target, const char *info, int type)
         : m_db_is_open(false),
         m_dbfile(DBCreate(name, mode, target, info, type))
-      { 
+      {
         if (m_dbfile == NULL)
           throw std::runtime_error("DBCreate failed");
         m_db_is_open = true;
@@ -509,16 +629,16 @@ namespace
 
 
       void put_zonelist(const char *name, int nzones, int ndims,
-          const std::vector<int> &nodelist, 
+          const std::vector<int> &nodelist,
           const std::vector<int> &shapesize,
           const std::vector<int> &shapecounts)
       {
         ensure_db_open();
 
-        CALL_GUARDED(DBPutZonelist, (m_dbfile, name, nzones, ndims, 
+        CALL_GUARDED(DBPutZonelist, (m_dbfile, name, nzones, ndims,
               const_cast<int *>(&nodelist.front()),
-              nodelist.size(), 0, 
-              const_cast<int *>(&shapesize.front()), 
+              nodelist.size(), 0,
+              const_cast<int *>(&shapesize.front()),
               const_cast<int *>(&shapecounts.front()),
               shapesize.size()
             ));
@@ -538,11 +658,11 @@ namespace
       {
         ensure_db_open();
 
-        CALL_GUARDED(DBPutZonelist2, (m_dbfile, name, nzones, ndims, 
-              const_cast<int *>(&nodelist.front()), nodelist.size(), 
+        CALL_GUARDED(DBPutZonelist2, (m_dbfile, name, nzones, ndims,
+              const_cast<int *>(&nodelist.front()), nodelist.size(),
               0, lo_offset, hi_offset,
-              const_cast<int *>(&shapetype.front()), 
-              const_cast<int *>(&shapesize.front()), 
+              const_cast<int *>(&shapetype.front()),
+              const_cast<int *>(&shapesize.front()),
               const_cast<int *>(&shapecounts.front()),
               shapesize.size(),
               optlist.get_optlist()
@@ -554,8 +674,8 @@ namespace
 
 
       template <class T>
-      void put_ucdmesh(const char *name, 
-             object coordnames_py, numpy_vector<T> coords, 
+      void put_ucdmesh(const char *name,
+             object coordnames_py, numpy_vector<T> coords,
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {
@@ -571,7 +691,7 @@ namespace
         for (int d = 0; d < ndims; d++)
           coord_starts.push_back(&coords.sub(d, 0));
 
-        CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims, 
+        CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims,
             /* coordnames*/ NULL,
             (float **) &coord_starts.front(), nnodes,
             nzones, zonel_name, facel_name,
@@ -582,17 +702,17 @@ namespace
 
 
       template <class T>
-      void put_ucdvar1(const char *vname, const char *mname, 
+      void put_ucdvar1(const char *vname, const char *mname,
           const numpy_vector<T> &v,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
-        CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname, 
+        CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname,
             (float *) &v.sub(0),
-            v.size(), 
-            /* mixvar */ NULL, /* mixlen */ 0, 
+            v.size(),
+            /* mixvar */ NULL, /* mixlen */ 0,
             get_datatype(T()), centering,
             optlist.get_optlist()));
       }
@@ -601,9 +721,9 @@ namespace
 
 
       template<class T>
-      void put_ucdvar_backend(const char *vname, const char *mname, 
-          object varnames_py, object vars_py, 
-          /*float *mixvars[], int mixlen,*/ 
+      void put_ucdvar_backend(const char *vname, const char *mname,
+          object varnames_py, object vars_py,
+          /*float *mixvars[], int mixlen,*/
           int centering, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -613,7 +733,7 @@ namespace
 
         COPY_PY_LIST(std::string, varnames);
         MAKE_STRING_POINTER_VECTOR(varnames);
-        
+
         std::vector<float *> vars;
         bool first = true;
         int vlength = 0;
@@ -627,37 +747,37 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, 
+            PYTHON_ERROR(ValueError,
                 boost::str(boost::format(
                     "field components of '%s' need to have matching lengths")
                   % vname).c_str());
           vars.push_back((float *) v.data().data());
         }
 
-        CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname, 
-            len(vars_py), 
-            const_cast<char **>(&varnames_ptrs.front()), 
-            &vars.front(), 
-            vlength, 
-            /* mixvar */ NULL, /* mixlen */ 0, 
+        CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname,
+            len(vars_py),
+            const_cast<char **>(&varnames_ptrs.front()),
+            &vars.front(),
+            vlength,
+            /* mixvar */ NULL, /* mixlen */ 0,
             get_datatype(T()), centering, optlist.get_optlist()));
       }
 
 
 
 
-      void put_ucdvar(const char *vname, const char *mname, 
-          object varnames_py, object vars_py, 
-          /*float *mixvars[], int mixlen,*/ 
+      void put_ucdvar(const char *vname, const char *mname,
+          object varnames_py, object vars_py,
+          /*float *mixvars[], int mixlen,*/
           int centering, DBoptlistWrapper &optlist)
       {
         switch (get_varlist_dtype(vars_py))
         {
-          case NPY_FLOAT: 
+          case NPY_FLOAT:
             put_ucdvar_backend<float>(vname, mname, varnames_py, vars_py,
                 centering, optlist);
             break;
-          case NPY_DOUBLE: 
+          case NPY_DOUBLE:
             put_ucdvar_backend<double>(vname, mname, varnames_py, vars_py,
                 centering, optlist);
             break;
@@ -689,7 +809,7 @@ namespace
             vartypes.push_back(DB_VARTYPE_SCALAR);
             varopts.push_back(NULL);
           }
-          else 
+          else
           {
             vartypes.push_back(extract<int>(entry[2]));
             if (len(entry) == 4)
@@ -706,13 +826,13 @@ namespace
         }
 
 #if PYLO_SILO_VERSION_GE(4,6,1)
-        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py), 
-            const_cast<char **>(&varnames.front()), 
-            &vartypes.front(), 
+        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py),
+            const_cast<char **>(&varnames.front()),
+            &vartypes.front(),
             const_cast<char **>(&vardefs.front()), &varopts.front()));
 #else
-        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py), 
-            &varnames.front(), &vartypes.front(), 
+        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py),
+            &varnames.front(), &vartypes.front(),
             &vardefs.front(), &varopts.front()));
 #endif
       }
@@ -736,8 +856,8 @@ namespace
         for (int d = 0; d < ndims; d++)
           coord_starts.push_back((float *) &coords.sub(d,0));
 
-        CALL_GUARDED(DBPutPointmesh, (m_dbfile, id, 
-              ndims, &coord_starts.front(), npoints, 
+        CALL_GUARDED(DBPutPointmesh, (m_dbfile, id,
+              ndims, &coord_starts.front(), npoints,
               get_datatype(T()), optlist.get_optlist()));
       }
 
@@ -745,13 +865,13 @@ namespace
 
 
       template <class T>
-      void put_pointvar1(const char *vname, const char *mname, 
+      void put_pointvar1(const char *vname, const char *mname,
           const numpy_vector<T> &v, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         CALL_GUARDED(DBPutPointvar1, (m_dbfile, vname, mname,
-              (float *) v.data().data(), v.size(), 
+              (float *) v.data().data(), v.size(),
               get_datatype(T()), optlist.get_optlist()));
       }
 
@@ -759,7 +879,7 @@ namespace
 
 
       template <class T>
-      void put_pointvar_backend(const char *vname, const char *mname, 
+      void put_pointvar_backend(const char *vname, const char *mname,
           object vars_py,
           DBoptlistWrapper &optlist)
       {
@@ -778,7 +898,7 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, 
+            PYTHON_ERROR(ValueError,
                 boost::str(boost::format(
                     "field components of '%s' need to have matching lengths")
                   % vname).c_str());
@@ -787,7 +907,7 @@ namespace
         }
 
         CALL_GUARDED(DBPutPointvar, (m_dbfile, vname, mname,
-              len(vars_py), &vars.front(), vlength, 
+              len(vars_py), &vars.front(), vlength,
               get_datatype(T()),
               optlist.get_optlist()));
       }
@@ -795,15 +915,15 @@ namespace
 
 
 
-      void put_pointvar(const char *vname, const char *mname, 
+      void put_pointvar(const char *vname, const char *mname,
           object vars_py, DBoptlistWrapper &optlist)
       {
         switch (get_varlist_dtype(vars_py))
         {
-          case NPY_FLOAT: 
+          case NPY_FLOAT:
             put_pointvar_backend<float>(vname, mname, vars_py, optlist);
             break;
-          case NPY_DOUBLE: 
+          case NPY_DOUBLE:
             put_pointvar_backend<double>(vname, mname, vars_py, optlist);
             break;
           default:
@@ -828,7 +948,7 @@ namespace
           coords.push_back((float *) coord_dim.data().data());
         }
 
-        CALL_GUARDED(DBPutQuadmesh, (m_dbfile, name, 
+        CALL_GUARDED(DBPutQuadmesh, (m_dbfile, name,
               /* coordnames */ NULL,
               &coords.front(),
               &dims.front(),
@@ -846,10 +966,10 @@ namespace
       {
         switch (get_varlist_dtype(coords_py))
         {
-          case NPY_FLOAT: 
+          case NPY_FLOAT:
             put_quadmesh_backend<float>(name, coords_py, coordtype, optlist);
             break;
-          case NPY_DOUBLE: 
+          case NPY_DOUBLE:
             put_quadmesh_backend<double>(name, coords_py, coordtype, optlist);
             break;
           default:
@@ -862,7 +982,7 @@ namespace
 
 
       template <class T>
-      void put_quadvar_backend(const char *vname, const char *mname, 
+      void put_quadvar_backend(const char *vname, const char *mname,
           object varnames_py, object vars_py, object dims_py,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
@@ -874,7 +994,7 @@ namespace
 
         COPY_PY_LIST(std::string, varnames);
         MAKE_STRING_POINTER_VECTOR(varnames);
-        
+
         std::vector<float *> vars;
         bool first = true;
         int vlength = 0;
@@ -888,7 +1008,7 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, 
+            PYTHON_ERROR(ValueError,
                 boost::str(boost::format(
                     "field components of '%s' need to have matching lengths")
                   % vname).c_str());
@@ -910,19 +1030,19 @@ namespace
 
 
 
-      void put_quadvar(const char *vname, const char *mname, 
+      void put_quadvar(const char *vname, const char *mname,
           object varnames_py, object vars_py, object dims_py,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         switch (get_varlist_dtype(vars_py))
         {
-          case NPY_FLOAT: 
-            put_quadvar_backend<float>(vname, mname, varnames_py, vars_py, 
+          case NPY_FLOAT:
+            put_quadvar_backend<float>(vname, mname, varnames_py, vars_py,
                 dims_py, centering, optlist);
             break;
-          case NPY_DOUBLE: 
-            put_quadvar_backend<double>(vname, mname, varnames_py, vars_py, 
+          case NPY_DOUBLE:
+            put_quadvar_backend<double>(vname, mname, varnames_py, vars_py,
                 dims_py, centering, optlist);
             break;
           default:
@@ -934,7 +1054,7 @@ namespace
 
 
       template <class T>
-      void put_quadvar1(const char *vname, const char *mname, 
+      void put_quadvar1(const char *vname, const char *mname,
           numpy_vector<T> var, object dims_py,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
@@ -970,7 +1090,7 @@ namespace
         MAKE_STRING_POINTER_VECTOR(meshnames)
 
         CALL_GUARDED(DBPutMultimesh, (m_dbfile, name,
-              meshnames.size(), 
+              meshnames.size(),
               const_cast<char **>(&meshnames_ptrs.front()),
               &meshtypes.front(),
               optlist.get_optlist()));
@@ -996,7 +1116,7 @@ namespace
         MAKE_STRING_POINTER_VECTOR(varnames)
 
         CALL_GUARDED(DBPutMultivar, (m_dbfile, name,
-              varnames.size(), 
+              varnames.size(),
               const_cast<char **>(&varnames_ptrs.front()),
               &vartypes.front(),
               optlist.get_optlist()));
@@ -1006,7 +1126,7 @@ namespace
 
 
       template <class T>
-      void put_curve(const char *curvename, 
+      void put_curve(const char *curvename,
           const numpy_vector<T> &xvals,
           const numpy_vector<T> &yvals,
           DBoptlistWrapper &optlist)
@@ -1024,11 +1144,57 @@ namespace
 
 
 
+      DBcurveWrapper *get_curve(const char *curvename)
+      {
+        DBcurve *crv = DBGetCurve(m_dbfile, curvename);
+        if (!crv)
+          throw std::runtime_error("DBGetCurve failed");
+
+        return new DBcurveWrapper(crv);
+      }
+
+      DBtocCopy *get_toc()
+      {
+        DBtoc *toc = DBGetToc(m_dbfile);
+        std::auto_ptr<DBtocCopy> result(new DBtocCopy());
+
+#define PYLO_COPY_TOC_LIST(NAME, CNT) \
+        for (int i = 0; i < toc->CNT; ++i) \
+          result->NAME.append(std::string(toc->NAME[i]));
+
+        PYLO_COPY_TOC_LIST(curve_names, ncurve);
+        PYLO_COPY_TOC_LIST(multimesh_names, nmultimesh);
+        PYLO_COPY_TOC_LIST(multimeshadj_names, nmultimeshadj);
+        PYLO_COPY_TOC_LIST(multivar_names, nmultivar);
+        PYLO_COPY_TOC_LIST(multimat_names, nmultimat);
+        PYLO_COPY_TOC_LIST(multimatspecies_names, nmultimatspecies);
+        PYLO_COPY_TOC_LIST(csgmesh_names, ncsgmesh);
+        PYLO_COPY_TOC_LIST(csgvar_names, ncsgvar);
+        PYLO_COPY_TOC_LIST(defvars_names, ndefvars);
+        PYLO_COPY_TOC_LIST(qmesh_names, nqmesh);
+        PYLO_COPY_TOC_LIST(qvar_names, nqvar);
+        PYLO_COPY_TOC_LIST(ucdmesh_names, nucdmesh);
+        PYLO_COPY_TOC_LIST(ucdvar_names, nucdvar);
+        PYLO_COPY_TOC_LIST(ptmesh_names, nptmesh);
+        PYLO_COPY_TOC_LIST(ptvar_names, nptvar);
+        PYLO_COPY_TOC_LIST(mat_names, nmat);
+        PYLO_COPY_TOC_LIST(matspecies_names, nmatspecies);
+        PYLO_COPY_TOC_LIST(var_names, nvar);
+        PYLO_COPY_TOC_LIST(obj_names, nobj);
+        PYLO_COPY_TOC_LIST(dir_names, ndir);
+        PYLO_COPY_TOC_LIST(array_names, narrays);
+        PYLO_COPY_TOC_LIST(mrgtree_names, nmrgtrees);
+        PYLO_COPY_TOC_LIST(groupelmap_names, ngroupelmaps);
+        PYLO_COPY_TOC_LIST(mrgvar_names, nmrgvars);
+
+        return result.release();
+      }
 
     private:
       bool m_db_is_open;
       DBfile *m_dbfile;
   };
+  // }}}
 
 
 
@@ -1045,13 +1211,15 @@ namespace
 
 
   int set_dep_warning_dummy(int)
-  { 
+  {
     return 0;
   }
 }
 
 
 
+
+// {{{ main wrapper function --------------------------------------------------
 
 BOOST_PYTHON_MODULE(_internal)
 {
@@ -1134,6 +1302,11 @@ BOOST_PYTHON_MODULE(_internal)
 
       .def("put_curve", &cl::put_curve<float>)
       .def("put_curve", &cl::put_curve<double>)
+      .def("get_curve", &cl::get_curve,
+          return_value_policy<manage_new_object>())
+
+      .def("get_toc", &cl::get_toc,
+          return_value_policy<manage_new_object>())
       ;
   }
 
@@ -1146,6 +1319,53 @@ BOOST_PYTHON_MODULE(_internal)
       ;
   }
 
+  {
+    typedef DBcurveWrapper cl;
+    class_<cl, boost::noncopyable>("DBCurve", no_init)
+      .DEF_SIMPLE_RO_PROPERTY(id)
+      .DEF_SIMPLE_RO_PROPERTY(origin)
+      .DEF_SIMPLE_RO_PROPERTY(title)
+      .DEF_SIMPLE_RO_PROPERTY(xvarname)
+      .DEF_SIMPLE_RO_PROPERTY(yvarname)
+      .DEF_SIMPLE_RO_PROPERTY(xlabel)
+      .DEF_SIMPLE_RO_PROPERTY(ylabel)
+      .DEF_SIMPLE_RO_PROPERTY(xunits)
+      .DEF_SIMPLE_RO_PROPERTY(yunits)
+      .DEF_SIMPLE_RO_PROPERTY(reference)
+      .add_property("x", make_function(curve_x))
+      .add_property("y", make_function(curve_y))
+      ;
+  }
+
+  {
+    typedef DBtocCopy cl;
+    class_<cl, boost::noncopyable>("DBToc", no_init)
+      .DEF_SIMPLE_RO_PROPERTY(curve_names)
+      .DEF_SIMPLE_RO_PROPERTY(multimesh_names)
+      .DEF_SIMPLE_RO_PROPERTY(multimeshadj_names)
+      .DEF_SIMPLE_RO_PROPERTY(multivar_names)
+      .DEF_SIMPLE_RO_PROPERTY(multimat_names)
+      .DEF_SIMPLE_RO_PROPERTY(multimatspecies_names)
+      .DEF_SIMPLE_RO_PROPERTY(csgmesh_names)
+      .DEF_SIMPLE_RO_PROPERTY(csgvar_names)
+      .DEF_SIMPLE_RO_PROPERTY(defvars_names)
+      .DEF_SIMPLE_RO_PROPERTY(qmesh_names)
+      .DEF_SIMPLE_RO_PROPERTY(qvar_names)
+      .DEF_SIMPLE_RO_PROPERTY(ucdmesh_names)
+      .DEF_SIMPLE_RO_PROPERTY(ucdvar_names)
+      .DEF_SIMPLE_RO_PROPERTY(ptmesh_names)
+      .DEF_SIMPLE_RO_PROPERTY(ptvar_names)
+      .DEF_SIMPLE_RO_PROPERTY(mat_names)
+      .DEF_SIMPLE_RO_PROPERTY(matspecies_names)
+      .DEF_SIMPLE_RO_PROPERTY(var_names)
+      .DEF_SIMPLE_RO_PROPERTY(obj_names)
+      .DEF_SIMPLE_RO_PROPERTY(dir_names)
+      .DEF_SIMPLE_RO_PROPERTY(array_names)
+      .DEF_SIMPLE_RO_PROPERTY(mrgtree_names)
+      .DEF_SIMPLE_RO_PROPERTY(groupelmap_names)
+      .DEF_SIMPLE_RO_PROPERTY(mrgvar_names)
+      ;
+  }
   {
     typedef std::vector<int> cl;
     class_<cl>("IntVector")
@@ -1162,3 +1382,7 @@ BOOST_PYTHON_MODULE(_internal)
 #endif
   DEF_SIMPLE_FUNCTION(get_silo_version);
 }
+
+// }}}
+
+// vim: foldmethod=marker
