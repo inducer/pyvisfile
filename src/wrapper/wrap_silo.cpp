@@ -475,7 +475,7 @@ namespace
           return NPY_DOUBLE;
       case DB_CHAR:
           return NPY_CHAR;
-#if SILO_VERSION_GE(4,7,0)
+#if SILO_VERSION_GE(4,7,2)
       case DB_LONG_LONG:
           return NPY_LONGLONG;
 #endif
