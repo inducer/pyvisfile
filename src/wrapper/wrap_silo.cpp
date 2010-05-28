@@ -490,6 +490,7 @@ namespace
   // {{{ data wrappers
 #define PYLO_TYPED_ACCESSOR(TYPE,NAME) \
   TYPE NAME() const { return m_data->NAME; }
+
 #define PYLO_STRING_ACCESSOR(NAME) \
   object NAME() const \
   { \
@@ -497,6 +498,15 @@ namespace
       return object(std::string(m_data->NAME)); \
     else \
       return object(); \
+  }
+
+#define PYLO_TYPED_ARRAY_ACCESSOR(CAST_TO, NAME, SIZE) \
+  object NAME() const \
+  { \
+    list py_list_result; \
+    for (unsigned i = 0; i < SIZE; ++i) \
+      py_list_result.append(CAST_TO(m_data->NAME[i])); \
+    return tuple(py_list_result); \
   }
 
   class DBcurveWrapper : boost::noncopyable
@@ -540,6 +550,71 @@ namespace
   PYLO_CURVE_DATA_GETTER(x);
   PYLO_CURVE_DATA_GETTER(y);
 
+  class DBquadmeshWrapper : boost::noncopyable
+  {
+    public:
+      DBquadmesh   *m_data;
+
+      DBquadmeshWrapper(DBquadmesh *data)
+        : m_data(data)
+      { }
+      ~DBquadmeshWrapper()
+      {
+        DBFreeQuadmesh(m_data);
+      }
+
+      PYLO_TYPED_ACCESSOR(int, id);
+      PYLO_TYPED_ACCESSOR(int, block_no);
+      PYLO_TYPED_ACCESSOR(int, group_no);
+      PYLO_STRING_ACCESSOR(name);
+      PYLO_TYPED_ACCESSOR(int, cycle);
+      PYLO_TYPED_ACCESSOR(int, coord_sys);
+      PYLO_TYPED_ACCESSOR(int, major_order);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, stride, 3);
+      PYLO_TYPED_ACCESSOR(int, coordtype);
+      PYLO_TYPED_ACCESSOR(int, facetype);
+      PYLO_TYPED_ACCESSOR(int, planar);
+      // not wrapped: datatype
+      PYLO_TYPED_ACCESSOR(float, time);
+      PYLO_TYPED_ACCESSOR(double, dtime);
+
+      PYLO_TYPED_ARRAY_ACCESSOR(float, min_extents, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(float, max_extents, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(std::string, labels, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(std::string, units, 3);
+      PYLO_TYPED_ACCESSOR(int, ndims);
+      PYLO_TYPED_ACCESSOR(int, nspace);
+      PYLO_TYPED_ACCESSOR(int, nnodes);
+      // not wrapped: dims
+      PYLO_TYPED_ACCESSOR(int, origin);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, min_index, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, max_index, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, base_index, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, start_index, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, size_index, 3);
+      PYLO_TYPED_ACCESSOR(int, guihide);
+      PYLO_STRING_ACCESSOR(mrgtree_name);
+  };
+
+  object quadmesh_coords(object py_quadmesh)
+  {
+    DBquadmeshWrapper &quadmesh((extract<DBquadmeshWrapper &>(py_quadmesh)));
+
+    list result;
+    for (unsigned i = 0; i < quadmesh.m_data->ndims; ++i)
+    {
+      npy_intp dims[] = { quadmesh.m_data->dims[i] };
+      handle<> coord_array(PyArray_SimpleNewFromData(1, dims,
+            silo_typenum_to_numpy_typenum(quadmesh.m_data->datatype),
+            quadmesh.m_data->coords[i]));
+      PyArray_BASE(coord_array.get()) = py_quadmesh.ptr();
+      Py_INCREF(PyArray_BASE(coord_array.get()));
+      result.append(coord_array);
+    }
+
+    return tuple(result);
+  }
+
   // }}}
 
 
@@ -576,12 +651,24 @@ namespace
 
   // }}}
 
-
-
   // {{{ DBfile wrapper -------------------------------------------------------
+
+#define PYLO_DBFILE_GET_WRAPPER(LOWER_TYPE, CAMEL_TYPE) \
+  DB##LOWER_TYPE##Wrapper *get_##LOWER_TYPE(const char *name) \
+  { \
+    DB##LOWER_TYPE *obj = DBGet##CAMEL_TYPE(m_dbfile, name); \
+    if (!obj) \
+      throw std::runtime_error("DBGet" #CAMEL_TYPE " failed"); \
+    return new DB##LOWER_TYPE##Wrapper(obj); \
+  } 
+
+
+
+
   class DBfileWrapper : boost::noncopyable
   {
     public:
+      // {{{ construction and administrativa
       DBfileWrapper(const char *name, int target, int mode)
         : m_db_is_open(false),
         m_dbfile(DBOpen(name, target, mode))
@@ -619,17 +706,15 @@ namespace
         m_db_is_open = false;
       }
 
-
-
       operator DBfile *()
       {
         ensure_db_open();
         return m_dbfile;
       }
 
+      // }}}
 
-
-
+      // {{{ zone lists
       void put_zonelist(const char *name, int nzones, int ndims,
           const std::vector<int> &nodelist,
           const std::vector<int> &shapesize,
@@ -672,9 +757,9 @@ namespace
       }
 #endif
 
+      // }}}
 
-
-
+      // {{{ ucd mesh/var
       template <class T>
       void put_ucdmesh(const char *name,
              object coordnames_py, numpy_vector<T> coords,
@@ -788,8 +873,9 @@ namespace
         }
       }
 
+      // }}}
 
-
+      // {{{ defvars
 
       void put_defvars(std::string id, object vars_py)
       {
@@ -839,8 +925,9 @@ namespace
 #endif
       }
 
+      // }}}
 
-
+      // {{{ point mesh/var
 
       template <class T>
       void put_pointmesh(const char *id, const numpy_vector<T> &coords,
@@ -933,8 +1020,9 @@ namespace
         }
       }
 
+      // }}}
 
-
+      // {{{ quad mesh/var
 
       template <class T>
       void put_quadmesh_backend(const char *name, object coords_py,
@@ -1073,8 +1161,11 @@ namespace
               optlist.get_optlist()));
       }
 
+      PYLO_DBFILE_GET_WRAPPER(quadmesh, Quadmesh);
 
+      // }}}
 
+      // {{{ multi mesh/var
 
       void put_multimesh(const char *name, object names_and_types,
           DBoptlistWrapper &optlist)
@@ -1124,8 +1215,9 @@ namespace
               optlist.get_optlist()));
       }
 
+      // }}}
 
-
+      // {{{ curve
 
       template <class T>
       void put_curve(const char *curvename,
@@ -1146,14 +1238,11 @@ namespace
 
 
 
-      DBcurveWrapper *get_curve(const char *curvename)
-      {
-        DBcurve *crv = DBGetCurve(m_dbfile, curvename);
-        if (!crv)
-          throw std::runtime_error("DBGetCurve failed");
+      PYLO_DBFILE_GET_WRAPPER(curve, Curve);
 
-        return new DBcurveWrapper(crv);
-      }
+      // }}}
+
+      // {{{ toc
 
       DBtocCopy *get_toc()
       {
@@ -1191,6 +1280,8 @@ namespace
 
         return result.release();
       }
+
+      // }}}
 
     private:
       bool m_db_is_open;
@@ -1339,6 +1430,40 @@ BOOST_PYTHON_MODULE(_internal)
       ;
   }
 
+  {
+    typedef DBquadmeshWrapper cl;
+    class_<cl, boost::noncopyable>("DBQuadMesh", no_init)
+      .DEF_SIMPLE_RO_PROPERTY(id)
+      .DEF_SIMPLE_RO_PROPERTY(block_no)
+      .DEF_SIMPLE_RO_PROPERTY(group_no)
+      .DEF_SIMPLE_RO_PROPERTY(name)
+      .DEF_SIMPLE_RO_PROPERTY(cycle)
+      .DEF_SIMPLE_RO_PROPERTY(coord_sys)
+      .DEF_SIMPLE_RO_PROPERTY(major_order)
+      .DEF_SIMPLE_RO_PROPERTY(stride)
+      .DEF_SIMPLE_RO_PROPERTY(coordtype)
+      .DEF_SIMPLE_RO_PROPERTY(facetype)
+      .DEF_SIMPLE_RO_PROPERTY(planar)
+      .DEF_SIMPLE_RO_PROPERTY(time)
+      .DEF_SIMPLE_RO_PROPERTY(dtime)
+      .DEF_SIMPLE_RO_PROPERTY(min_extents)
+      .DEF_SIMPLE_RO_PROPERTY(max_extents)
+      .DEF_SIMPLE_RO_PROPERTY(labels)
+      .DEF_SIMPLE_RO_PROPERTY(units)
+      .DEF_SIMPLE_RO_PROPERTY(ndims)
+      .DEF_SIMPLE_RO_PROPERTY(nspace)
+      .DEF_SIMPLE_RO_PROPERTY(nnodes)
+      .DEF_SIMPLE_RO_PROPERTY(origin)
+      .DEF_SIMPLE_RO_PROPERTY(min_index)
+      .DEF_SIMPLE_RO_PROPERTY(max_index)
+      .DEF_SIMPLE_RO_PROPERTY(base_index)
+      .DEF_SIMPLE_RO_PROPERTY(start_index)
+      .DEF_SIMPLE_RO_PROPERTY(size_index)
+      .DEF_SIMPLE_RO_PROPERTY(guihide)
+      .DEF_SIMPLE_RO_PROPERTY(mrgtree_name)
+      .add_property("coords", make_function(quadmesh_coords))
+      ;
+  }
   {
     typedef DBtocCopy cl;
     class_<cl, boost::noncopyable>("DBToc", no_init)
