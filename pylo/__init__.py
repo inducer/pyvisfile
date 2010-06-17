@@ -53,6 +53,12 @@ _export_symbols()
 
 DBObjectType = _internal.DBObjectType
 DBdatatype = _internal.DBdatatype
+
+DBToc = _internal.DBToc
+DBCurve = _internal.DBCurve
+DBQuadMesh = _internal.DBQuadMesh
+DBQuadVar = _internal.DBQuadVar
+
 IntVector = _internal.IntVector
 get_silo_version = _internal.get_silo_version
 set_deprecate_warnings = _internal.set_deprecate_warnings
@@ -76,6 +82,7 @@ def _convert_optlist(ol_dict):
 
 
 class SiloFile(_internal.DBFile):
+    """This class can be used in a Python 2.5 *with* statement."""
     def __enter__(self):
         return self
 
@@ -83,7 +90,7 @@ class SiloFile(_internal.DBFile):
         self.close()
 
     def __init__(self, pathname, create=True, mode=None,
-            fileinfo="Hedge visualization",
+            fileinfo="Created using Pylo",
             target=DB_LOCAL, filetype=None):
         if create:
             if mode is None:
@@ -123,15 +130,15 @@ class SiloFile(_internal.DBFile):
     def put_defvars(self, vname, vars):
         """Add an defined variable ("expression") to this database.
 
-        The `vars' argument consists of a list of tuples of type
-          (name, definition)
+        The *vars* argument consists of a list of tuples of type
+          *(name, definition)*
         or
-          (name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR).
+          *(name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR)*
         or even
-          (name, definition, DB_VARTYPE_XXX, {options}).
+          *(name, definition, DB_VARTYPE_XXX, {options})*.
         If the type is not specified, scalar is assumed.
         """
-        
+
         _internal.DBFile.put_defvars(self, vname, vars)
 
     def put_pointmesh(self, mname, coords, optlist={}):
@@ -175,18 +182,20 @@ class SiloFile(_internal.DBFile):
 
 
 class ParallelSiloFile:
-    """A SiloFile that automatically creates a parallel master file.
+    """A :class:`SiloFile` that automatically creates a parallel master file.
 
-    This class is meant to be instantiated on every rank of the
+    This class is meant to be instantiated on every rank of an MPI
     computation. It creates one data file per rank, and it
     automatically chooses a rank that writes a master file.
 
     The contents of the master file is automatically built,
     without any further user intervention.
 
-    A .silo extension is automatically appended to the `pathname'
+    A :file:`.silo` extension is automatically appended to *pathname*
     for the master file, as are rank numbers and the extension
     for each individual rank.
+
+    This class can be used in a Python 2.5 *with* statement.
     """
 
     def __init__(self, pathname, rank, ranks, *args, **kwargs):
@@ -245,12 +254,12 @@ class ParallelSiloFile:
     def put_defvars(self, vname, vars):
         """Add an defined variable ("expression") to this database.
 
-        The `vars' argument consists of a list of tuples of type
-          (name, definition)
+        The *vars* argument consists of a list of tuples of type
+          *(name, definition)*
         or
-          (name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR).
+          *(name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR)*.
         or even
-          (name, definition, DB_VARTYPE_XXX, {options}).
+          *(name, definition, DB_VARTYPE_XXX, {options})*.
         If the type is not specified, scalar is assumed.
         """
         if self.master_file is not None:

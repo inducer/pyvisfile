@@ -23,6 +23,7 @@ Table of Contents
     :maxdepth: 2
 
     installing
+    reference
     faq
 
 * :ref:`genindex`

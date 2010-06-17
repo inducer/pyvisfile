@@ -488,6 +488,8 @@ namespace
 
 
   // {{{ data wrappers
+
+  // {{{ data wrapper helpers
 #define PYLO_TYPED_ACCESSOR(TYPE,NAME) \
   TYPE NAME() const { return m_data->NAME; }
 
@@ -508,6 +510,10 @@ namespace
       py_list_result.append(CAST_TO(m_data->NAME[i])); \
     return tuple(py_list_result); \
   }
+
+  // }}}
+
+  // {{{ curve wrapper
 
   class DBcurveWrapper : boost::noncopyable
   {
@@ -549,6 +555,10 @@ namespace
 
   PYLO_CURVE_DATA_GETTER(x);
   PYLO_CURVE_DATA_GETTER(y);
+
+  // }}}
+
+  // {{{ quad mesh wrapper
 
   class DBquadmeshWrapper : boost::noncopyable
   {
@@ -614,6 +624,93 @@ namespace
 
     return tuple(result);
   }
+
+  // }}}
+
+  // {{{ quad var wrapper
+
+  class DBquadvarWrapper : boost::noncopyable
+  {
+    public:
+      DBquadvar   *m_data;
+
+      DBquadvarWrapper(DBquadvar *data)
+        : m_data(data)
+      { }
+      ~DBquadvarWrapper()
+      {
+        DBFreeQuadvar(m_data);
+      }
+
+      PYLO_TYPED_ACCESSOR(int, id);
+      PYLO_STRING_ACCESSOR(name);
+      PYLO_STRING_ACCESSOR(units);
+      PYLO_STRING_ACCESSOR(label);
+
+      PYLO_TYPED_ACCESSOR(int, cycle);
+      PYLO_TYPED_ACCESSOR(int, meshid);
+      // not wrapped: datatype
+
+      PYLO_TYPED_ACCESSOR(int, nels);
+      PYLO_TYPED_ACCESSOR(int, nvals);
+      PYLO_TYPED_ACCESSOR(int, ndims);
+      PYLO_TYPED_ACCESSOR(int, major_order);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, stride, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, min_index, 3);
+      PYLO_TYPED_ARRAY_ACCESSOR(int, max_index, 3);
+      PYLO_TYPED_ACCESSOR(int, origin);
+      PYLO_TYPED_ACCESSOR(float, time);
+      PYLO_TYPED_ACCESSOR(float, dtime);
+      PYLO_TYPED_ARRAY_ACCESSOR(float, align, 3);
+      // TODO: mixvals
+      PYLO_TYPED_ACCESSOR(float, mixlen);
+
+      PYLO_TYPED_ACCESSOR(float, use_specmf);
+      PYLO_TYPED_ACCESSOR(float, ascii_labels);
+
+      PYLO_STRING_ACCESSOR(meshname);
+      PYLO_TYPED_ACCESSOR(int, guihide);
+      // TODO: region_pnames
+  };
+
+  object quadvar_vals(object py_quadvar)
+  {
+    DBquadvarWrapper &quadvar((extract<DBquadvarWrapper &>(py_quadvar)));
+
+    npy_intp dims[3];
+
+    for (unsigned i = 0; i < quadvar.m_data->ndims; ++i)
+      dims[i] = quadvar.m_data->dims[i];
+
+    int ary_flags = 0;
+    if (quadvar.m_data->major_order)
+      ary_flags |= NPY_CARRAY;
+    else
+      ary_flags |= NPY_FARRAY;
+
+    list result;
+    for (unsigned i = 0; i < quadvar.m_data->nvals; ++i)
+    {
+      PyArray_Descr *tp_descr;
+      tp_descr = PyArray_DescrNewFromType(
+          silo_typenum_to_numpy_typenum(quadvar.m_data->datatype));
+      if (tp_descr == 0)
+        throw error_already_set();
+
+      handle<> val_array(PyArray_NewFromDescr(
+          &PyArray_Type, tp_descr,
+          quadvar.m_data->ndims, dims, /*strides*/ NULL,
+          quadvar.m_data->vals[i], ary_flags, /*obj*/NULL));
+
+      PyArray_BASE(val_array.get()) = py_quadvar.ptr();
+      Py_INCREF(PyArray_BASE(val_array.get()));
+      result.append(val_array);
+    }
+
+    return tuple(result);
+  }
+
+  // }}}
 
   // }}}
 
@@ -1162,6 +1259,7 @@ namespace
       }
 
       PYLO_DBFILE_GET_WRAPPER(quadmesh, Quadmesh);
+      PYLO_DBFILE_GET_WRAPPER(quadvar, Quadvar);
 
       // }}}
 
@@ -1326,6 +1424,9 @@ BOOST_PYTHON_MODULE(_internal)
     .ENUM_VALUE(DB_DOUBLE)
     .ENUM_VALUE(DB_CHAR)
     .ENUM_VALUE(DB_NOTYPE)
+#if SILO_VERSION_GE(4,7,2)
+    .ENUM_VALUE(DB_LONG_LONG)
+#endif
     ;
 
   enum_<DBObjectType>("DBObjectType")
@@ -1397,6 +1498,10 @@ BOOST_PYTHON_MODULE(_internal)
       .def("put_curve", &cl::put_curve<double>)
       .def("get_curve", &cl::get_curve,
           return_value_policy<manage_new_object>())
+      .def("get_quadmesh", &cl::get_quadmesh,
+          return_value_policy<manage_new_object>())
+      .def("get_quadvar", &cl::get_quadvar,
+          return_value_policy<manage_new_object>())
 
       .def("get_toc", &cl::get_toc,
           return_value_policy<manage_new_object>())
@@ -1464,6 +1569,39 @@ BOOST_PYTHON_MODULE(_internal)
       .add_property("coords", make_function(quadmesh_coords))
       ;
   }
+
+  {
+    typedef DBquadvarWrapper cl;
+    class_<cl, boost::noncopyable>("DBQuadVar", no_init)
+      .DEF_SIMPLE_RO_PROPERTY(id)
+      .DEF_SIMPLE_RO_PROPERTY(name)
+      .DEF_SIMPLE_RO_PROPERTY(units)
+      .DEF_SIMPLE_RO_PROPERTY(label)
+
+      .DEF_SIMPLE_RO_PROPERTY(cycle)
+      .DEF_SIMPLE_RO_PROPERTY(meshid)
+
+      .DEF_SIMPLE_RO_PROPERTY(nels)
+      .DEF_SIMPLE_RO_PROPERTY(nvals)
+      .DEF_SIMPLE_RO_PROPERTY(ndims)
+      .DEF_SIMPLE_RO_PROPERTY(major_order)
+      .DEF_SIMPLE_RO_PROPERTY(stride)
+      .DEF_SIMPLE_RO_PROPERTY(min_index)
+      .DEF_SIMPLE_RO_PROPERTY(max_index)
+      .DEF_SIMPLE_RO_PROPERTY(origin)
+      .DEF_SIMPLE_RO_PROPERTY(time)
+      .DEF_SIMPLE_RO_PROPERTY(dtime)
+      .DEF_SIMPLE_RO_PROPERTY(align)
+      .DEF_SIMPLE_RO_PROPERTY(mixlen)
+
+      .DEF_SIMPLE_RO_PROPERTY(use_specmf)
+      .DEF_SIMPLE_RO_PROPERTY(ascii_labels)
+      .DEF_SIMPLE_RO_PROPERTY(meshname)
+      .DEF_SIMPLE_RO_PROPERTY(guihide)
+      .add_property("vals", make_function(quadvar_vals))
+      ;
+  }
+
   {
     typedef DBtocCopy cl;
     class_<cl, boost::noncopyable>("DBToc", no_init)

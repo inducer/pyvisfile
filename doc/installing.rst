@@ -52,8 +52,8 @@ During prior steps of this installation, you will have created
 a file called :file:`.aksetup-defaults.py`  in your home directory. 
 Now add the following lines to this file::
 
-    SILO_INC_DIR = ['/home/andreas/pool/include']
-    SILO_LIB_DIR = ['/home/andreas/pool/lib']
+    SILO_INC_DIR = ['${HOME}/pool/include']
+    SILO_LIB_DIR = ['${HOME}/pool/lib']
 
 You will need to adapt the above path names to the location where you installed 
 the Silo software, of course.
