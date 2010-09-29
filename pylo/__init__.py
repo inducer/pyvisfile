@@ -283,12 +283,12 @@ class ParallelSiloFile:
 
     def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
         self.data_file.put_quadvar1(vname, mname, var, dims, centering, optlist)
-        self._added_mesh(vname, DBObjectType.DB_QUADVAR, optlist)
+        self._added_variable(vname, DBObjectType.DB_QUADVAR, optlist)
 
     def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
         self.data_file.put_quadvar(vname, mname, varnames, vars, 
                 dims, centering, optlist)
-        self._added_mesh(vname, DBObjectType.DB_QUADVAR, optlist)
+        self._added_variable(vname, DBObjectType.DB_QUADVAR, optlist)
 
     # -------------------------------------------------------------------------
     def _added_mesh(self, mname, type, optlist):
