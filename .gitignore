@@ -22,3 +22,4 @@ MANIFEST
 setuptools*egg
 setuptools.pth
 distribute-*.tar.gz
+distribute-*.egg

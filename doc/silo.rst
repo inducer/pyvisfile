@@ -1,7 +1,7 @@
-Usage Reference
-===============
+Usage Reference for :mod:`pyvisfile.silo`
+=========================================
 
-.. module:: pylo
+.. module:: pyvisfile.silo
 .. moduleauthor:: Andreas Kloeckner <inform@tiker.net>
 
 .. function:: get_silo_version()

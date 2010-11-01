@@ -1,7 +1,8 @@
-Welcome to :mod:`pylo`!
-=======================
+Welcome to :mod:`pyvisfile`'s documentation!
+============================================
 
 Pylo allows you to write `Silo <https://wci.llnl.gov/codes/silo/>`_
+and `Vtk <http://www.vtk.org/>`_ (`XML-style <http://www.vtk.org/VTK/help/documentation.html>`_)
 visualization files from the `Python <http://www.python.org>`_
 programming language, more specifically from data contained in `numpy
 <http://www.numpy.org>`_ arrays.
@@ -23,7 +24,8 @@ Table of Contents
     :maxdepth: 2
 
     installing
-    reference
+    silo
+    vtk
     faq
 
 * :ref:`genindex`

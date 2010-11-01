@@ -10,6 +10,8 @@ def get_config_schema():
             Switch, StringListOption, make_boost_base_options
 
     return ConfigSchema(make_boost_base_options() + [
+        Switch("USE_SILO", False, "Compile libsilo interface"),
+
         BoostLibraries("python"),
 
         IncludeDir("SILO", []),
@@ -40,6 +42,9 @@ def main():
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
 
+    requirements = []
+    ext_modules = []
+
     def handle_component(comp):
         if conf["USE_"+comp]:
             EXTRA_DEFINES["USE_"+comp] = 1
@@ -47,35 +52,57 @@ def main():
             EXTRA_LIBRARY_DIRS.extend(conf[comp+"_LIB_DIR"])
             EXTRA_LIBRARIES.extend(conf[comp+"_LIBNAME"])
 
-    conf["USE_SILO"] = True
-    handle_component("SILO")
 
-    setup(name="pylo",
-            version="0.92",
+    if conf["USE_SILO"]:
+        handle_component("SILO")
+
+        ext_modules.append(PyUblasExtension("_internal", 
+            [ "src/wrapper/wrap_silo.cpp", ],
+            include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
+            library_dirs=LIBRARY_DIRS + EXTRA_LIBRARY_DIRS,
+            libraries=LIBRARIES + EXTRA_LIBRARIES,
+            extra_compile_args=conf["CXXFLAGS"],
+            define_macros=list(EXTRA_DEFINES.iteritems()),
+            ))
+
+        requirements.append("PyUblas>=0.92.1")
+
+    setup(name="pyvisfile",
+            version="2010.1",
             description="Large-scale Visualization Data Storage",
             long_description="""
-            Pylo allows you to write Silo visualization files, as
-            introduced by LLNL's 
-            `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
-            more recently used by the 
-            `VisIt <https://wci.llnl.gov/codes/visit/>`_ 
-            large-scale visualization program. Check the
+            Pyvisfile allows you to write a variety of visualization file formats,
+            including
+
+            * `Kitware's <http://www.kitware.com>`_ 
+              `XML-style <http://www.vtk.org/VTK/help/documentation.html>`_
+              `Vtk <http://vtk.org>`_ data files.
+
+            * Silo visualization files, as
+              introduced by LLNL's 
+              `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
+              more recently used by the 
+              `VisIt <https://wci.llnl.gov/codes/visit/>`_ 
+              large-scale visualization program. 
+
+            pyvisfiles supports many mesh geometries, such such as unstructured
+            and rectangular structured meshes, particle meshes, as well as
+            scalar and vector variables on them. In addition, pyvisfile allows the
+            semi-automatic writing of parallelization-segmented visualization files
+            in both Silo and Vtk formats. For Silo files, pyvisfile also
+            supports the writing of expressions as visualization variables.
+
+            pyvisfile can write Vtk files without any extra software installed.
+
+            To use pyvisfile to create Silo files, you need `libsilo
+            <https://wci.llnl.gov/codes/silo/>`_ as well as `Boost.Python
+            <http://www.boost.org>`_ and `PyUblas
+            <http://mathema.tician.de/software/pyublas>`_.  To build
+            pyvisfile's Silo support, please refer to the `PyUblas
+            documentation <http://tiker.net/doc/pyublas>`_ for build
+            instructions first. Check the
             `VisIt source page <https://wci.llnl.gov/codes/visit/source.html>`_
             for the latest Silo source code.
-
-            Pylo supports the majority of datatypes allowed in 
-            Silo files, such as unstructured and rectangular
-            structured meshes, particle meshes, as well as 
-            scalar and vector variables on them. In addition,
-            Pylo supports expressions of scalar variables and
-            semi-automatic writing of parallelization-segmented
-            Silo files.
-
-            Pylo uses `Boost.Python <http://www.boost.org>`_ and `PyUblas
-            <http://mathema.tician.de/software/pyublas>`_.  To build it, please
-            refer to the `PyUblas documentation <http://tiker.net/doc/pyublas>`_
-            for build instructions first. After that, building pylo should be
-            straightforward.
             """,
             classifiers=[
               'Development Status :: 4 - Beta',
@@ -97,27 +124,19 @@ def main():
             author=u"Andreas Kloeckner",
             author_email="inform@tiker.net",
             license = "MIT",
-            url="http://mathema.tician.de/software/pylo",
+            url="http://mathema.tician.de/software/pyvisfile",
 
             # dependencies
-            setup_requires=[
-                "PyUblas>=0.92.1",
-                ],
-            install_requires=[
-                "PyUblas>=0.92.1",
-                ],
+            setup_requires=requirements,
+            install_requires=requirements,
 
-            packages=["pylo"],
-            ext_package="pylo",
-            ext_modules=[
-                PyUblasExtension("_internal", 
-                    [ "src/wrapper/wrap_silo.cpp", ],
-                    include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
-                    library_dirs=LIBRARY_DIRS + EXTRA_LIBRARY_DIRS,
-                    libraries=LIBRARIES + EXTRA_LIBRARIES,
-                    extra_compile_args=conf["CXXFLAGS"],
-                    define_macros=list(EXTRA_DEFINES.iteritems()),
-                    )],
+            packages=[
+                    "pyvisfile",
+                    "pyvisfile.silo",
+                    "pyvisfile.vtk"
+                    ],
+            ext_package="pyvisfile.silo",
+            ext_modules=ext_modules,
 
             zip_safe=False)
 
