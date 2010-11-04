@@ -1,5 +1,6 @@
-# Pylo - a Python wrapper around libsilo
-# Copyright (C) 2007 Andreas Kloeckner
+# PyVisfile Copyright (C) 2007,2010 Andreas Kloeckner
+#
+# Python wrapper around libsilo
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +18,10 @@
 
 
 
-"""Pylo exposes the functionality of libsilo to Python using the
+"""PyVisfile exposes the functionality of libsilo to Python using the
 Boost.Python wrapper library.
 
-To use pylo, you would typically create a SiloFile instance and then
+To use pyvisfile, you would typically create a SiloFile instance and then
 write different entities (variables and meshes, for the most part) to
 this file.
 
@@ -34,13 +35,14 @@ SiloFile.
 
 def _ignore_extra_int_vector_warning():
     from warnings import filterwarnings
-    filterwarnings("ignore", module="pylo", category=RuntimeWarning, lineno=43)
+    filterwarnings("ignore", module="pyvisfile.silo", 
+            category=RuntimeWarning, lineno=43)
 _ignore_extra_int_vector_warning()
 
 
 
 
-import pylo._internal as _internal
+import pyvisfile.silo._internal as _internal
 import pyublas
 
 

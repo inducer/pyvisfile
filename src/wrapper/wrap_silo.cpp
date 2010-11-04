@@ -1,4 +1,4 @@
-// Pylo - A Python wrapper around Silo
+// PyVisfile - A Python wrapper around Silo
 // Copyright (C) 2007 Andreas Kloeckner
 
 
@@ -20,12 +20,12 @@
 
 
 #ifdef SILO_VERS_MAJ
-#define PYLO_SILO_VERSION_GE(Maj,Min,Rel)  \
+#define PYVISFILE_SILO_VERSION_GE(Maj,Min,Rel)  \
         (((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN==Min) && (SILO_VERS_PAT>=Rel)) || \
          ((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN>Min)) || \
          (SILO_VERS_MAJ>Maj))
 #else
-#define PYLO_SILO_VERSION_GE(Maj,Min,Rel) 0
+#define PYVISFILE_SILO_VERSION_GE(Maj,Min,Rel) 0
 #endif
 
 #define PYTHON_ERROR(TYPE, REASON) \
@@ -90,7 +90,7 @@ namespace
     EXPORT_CONSTANT(DB_DEBUG);
     EXPORT_CONSTANT(DB_HDF5);
 
-#if PYLO_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4,6,1)
     EXPORT_CONSTANT(DB_HDF5_SEC2);
     EXPORT_CONSTANT(DB_HDF5_STDIO);
     EXPORT_CONSTANT(DB_HDF5_CORE);
@@ -296,7 +296,7 @@ namespace
     EXPORT_CONSTANT(DBCSG_XFORM);
     EXPORT_CONSTANT(DBCSG_SWEEP);
 
-#if PYLO_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4,6,1)
     /* Shape types */
     EXPORT_CONSTANT(DB_ZONETYPE_BEAM);
     EXPORT_CONSTANT(DB_ZONETYPE_TRIANGLE);
@@ -490,10 +490,10 @@ namespace
   // {{{ data wrappers
 
   // {{{ data wrapper helpers
-#define PYLO_TYPED_ACCESSOR(TYPE,NAME) \
+#define PYVISFILE_TYPED_ACCESSOR(TYPE,NAME) \
   TYPE NAME() const { return m_data->NAME; }
 
-#define PYLO_STRING_ACCESSOR(NAME) \
+#define PYVISFILE_STRING_ACCESSOR(NAME) \
   object NAME() const \
   { \
     if (m_data) \
@@ -502,7 +502,7 @@ namespace
       return object(); \
   }
 
-#define PYLO_TYPED_ARRAY_ACCESSOR(CAST_TO, NAME, SIZE) \
+#define PYVISFILE_TYPED_ARRAY_ACCESSOR(CAST_TO, NAME, SIZE) \
   object NAME() const \
   { \
     list py_list_result; \
@@ -528,19 +528,19 @@ namespace
         DBFreeCurve(m_data);
       }
 
-      PYLO_TYPED_ACCESSOR(int, id);
-      PYLO_TYPED_ACCESSOR(int, origin);
-      PYLO_STRING_ACCESSOR(title);
-      PYLO_STRING_ACCESSOR(xvarname);
-      PYLO_STRING_ACCESSOR(yvarname);
-      PYLO_STRING_ACCESSOR(xlabel);
-      PYLO_STRING_ACCESSOR(ylabel);
-      PYLO_STRING_ACCESSOR(xunits);
-      PYLO_STRING_ACCESSOR(yunits);
-      PYLO_STRING_ACCESSOR(reference);
+      PYVISFILE_TYPED_ACCESSOR(int, id);
+      PYVISFILE_TYPED_ACCESSOR(int, origin);
+      PYVISFILE_STRING_ACCESSOR(title);
+      PYVISFILE_STRING_ACCESSOR(xvarname);
+      PYVISFILE_STRING_ACCESSOR(yvarname);
+      PYVISFILE_STRING_ACCESSOR(xlabel);
+      PYVISFILE_STRING_ACCESSOR(ylabel);
+      PYVISFILE_STRING_ACCESSOR(xunits);
+      PYVISFILE_STRING_ACCESSOR(yunits);
+      PYVISFILE_STRING_ACCESSOR(reference);
   };
 
-#define PYLO_CURVE_DATA_GETTER(COORD) \
+#define PYVISFILE_CURVE_DATA_GETTER(COORD) \
   handle<> curve_##COORD(object py_curve) \
   { \
     DBcurveWrapper &curve((extract<DBcurveWrapper &>(py_curve))); \
@@ -553,8 +553,8 @@ namespace
     return result; \
   }
 
-  PYLO_CURVE_DATA_GETTER(x);
-  PYLO_CURVE_DATA_GETTER(y);
+  PYVISFILE_CURVE_DATA_GETTER(x);
+  PYVISFILE_CURVE_DATA_GETTER(y);
 
   // }}}
 
@@ -573,37 +573,37 @@ namespace
         DBFreeQuadmesh(m_data);
       }
 
-      PYLO_TYPED_ACCESSOR(int, id);
-      PYLO_TYPED_ACCESSOR(int, block_no);
-      PYLO_TYPED_ACCESSOR(int, group_no);
-      PYLO_STRING_ACCESSOR(name);
-      PYLO_TYPED_ACCESSOR(int, cycle);
-      PYLO_TYPED_ACCESSOR(int, coord_sys);
-      PYLO_TYPED_ACCESSOR(int, major_order);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, stride, 3);
-      PYLO_TYPED_ACCESSOR(int, coordtype);
-      PYLO_TYPED_ACCESSOR(int, facetype);
-      PYLO_TYPED_ACCESSOR(int, planar);
+      PYVISFILE_TYPED_ACCESSOR(int, id);
+      PYVISFILE_TYPED_ACCESSOR(int, block_no);
+      PYVISFILE_TYPED_ACCESSOR(int, group_no);
+      PYVISFILE_STRING_ACCESSOR(name);
+      PYVISFILE_TYPED_ACCESSOR(int, cycle);
+      PYVISFILE_TYPED_ACCESSOR(int, coord_sys);
+      PYVISFILE_TYPED_ACCESSOR(int, major_order);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, stride, 3);
+      PYVISFILE_TYPED_ACCESSOR(int, coordtype);
+      PYVISFILE_TYPED_ACCESSOR(int, facetype);
+      PYVISFILE_TYPED_ACCESSOR(int, planar);
       // not wrapped: datatype
-      PYLO_TYPED_ACCESSOR(float, time);
-      PYLO_TYPED_ACCESSOR(double, dtime);
+      PYVISFILE_TYPED_ACCESSOR(float, time);
+      PYVISFILE_TYPED_ACCESSOR(double, dtime);
 
-      PYLO_TYPED_ARRAY_ACCESSOR(float, min_extents, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(float, max_extents, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(std::string, labels, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(std::string, units, 3);
-      PYLO_TYPED_ACCESSOR(int, ndims);
-      PYLO_TYPED_ACCESSOR(int, nspace);
-      PYLO_TYPED_ACCESSOR(int, nnodes);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(float, min_extents, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(float, max_extents, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(std::string, labels, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(std::string, units, 3);
+      PYVISFILE_TYPED_ACCESSOR(int, ndims);
+      PYVISFILE_TYPED_ACCESSOR(int, nspace);
+      PYVISFILE_TYPED_ACCESSOR(int, nnodes);
       // not wrapped: dims
-      PYLO_TYPED_ACCESSOR(int, origin);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, min_index, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, max_index, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, base_index, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, start_index, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, size_index, 3);
-      PYLO_TYPED_ACCESSOR(int, guihide);
-      PYLO_STRING_ACCESSOR(mrgtree_name);
+      PYVISFILE_TYPED_ACCESSOR(int, origin);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, min_index, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, max_index, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, base_index, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, start_index, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, size_index, 3);
+      PYVISFILE_TYPED_ACCESSOR(int, guihide);
+      PYVISFILE_STRING_ACCESSOR(mrgtree_name);
   };
 
   object quadmesh_coords(object py_quadmesh)
@@ -642,34 +642,34 @@ namespace
         DBFreeQuadvar(m_data);
       }
 
-      PYLO_TYPED_ACCESSOR(int, id);
-      PYLO_STRING_ACCESSOR(name);
-      PYLO_STRING_ACCESSOR(units);
-      PYLO_STRING_ACCESSOR(label);
+      PYVISFILE_TYPED_ACCESSOR(int, id);
+      PYVISFILE_STRING_ACCESSOR(name);
+      PYVISFILE_STRING_ACCESSOR(units);
+      PYVISFILE_STRING_ACCESSOR(label);
 
-      PYLO_TYPED_ACCESSOR(int, cycle);
-      PYLO_TYPED_ACCESSOR(int, meshid);
+      PYVISFILE_TYPED_ACCESSOR(int, cycle);
+      PYVISFILE_TYPED_ACCESSOR(int, meshid);
       // not wrapped: datatype
 
-      PYLO_TYPED_ACCESSOR(int, nels);
-      PYLO_TYPED_ACCESSOR(int, nvals);
-      PYLO_TYPED_ACCESSOR(int, ndims);
-      PYLO_TYPED_ACCESSOR(int, major_order);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, stride, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, min_index, 3);
-      PYLO_TYPED_ARRAY_ACCESSOR(int, max_index, 3);
-      PYLO_TYPED_ACCESSOR(int, origin);
-      PYLO_TYPED_ACCESSOR(float, time);
-      PYLO_TYPED_ACCESSOR(float, dtime);
-      PYLO_TYPED_ARRAY_ACCESSOR(float, align, 3);
+      PYVISFILE_TYPED_ACCESSOR(int, nels);
+      PYVISFILE_TYPED_ACCESSOR(int, nvals);
+      PYVISFILE_TYPED_ACCESSOR(int, ndims);
+      PYVISFILE_TYPED_ACCESSOR(int, major_order);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, stride, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, min_index, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(int, max_index, 3);
+      PYVISFILE_TYPED_ACCESSOR(int, origin);
+      PYVISFILE_TYPED_ACCESSOR(float, time);
+      PYVISFILE_TYPED_ACCESSOR(float, dtime);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(float, align, 3);
       // TODO: mixvals
-      PYLO_TYPED_ACCESSOR(float, mixlen);
+      PYVISFILE_TYPED_ACCESSOR(float, mixlen);
 
-      PYLO_TYPED_ACCESSOR(float, use_specmf);
-      PYLO_TYPED_ACCESSOR(float, ascii_labels);
+      PYVISFILE_TYPED_ACCESSOR(float, use_specmf);
+      PYVISFILE_TYPED_ACCESSOR(float, ascii_labels);
 
-      PYLO_STRING_ACCESSOR(meshname);
-      PYLO_TYPED_ACCESSOR(int, guihide);
+      PYVISFILE_STRING_ACCESSOR(meshname);
+      PYVISFILE_TYPED_ACCESSOR(int, guihide);
       // TODO: region_pnames
   };
 
@@ -750,7 +750,7 @@ namespace
 
   // {{{ DBfile wrapper -------------------------------------------------------
 
-#define PYLO_DBFILE_GET_WRAPPER(LOWER_TYPE, CAMEL_TYPE) \
+#define PYVISFILE_DBFILE_GET_WRAPPER(LOWER_TYPE, CAMEL_TYPE) \
   DB##LOWER_TYPE##Wrapper *get_##LOWER_TYPE(const char *name) \
   { \
     DB##LOWER_TYPE *obj = DBGet##CAMEL_TYPE(m_dbfile, name); \
@@ -831,7 +831,7 @@ namespace
 
 
 
-#if PYLO_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4,6,1)
       void put_zonelist_2(const char *name, int nzones, int ndims,
           const std::vector<int> &nodelist, int lo_offset, int hi_offset,
           const std::vector<int> &shapetype,
@@ -1010,7 +1010,7 @@ namespace
           vardefs.push_back(vardefs_container[i].data());
         }
 
-#if PYLO_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4,6,1)
         CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py),
             const_cast<char **>(&varnames.front()),
             &vartypes.front(),
@@ -1258,8 +1258,8 @@ namespace
               optlist.get_optlist()));
       }
 
-      PYLO_DBFILE_GET_WRAPPER(quadmesh, Quadmesh);
-      PYLO_DBFILE_GET_WRAPPER(quadvar, Quadvar);
+      PYVISFILE_DBFILE_GET_WRAPPER(quadmesh, Quadmesh);
+      PYVISFILE_DBFILE_GET_WRAPPER(quadvar, Quadvar);
 
       // }}}
 
@@ -1336,7 +1336,7 @@ namespace
 
 
 
-      PYLO_DBFILE_GET_WRAPPER(curve, Curve);
+      PYVISFILE_DBFILE_GET_WRAPPER(curve, Curve);
 
       // }}}
 
@@ -1347,34 +1347,34 @@ namespace
         DBtoc *toc = DBGetToc(m_dbfile);
         std::auto_ptr<DBtocCopy> result(new DBtocCopy());
 
-#define PYLO_COPY_TOC_LIST(NAME, CNT) \
+#define PYVISFILE_COPY_TOC_LIST(NAME, CNT) \
         for (int i = 0; i < toc->CNT; ++i) \
           result->NAME.append(std::string(toc->NAME[i]));
 
-        PYLO_COPY_TOC_LIST(curve_names, ncurve);
-        PYLO_COPY_TOC_LIST(multimesh_names, nmultimesh);
-        PYLO_COPY_TOC_LIST(multimeshadj_names, nmultimeshadj);
-        PYLO_COPY_TOC_LIST(multivar_names, nmultivar);
-        PYLO_COPY_TOC_LIST(multimat_names, nmultimat);
-        PYLO_COPY_TOC_LIST(multimatspecies_names, nmultimatspecies);
-        PYLO_COPY_TOC_LIST(csgmesh_names, ncsgmesh);
-        PYLO_COPY_TOC_LIST(csgvar_names, ncsgvar);
-        PYLO_COPY_TOC_LIST(defvars_names, ndefvars);
-        PYLO_COPY_TOC_LIST(qmesh_names, nqmesh);
-        PYLO_COPY_TOC_LIST(qvar_names, nqvar);
-        PYLO_COPY_TOC_LIST(ucdmesh_names, nucdmesh);
-        PYLO_COPY_TOC_LIST(ucdvar_names, nucdvar);
-        PYLO_COPY_TOC_LIST(ptmesh_names, nptmesh);
-        PYLO_COPY_TOC_LIST(ptvar_names, nptvar);
-        PYLO_COPY_TOC_LIST(mat_names, nmat);
-        PYLO_COPY_TOC_LIST(matspecies_names, nmatspecies);
-        PYLO_COPY_TOC_LIST(var_names, nvar);
-        PYLO_COPY_TOC_LIST(obj_names, nobj);
-        PYLO_COPY_TOC_LIST(dir_names, ndir);
-        PYLO_COPY_TOC_LIST(array_names, narrays);
-        PYLO_COPY_TOC_LIST(mrgtree_names, nmrgtrees);
-        PYLO_COPY_TOC_LIST(groupelmap_names, ngroupelmaps);
-        PYLO_COPY_TOC_LIST(mrgvar_names, nmrgvars);
+        PYVISFILE_COPY_TOC_LIST(curve_names, ncurve);
+        PYVISFILE_COPY_TOC_LIST(multimesh_names, nmultimesh);
+        PYVISFILE_COPY_TOC_LIST(multimeshadj_names, nmultimeshadj);
+        PYVISFILE_COPY_TOC_LIST(multivar_names, nmultivar);
+        PYVISFILE_COPY_TOC_LIST(multimat_names, nmultimat);
+        PYVISFILE_COPY_TOC_LIST(multimatspecies_names, nmultimatspecies);
+        PYVISFILE_COPY_TOC_LIST(csgmesh_names, ncsgmesh);
+        PYVISFILE_COPY_TOC_LIST(csgvar_names, ncsgvar);
+        PYVISFILE_COPY_TOC_LIST(defvars_names, ndefvars);
+        PYVISFILE_COPY_TOC_LIST(qmesh_names, nqmesh);
+        PYVISFILE_COPY_TOC_LIST(qvar_names, nqvar);
+        PYVISFILE_COPY_TOC_LIST(ucdmesh_names, nucdmesh);
+        PYVISFILE_COPY_TOC_LIST(ucdvar_names, nucdvar);
+        PYVISFILE_COPY_TOC_LIST(ptmesh_names, nptmesh);
+        PYVISFILE_COPY_TOC_LIST(ptvar_names, nptvar);
+        PYVISFILE_COPY_TOC_LIST(mat_names, nmat);
+        PYVISFILE_COPY_TOC_LIST(matspecies_names, nmatspecies);
+        PYVISFILE_COPY_TOC_LIST(var_names, nvar);
+        PYVISFILE_COPY_TOC_LIST(obj_names, nobj);
+        PYVISFILE_COPY_TOC_LIST(dir_names, ndir);
+        PYVISFILE_COPY_TOC_LIST(array_names, narrays);
+        PYVISFILE_COPY_TOC_LIST(mrgtree_names, nmrgtrees);
+        PYVISFILE_COPY_TOC_LIST(groupelmap_names, ngroupelmaps);
+        PYVISFILE_COPY_TOC_LIST(mrgvar_names, nmrgvars);
 
         return result.release();
       }
@@ -1392,7 +1392,7 @@ namespace
 
   tuple get_silo_version()
   {
-#if PYLO_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4,6,1)
     return make_tuple(SILO_VERS_MAJ, SILO_VERS_MIN, SILO_VERS_PAT);
 #else
     return make_tuple(4,5,1);
@@ -1468,7 +1468,7 @@ BOOST_PYTHON_MODULE(_internal)
       .DEF_SIMPLE_METHOD(close)
       .DEF_SIMPLE_METHOD(put_zonelist)
 
-#if PYLO_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4,6,1)
       .DEF_SIMPLE_METHOD(put_zonelist_2)
 #endif
 
@@ -1640,7 +1640,7 @@ BOOST_PYTHON_MODULE(_internal)
       ;
   }
 
-#if PYLO_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4,6,1)
   def("set_deprecate_warnings", DBSetDeprecateWarnings);
 #else
   def("set_deprecate_warnings", set_dep_warning_dummy);

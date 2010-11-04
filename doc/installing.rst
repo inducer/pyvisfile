@@ -68,19 +68,19 @@ the Silo software, of course.
     The order of the entries in the build configuration file does not
     matter.
 
-Step 4: Download and unpack Pylo
---------------------------------
+Step 4: Download and unpack PyVisfile
+-------------------------------------
 
-`Download Pylo <http://pypi.python.org/pypi/pylo>`_ and unpack it::
+`Download PyVisfile <http://pypi.python.org/pypi/pyvisfile>`_ and unpack it::
 
-    $ tar xfz pylo-VERSION.tar.gz
+    $ tar xfz pyvisfile-VERSION.tar.gz
 
-Step 5: Build :mod:`pylo`
--------------------------
+Step 5: Build :mod:`pyvisfile`
+------------------------------
 
 Just type::
 
-    $ cd pylo-VERSION # if you're not there already
+    $ cd pyvisfile-VERSION # if you're not there already
     $ sudo python setup.py install
 
-Once that works, congratulations! You've successfully built :mod:`pylo`.
+Once that works, congratulations! You've successfully built :mod:`pyvisfile`.

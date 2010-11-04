@@ -1,4 +1,4 @@
-from pylo import SiloFile, DB_READ
+from pyvisfile.silo import SiloFile, DB_READ
 db = SiloFile("qmesh.silo", create=False, mode=DB_READ)
 print db.get_toc().qmesh_names
 print db.get_toc().qvar_names

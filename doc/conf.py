@@ -35,8 +35,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General substitutions.
-project = 'Pylo'
-copyright = '2008, Andreas Kloeckner'
+project = 'PyVisfile'
+copyright = '2010, Andreas Kloeckner'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -112,7 +112,7 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_copy_source = True
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Pylodoc'
+htmlhelp_basename = 'PyVisfiledoc'
 
 
 # Options for LaTeX output
@@ -126,8 +126,8 @@ htmlhelp_basename = 'Pylodoc'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-latex_documents = [("index", "pylo.tex", 
-    "Pylo documentation", "Andreas Kloeckner",
+latex_documents = [("index", "pyvisfile.tex", 
+    "PyVisfile documentation", "Andreas Kloeckner",
     "manual")]
 
 # Additional stuff for the LaTeX preamble.
