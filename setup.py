@@ -42,19 +42,20 @@ def main():
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
 
+    ver_dic = {}
+    exec(compile(
+        open("pyvisfile/__init__.py").read(), 
+        "pyvisfile/__init__.py", 'exec'), ver_dic)
+
     requirements = []
     ext_modules = []
 
-    def handle_component(comp):
-        if conf["USE_"+comp]:
-            EXTRA_DEFINES["USE_"+comp] = 1
-            EXTRA_INCLUDE_DIRS.extend(conf[comp+"_INC_DIR"])
-            EXTRA_LIBRARY_DIRS.extend(conf[comp+"_LIB_DIR"])
-            EXTRA_LIBRARIES.extend(conf[comp+"_LIBNAME"])
-
 
     if conf["USE_SILO"]:
-        handle_component("SILO")
+        EXTRA_DEFINES["USE_SILO"] = 1
+        EXTRA_INCLUDE_DIRS.extend(conf["SILO_INC_DIR"])
+        EXTRA_LIBRARY_DIRS.extend(conf["SILO_LIB_DIR"])
+        EXTRA_LIBRARIES.extend(conf["SILO_LIBNAME"])
 
         ext_modules.append(PyUblasExtension("_internal", 
             [ "src/wrapper/wrap_silo.cpp", ],
@@ -68,7 +69,7 @@ def main():
         requirements.append("PyUblas>=0.92.1")
 
     setup(name="pyvisfile",
-            version="2010.1",
+            version=ver_dic["VERSION_TEXT"],
             description="Large-scale Visualization Data Storage",
             long_description="""
             Pyvisfile allows you to write a variety of visualization file formats,
