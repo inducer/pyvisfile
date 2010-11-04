@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+
 
 
 
@@ -42,35 +44,38 @@ _ignore_extra_int_vector_warning()
 
 
 
-import pyvisfile.silo._internal as _internal
+import sys
 import pyublas
+import pyvisfile.silo._internal
+# hackety hack -- not sure why this is needed
+_intnl = sys.modules["pyvisfile.silo._internal"]
 
 
 
 
 def _export_symbols():
-    for name, value in _internal.symbols().iteritems():
+    for name, value in _intnl.symbols().iteritems():
         globals()[name] = value
 _export_symbols()
 
-DBObjectType = _internal.DBObjectType
-DBdatatype = _internal.DBdatatype
+DBObjectType = _intnl.DBObjectType
+DBdatatype = _intnl.DBdatatype
 
-DBToc = _internal.DBToc
-DBCurve = _internal.DBCurve
-DBQuadMesh = _internal.DBQuadMesh
-DBQuadVar = _internal.DBQuadVar
+DBToc = _intnl.DBToc
+DBCurve = _intnl.DBCurve
+DBQuadMesh = _intnl.DBQuadMesh
+DBQuadVar = _intnl.DBQuadVar
 
-IntVector = _internal.IntVector
-get_silo_version = _internal.get_silo_version
-set_deprecate_warnings = _internal.set_deprecate_warnings
+IntVector = _intnl.IntVector
+get_silo_version = _intnl.get_silo_version
+set_deprecate_warnings = _intnl.set_deprecate_warnings
 
 
 
 
 def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
-    ol = _internal.DBOptlist(optcount, optcount * 150)
+    ol = _intnl.DBOptlist(optcount, optcount * 150)
 
     for key, value in ol_dict.iteritems():
         if isinstance(value, int):
@@ -83,7 +88,7 @@ def _convert_optlist(ol_dict):
 
 
 
-class SiloFile(_internal.DBFile):
+class SiloFile(_intnl.DBFile):
     """This class can be used in a Python 2.5 *with* statement."""
     def __enter__(self):
         return self
@@ -92,41 +97,41 @@ class SiloFile(_internal.DBFile):
         self.close()
 
     def __init__(self, pathname, create=True, mode=None,
-            fileinfo="Created using Pylo",
+            fileinfo="Created using PyVisfile",
             target=DB_LOCAL, filetype=None):
         if create:
             if mode is None:
                 mode = DB_NOCLOBBER
             if filetype is None:
                 filetype = DB_PDB
-            _internal.DBFile.__init__(self, pathname, mode, target,
+            _intnl.DBFile.__init__(self, pathname, mode, target,
                     fileinfo, filetype)
         else:
             if mode is None:
                 mode = DB_APPEND
             if filetype is None:
                 filetype = DB_UNKNOWN
-            _internal.DBFile.__init__(self, pathname, filetype, mode)
+            _intnl.DBFile.__init__(self, pathname, filetype, mode)
 
     def put_zonelist_2(self, names, nzones, ndims, nodelist, lo_offset, hi_offset,
             shapetype, shapesize, shapecounts, optlist={}):
-        _internal.DBFile.put_zonelist_2(self, names, nzones, ndims, 
+        _intnl.DBFile.put_zonelist_2(self, names, nzones, ndims, 
                 nodelist, lo_offset, hi_offset,
                 shapetype, shapesize, shapecounts, _convert_optlist(optlist))
 
     def put_ucdmesh(self, mname, coordnames, coords, 
             nzones, zonel_name, facel_name,
             optlist={}):
-        _internal.DBFile.put_ucdmesh(self, mname, coordnames, coords, 
+        _intnl.DBFile.put_ucdmesh(self, mname, coordnames, coords, 
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
-        _internal.DBFile.put_ucdvar1(self, vname, mname, vec, centering, 
+        _intnl.DBFile.put_ucdvar1(self, vname, mname, vec, centering, 
                 _convert_optlist(optlist))
 
     def put_ucdvar(self, vname, mname, varnames, vars, 
             centering, optlist={}):
-        _internal.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering, 
+        _intnl.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering, 
                 _convert_optlist(optlist))
 
     def put_defvars(self, vname, vars):
@@ -141,43 +146,43 @@ class SiloFile(_internal.DBFile):
         If the type is not specified, scalar is assumed.
         """
 
-        _internal.DBFile.put_defvars(self, vname, vars)
+        _intnl.DBFile.put_defvars(self, vname, vars)
 
     def put_pointmesh(self, mname, coords, optlist={}):
-        _internal.DBFile.put_pointmesh(self, mname, coords,
+        _intnl.DBFile.put_pointmesh(self, mname, coords,
                 _convert_optlist(optlist))
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
-        _internal.DBFile.put_pointvar1(self, vname, mname, var,
+        _intnl.DBFile.put_pointvar1(self, vname, mname, var,
                 _convert_optlist(optlist))
 
     def put_pointvar(self, vname, mname, vars, optlist={}):
-        _internal.DBFile.put_pointvar(self, vname, mname, vars,
+        _intnl.DBFile.put_pointvar(self, vname, mname, vars,
                 _convert_optlist(optlist))
 
     def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist={}):
-        _internal.DBFile.put_quadmesh(self, mname, coords, coordtype,
+        _intnl.DBFile.put_quadmesh(self, mname, coords, coordtype,
                 _convert_optlist(optlist))
 
     def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
-        _internal.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
+        _intnl.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
                 _convert_optlist(optlist))
 
     def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
-        _internal.DBFile.put_quadvar(self, vname, mname,
+        _intnl.DBFile.put_quadvar(self, vname, mname,
                 varnames, vars, dims, centering,
                 _convert_optlist(optlist))
 
     def put_multimesh(self, mname, mnames_and_types, optlist={}):
-        _internal.DBFile.put_multimesh(self, mname,
+        _intnl.DBFile.put_multimesh(self, mname,
                 mnames_and_types, _convert_optlist(optlist))
 
     def put_multivar(self, vname, vnames_and_types, optlist={}):
-        _internal.DBFile.put_multivar(self, vname,
+        _intnl.DBFile.put_multivar(self, vname,
                 vnames_and_types, _convert_optlist(optlist))
 
     def put_curve(self, curvename, xvals, yvals, optlist={}):
-        _internal.DBFile.put_curve(self, curvename, xvals, yvals,
+        _intnl.DBFile.put_curve(self, curvename, xvals, yvals,
                 _convert_optlist(optlist))
 
 
