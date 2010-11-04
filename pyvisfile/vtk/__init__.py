@@ -600,8 +600,6 @@ def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
     for name, field in point_data:
         grid.add_pointdata(DataArray(name, field.T.copy().reshape(-1)))
 
-    file_name = "yo.vts"
-
     from os.path import exists
     if exists(file_name):
         raise RuntimeError("output file '%s' already exists"
