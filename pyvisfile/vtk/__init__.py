@@ -381,6 +381,38 @@ class UnstructuredGrid(object):
 
 
 
+class StructuredGrid(object):
+    def __init__(self, mesh):
+        self.mesh = mesh
+        if mesh.shape[0] != 3:
+            raise ValueError("Mesh must consist of three-dimensional points")
+
+        self.shape = mesh.shape[1:]
+        self.points = DataArray(
+                "points", mesh.T.copy().reshape(-1, 3),
+                vector_format=VF_LIST_OF_VECTORS)
+
+        self.pointdata = []
+        self.celldata = []
+
+    def copy(self):
+        return StructuredGrid(self.mesh)
+
+    def vtk_extension(self):
+        return "vts"
+
+    def invoke_visitor(self, visitor):
+        return visitor.gen_structured_grid(self)
+
+    def add_pointdata(self, data_array):
+        self.pointdata.append(data_array)
+
+    def add_celldata(self, data_array):
+        self.celldata.append(data_array)
+
+
+
+
 def make_vtkfile(filetype, compressor):
     import sys
     if sys.byteorder == "little":
@@ -455,6 +487,37 @@ class InlineXMLGenerator(XMLGenerator):
 
         return el
 
+    def gen_structured_grid(self, sgrid):
+        extent = []
+        for dim in range(3):
+            extent.append(0)
+            if dim < len(sgrid.shape):
+                extent.append(sgrid.shape[dim]-1)
+            else:
+                extent.append(1)
+        extent_str = " ".join(str(i) for i in extent)
+
+        el = XMLElement("StructuredGrid", WholeExtent=extent_str)
+        piece = XMLElement("Piece", Extent=extent_str)
+        el.add_child(piece)
+
+        if sgrid.pointdata:
+            data_el = XMLElement("PointData")
+            piece.add_child(data_el)
+            for data_array in sgrid.pointdata:
+                data_el.add_child(self.rec(data_array))
+
+        if sgrid.celldata:
+            data_el = XMLElement("CellData")
+            piece.add_child(data_el)
+            for data_array in sgrid.celldata:
+                data_el.add_child(self.rec(data_array))
+
+        points = XMLElement("Points")
+        piece.add_child(points)
+        points.add_child(self.rec(sgrid.points))
+        return el
+
     def gen_data_array(self, data):
         el = XMLElement("DataArray", type=data.type, Name=data.name,
                 NumberOfComponents=data.components, format="binary")
@@ -524,3 +587,28 @@ class ParallelXMLGenerator(XMLGenerator):
         el = XMLElement("PDataArray", type=data.type, Name=data.name,
                 NumberOfComponents=data.components)
         return el
+
+
+
+
+def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
+    grid = StructuredGrid(mesh)
+
+    for name, field in cell_data:
+        grid.add_pointdata(DataArray(name, field.T.copy().reshape(-1)))
+
+    for name, field in point_data:
+        grid.add_pointdata(DataArray(name, field.T.copy().reshape(-1)))
+
+    file_name = "yo.vts"
+
+    from os.path import exists
+    if exists(file_name):
+        raise RuntimeError("output file '%s' already exists"
+                % file_name)
+
+    outf = open(file_name, "w")
+    AppendedDataXMLGenerator()(grid).write(outf)
+    outf.close()
+
+
