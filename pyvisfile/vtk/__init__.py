@@ -259,13 +259,13 @@ class DataArray(object):
             raise ValueError, "cannot convert object of type `%s' to DataArray" % type(container)
 
         if not isinstance(container, np.ndarray):
-            raise TypeError("expected numpy array, got '%s' instead" 
+            raise TypeError("expected numpy array, got '%s' instead"
                     % type(container))
 
         if container.dtype == object:
             for subvec in container:
                 if not isinstance(subvec, np.ndarray):
-                    raise TypeError("expected numpy array, got '%s' instead" 
+                    raise TypeError("expected numpy array, got '%s' instead"
                             % type(subvec))
 
             container = np.array(list(container))
@@ -594,11 +594,19 @@ class ParallelXMLGenerator(XMLGenerator):
 def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
     grid = StructuredGrid(mesh)
 
+    from pytools.obj_array import with_object_array_or_scalar
+    def do_reshape(fld):
+        return fld.T.copy().reshape(-1)
+
     for name, field in cell_data:
-        grid.add_pointdata(DataArray(name, field.T.copy().reshape(-1)))
+        grid.add_pointdata(
+                DataArray(name,
+                    with_object_array_or_scalar(do_reshape, field)))
 
     for name, field in point_data:
-        grid.add_pointdata(DataArray(name, field.T.copy().reshape(-1)))
+        grid.add_pointdata(
+                DataArray(name,
+                    with_object_array_or_scalar(do_reshape, field)))
 
     from os.path import exists
     if exists(file_name):

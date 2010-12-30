@@ -2,7 +2,6 @@ from pyvisfile.vtk import write_structured_grid
 
 import numpy as np
 
-eps = 1e-5
 angle_mesh = np.mgrid[1:2:10j, 0:2*np.pi:20j, 0:np.pi:30j]
 
 r = angle_mesh[0,np.newaxis]
