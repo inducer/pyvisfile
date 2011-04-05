@@ -42,11 +42,9 @@ copyright = '2010, Andreas Kloeckner'
 # other places throughout the built documents.
 #
 # The short X.Y version.
-import re
-ver_re = re.compile(r'version\s*=\s*"([0-9.]+)"')
-version = [ver_re.search(line).group(1) 
-        for line in open("../setup.py").readlines() 
-        if ver_re.search(line)][0]
+ver_dic = {}
+execfile("../pyvisfile/__init__.py", ver_dic)
+version = ".".join(str(x) for x in ver_dic["VERSION"])
 # The full version, including alpha/beta/rc tags.
 release = version
 
