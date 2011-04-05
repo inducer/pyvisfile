@@ -6,4 +6,4 @@ include Makefile.in
 include aksetup_helper.py
 include README_SETUP.txt
 
-includes examples/*py
+include examples/*py
