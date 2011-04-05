@@ -601,12 +601,14 @@ def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
     for name, field in cell_data:
         grid.add_pointdata(
                 DataArray(name,
-                    with_object_array_or_scalar(do_reshape, field)))
+                    with_object_array_or_scalar(do_reshape, field, 
+			    obj_array_only=True)))
 
     for name, field in point_data:
         grid.add_pointdata(
                 DataArray(name,
-                    with_object_array_or_scalar(do_reshape, field)))
+                    with_object_array_or_scalar(do_reshape, field,
+			    obj_array_only=True)))
 
     from os.path import exists
     if exists(file_name):
