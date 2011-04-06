@@ -46,7 +46,16 @@ _ignore_extra_int_vector_warning()
 
 import sys
 import pyublas
-import pyvisfile.silo._internal
+try:
+    import pyvisfile.silo._internal
+except ImportError:
+    from warnings import warn
+    warn("Importing the native-code parts of PyVisfile's silo component failed. "
+            "By default, PyVisfile is installed without Silo support. If you would "
+            "like support for the Silo file format, configure with --use-silo=True. "
+            "This requires the libsilo library.")
+    raise
+
 # hackety hack -- not sure why this is needed
 _intnl = sys.modules["pyvisfile.silo._internal"]
 
