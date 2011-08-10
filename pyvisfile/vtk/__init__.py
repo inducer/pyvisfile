@@ -276,7 +276,7 @@ class DataArray(object):
                 container = container.T.copy()
 
             assert len(container.shape) == 2, "numpy vectors of rank >2 are not supported"
-            assert container.strides[1] == container.itemsize, "2D np arrays must be row-major"
+            assert container.strides[1] == container.itemsize, "2D numpy arrays must be row-major"
             if vector_padding > container.shape[1]:
                 container = np.asarray(np.hstack((
                         container,
@@ -599,16 +599,14 @@ def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
         return fld.T.copy().reshape(-1)
 
     for name, field in cell_data:
-        grid.add_pointdata(
-                DataArray(name,
-                    with_object_array_or_scalar(do_reshape, field, 
-			    obj_array_only=True)))
+        reshaped_fld = with_object_array_or_scalar(do_reshape, field,
+                            obj_array_only=True)
+        grid.add_pointdata(DataArray(name, reshaped_fld))
 
     for name, field in point_data:
-        grid.add_pointdata(
-                DataArray(name,
-                    with_object_array_or_scalar(do_reshape, field,
-			    obj_array_only=True)))
+        reshaped_fld = with_object_array_or_scalar(do_reshape, field,
+                obj_array_only=True)
+        grid.add_pointdata(DataArray(name, reshaped_fld))
 
     from os.path import exists
     if exists(file_name):

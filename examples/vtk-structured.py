@@ -13,5 +13,12 @@ mesh = np.vstack((
     r*np.cos(theta),
     ))
 
+from pytools.obj_array import make_obj_array
+vec = make_obj_array([
+    np.sin(theta)*np.cos(phi),
+    np.sin(theta)*np.sin(phi),
+    np.cos(theta),
+    ])
+
 write_structured_grid("yo.vts", mesh, 
-        point_data=[("phi", phi)])
+        point_data=[("phi", phi), ("vec", vec)])
