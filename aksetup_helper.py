@@ -165,7 +165,7 @@ def get_config(schema=None, warn_about_no_config=True):
 
         count_down_delay(delay=10)
 
-    return schema.read_config()
+    return expand_options(schema.read_config())
 
 
 
@@ -241,15 +241,23 @@ def expand_value(v, options):
     if isinstance(v, str):
         return expand_str(v, options)
     elif isinstance(v, list):
-        return [expand_value(i, options) for i in v]
+        result = []
+        for i in v:
+            try:
+                exp_i = expand_value(i, options)
+            except:
+                pass
+            else:
+                result.append(exp_i)
+
+        return result
     else:
         return v
 
 
 def expand_options(options):
-    for k in options.keys():
-        options[k] = expand_value(options[k], options)
-    return options
+    return dict(
+            (k, expand_value(v, options)) for k, v in options.items())
 
 
 
@@ -280,8 +288,7 @@ class ConfigSchema:
         self.conf_dir = conf_dir
 
     def get_default_config(self):
-        return dict((opt.name, opt.default)
-                for opt in self.options)
+        return dict((opt.name, opt.default) for opt in self.options)
 
     def read_config_from_pyfile(self, filename):
         result = {}
@@ -379,8 +386,6 @@ class ConfigSchema:
                     raise KeyError("invalid config key in %s: %s" % (
                             cfile, key))
 
-        expand_options(result)
-
         return result
 
     def add_to_configparser(self, parser, def_config=None):
@@ -395,11 +400,9 @@ class ConfigSchema:
         result = {}
         for opt in self.options:
             result[opt.name] = opt.take_from_configparser(options)
-        expand_options(result)
         return result
 
     def write_config(self, config):
-        import os
         outf = open(self.get_conf_file(), "w")
         for opt in self.options:
             value = config[opt.name]
@@ -565,12 +568,17 @@ def set_up_shipped_boost_if_requested(project_name, conf):
                 + glob("bpl-subset/bpl_subset/libs/*/*/*.cpp")
                 + glob("bpl-subset/bpl_subset/libs/*/*.cpp"))
 
+        # make sure next line succeeds even on Windows
+        source_files = [f.replace("\\","/") for f in source_files]
+
         source_files = [f for f in source_files
                 if not f.startswith("bpl-subset/bpl_subset/libs/thread/src")]
 
         if sys.platform == "win32":
             source_files += glob(
                     "bpl-subset/bpl_subset/libs/thread/src/win32/*.cpp")
+            source_files += glob(
+                    "bpl-subset/bpl_subset/libs/thread/src/*.cpp")
         else:
             source_files += glob(
                     "bpl-subset/bpl_subset/libs/thread/src/pthread/*.cpp")
@@ -591,6 +599,10 @@ def set_up_shipped_boost_if_requested(project_name, conf):
 
         return (source_files,
                 {
+                    # do not pick up libboost link dependency on windows
+                    "BOOST_ALL_NO_LIB": 1,
+                    "BOOST_THREAD_BUILD_DLL": 1,
+
                     "BOOST_MULTI_INDEX_DISABLE_SERIALIZATION": 1,
                     "BOOST_PYTHON_SOURCE": 1,
                     "boost": '%sboost' % project_name
@@ -723,8 +735,8 @@ def check_git_submodules():
         stdout_data, _ = popen.communicate()
         if popen.returncode != 0:
             git_error = "git returned error code %d" % popen.returncode
-    except OSError, e:
-        git_error = e
+    except OSError:
+        git_error = "(os error, likely git not found)"
 
     if git_error is not None:
         print("-------------------------------------------------------------------------")
@@ -734,7 +746,7 @@ def check_git_submodules():
         print("not invoke git to check whether my submodules are up to date.")
         print("")
         print("The error was:")
-        print(e)
+        print(git_error)
         print("Hit Ctrl-C now if you'd like to think about the situation.")
         print("-------------------------------------------------------------------------")
         count_down_delay(delay=5)
@@ -794,7 +806,9 @@ def check_git_submodules():
             print("Hit Ctrl-C now if you'd like to think about the situation.")
             print("-------------------------------------------------------------------------")
 
-            count_down_delay(delay=10)
+            from os.path import exists
+            if not exists(".dirty-git-ok"):
+                count_down_delay(delay=10)
 
 
 
