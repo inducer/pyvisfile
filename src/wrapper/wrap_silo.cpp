@@ -1371,11 +1371,17 @@ namespace
         PYVISFILE_COPY_TOC_LIST(var_names, nvar);
         PYVISFILE_COPY_TOC_LIST(obj_names, nobj);
         PYVISFILE_COPY_TOC_LIST(dir_names, ndir);
+#if PYVISFILE_SILO_VERSION_GE(4,9,0)
+        PYVISFILE_COPY_TOC_LIST(array_names, narray);
+        PYVISFILE_COPY_TOC_LIST(mrgtree_names, nmrgtree);
+        PYVISFILE_COPY_TOC_LIST(groupelmap_names, ngroupelmap);
+        PYVISFILE_COPY_TOC_LIST(mrgvar_names, nmrgvar);
+#else
         PYVISFILE_COPY_TOC_LIST(array_names, narrays);
         PYVISFILE_COPY_TOC_LIST(mrgtree_names, nmrgtrees);
         PYVISFILE_COPY_TOC_LIST(groupelmap_names, ngroupelmaps);
         PYVISFILE_COPY_TOC_LIST(mrgvar_names, nmrgvars);
-
+#endif
         return result.release();
       }
 
