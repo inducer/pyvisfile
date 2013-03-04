@@ -1,3 +1,3 @@
 #! /bin/sh
 
-rsync --progress --verbose --archive --delete .build/html/* buster:doc/pyvisfile
+rsync --progress --verbose --archive --delete .build/html/* doc-upload:doc/pyvisfile
