@@ -16,7 +16,7 @@ def get_config_schema():
 
         IncludeDir("SILO", []),
         LibraryDir("SILO", []),
-        Libraries("SILO", ["silo"]),
+        Libraries("SILO", ["siloh5"]),
 
         StringListOption("CXXFLAGS", [], 
             help="Any extra C++ compiler options to include"),
