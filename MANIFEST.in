@@ -7,3 +7,9 @@ include aksetup_helper.py
 include README_SETUP.txt
 
 include examples/*py
+
+include doc/*.rst
+include doc/conf.py
+include doc/Makefile
+include doc/_static/*.css
+include doc/_templates/*.html
