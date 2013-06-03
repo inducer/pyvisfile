@@ -2,10 +2,8 @@
 # -*- coding: latin-1 -*-
 
 
-
-
 def get_config_schema():
-    from aksetup_helper import ConfigSchema, Option, \
+    from aksetup_helper import ConfigSchema,  \
             IncludeDir, LibraryDir, Libraries, BoostLibraries, \
             Switch, StringListOption, make_boost_base_options
 
@@ -18,11 +16,9 @@ def get_config_schema():
         LibraryDir("SILO", []),
         Libraries("SILO", ["siloh5"]),
 
-        StringListOption("CXXFLAGS", [], 
+        StringListOption("CXXFLAGS", [],
             help="Any extra C++ compiler options to include"),
         ])
-
-
 
 
 def main():
@@ -37,19 +33,18 @@ def main():
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
 
-    EXTRA_DEFINES = { }
+    EXTRA_DEFINES = {}
     EXTRA_INCLUDE_DIRS = []
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
 
     ver_dic = {}
     exec(compile(
-        open("pyvisfile/__init__.py").read(), 
+        open("pyvisfile/__init__.py").read(),
         "pyvisfile/__init__.py", 'exec'), ver_dic)
 
     requirements = []
     ext_modules = []
-
 
     if conf["USE_SILO"]:
         EXTRA_DEFINES["USE_SILO"] = 1
@@ -57,8 +52,8 @@ def main():
         EXTRA_LIBRARY_DIRS.extend(conf["SILO_LIB_DIR"])
         EXTRA_LIBRARIES.extend(conf["SILO_LIBNAME"])
 
-        ext_modules.append(PyUblasExtension("_internal", 
-            [ "src/wrapper/wrap_silo.cpp", ],
+        ext_modules.append(PyUblasExtension("_internal",
+            ["src/wrapper/wrap_silo.cpp"],
             include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
             library_dirs=LIBRARY_DIRS + EXTRA_LIBRARY_DIRS,
             libraries=LIBRARIES + EXTRA_LIBRARIES,
@@ -75,16 +70,16 @@ def main():
             Pyvisfile allows you to write a variety of visualization file formats,
             including
 
-            * `Kitware's <http://www.kitware.com>`_ 
+            * `Kitware's <http://www.kitware.com>`_
               `XML-style <http://www.vtk.org/VTK/help/documentation.html>`_
               `Vtk <http://vtk.org>`_ data files.
 
             * Silo visualization files, as
-              introduced by LLNL's 
+              introduced by LLNL's
               `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
-              more recently used by the 
-              `VisIt <https://wci.llnl.gov/codes/visit/>`_ 
-              large-scale visualization program. 
+              more recently used by the
+              `VisIt <https://wci.llnl.gov/codes/visit/>`_
+              large-scale visualization program.
 
             pyvisfiles supports many mesh geometries, such such as unstructured
             and rectangular structured meshes, particle meshes, as well as
@@ -106,25 +101,25 @@ def main():
             for the latest Silo source code.
             """,
             classifiers=[
-              'Development Status :: 4 - Beta',
-              'Intended Audience :: Developers',
-              'Intended Audience :: Other Audience',
-              'Intended Audience :: Science/Research',
-              'License :: OSI Approved :: MIT License',
-              'Natural Language :: English',
-              'Programming Language :: C++',
-              'Programming Language :: Python',
-              'Topic :: Multimedia :: Graphics :: 3D Modeling',
-              'Topic :: Scientific/Engineering',
-              'Topic :: Scientific/Engineering :: Mathematics',
-              'Topic :: Scientific/Engineering :: Physics',
-              'Topic :: Scientific/Engineering :: Visualization',
-              'Topic :: Software Development :: Libraries',
-              ],
+               'Development Status :: 4 - Beta',
+               'Intended Audience :: Developers',
+               'Intended Audience :: Other Audience',
+               'Intended Audience :: Science/Research',
+               'License :: OSI Approved :: MIT License',
+               'Natural Language :: English',
+               'Programming Language :: C++',
+               'Programming Language :: Python',
+               'Topic :: Multimedia :: Graphics :: 3D Modeling',
+               'Topic :: Scientific/Engineering',
+               'Topic :: Scientific/Engineering :: Mathematics',
+               'Topic :: Scientific/Engineering :: Physics',
+               'Topic :: Scientific/Engineering :: Visualization',
+               'Topic :: Software Development :: Libraries',
+               ],
 
             author=u"Andreas Kloeckner",
             author_email="inform@tiker.net",
-            license = "MIT",
+            license="MIT",
             url="http://mathema.tician.de/software/pyvisfile",
 
             # dependencies
@@ -140,8 +135,6 @@ def main():
             ext_modules=ext_modules,
 
             zip_safe=False)
-
-
 
 
 if __name__ == '__main__':
