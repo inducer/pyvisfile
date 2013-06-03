@@ -18,8 +18,6 @@
 from __future__ import division
 
 
-
-
 """PyVisfile exposes the functionality of libsilo to Python using the
 Boost.Python wrapper library.
 
@@ -27,39 +25,33 @@ To use pyvisfile, you would typically create a SiloFile instance and then
 write different entities (variables and meshes, for the most part) to
 this file.
 
-If you are running on a parallel machine, you might want to use 
+If you are running on a parallel machine, you might want to use
 ParallelSiloFile to automatically create a master file along with your
 SiloFile.
 """
 
 
-
-
 def _ignore_extra_int_vector_warning():
     from warnings import filterwarnings
-    filterwarnings("ignore", module="pyvisfile.silo", 
+    filterwarnings("ignore", module="pyvisfile.silo",
             category=RuntimeWarning, lineno=43)
 _ignore_extra_int_vector_warning()
 
 
-
-
 import sys
-import pyublas
+import pyublas  # noqa
 try:
-    import pyvisfile.silo._internal
+    import pyvisfile.silo._internal  # noqa
 except ImportError:
     from warnings import warn
     warn("Importing the native-code parts of PyVisfile's silo component failed. "
             "By default, PyVisfile is installed without Silo support. If you would "
-            "like support for the Silo file format, configure with --use-silo=True. "
+            "like support for the Silo file format, configure with --use-silo. "
             "This requires the libsilo library.")
     raise
 
 # hackety hack -- not sure why this is needed
 _intnl = sys.modules["pyvisfile.silo._internal"]
-
-
 
 
 def _export_symbols():
@@ -80,8 +72,6 @@ get_silo_version = _intnl.get_silo_version
 set_deprecate_warnings = _intnl.set_deprecate_warnings
 
 
-
-
 def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
     ol = _intnl.DBOptlist(optcount, optcount * 150)
@@ -93,8 +83,6 @@ def _convert_optlist(ol_dict):
             ol.add_option(key, value)
 
     return ol
-
-
 
 
 class SiloFile(_intnl.DBFile):
@@ -124,23 +112,23 @@ class SiloFile(_intnl.DBFile):
 
     def put_zonelist_2(self, names, nzones, ndims, nodelist, lo_offset, hi_offset,
             shapetype, shapesize, shapecounts, optlist={}):
-        _intnl.DBFile.put_zonelist_2(self, names, nzones, ndims, 
+        _intnl.DBFile.put_zonelist_2(self, names, nzones, ndims,
                 nodelist, lo_offset, hi_offset,
                 shapetype, shapesize, shapecounts, _convert_optlist(optlist))
 
-    def put_ucdmesh(self, mname, coordnames, coords, 
+    def put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name,
             optlist={}):
-        _intnl.DBFile.put_ucdmesh(self, mname, coordnames, coords, 
+        _intnl.DBFile.put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
-        _intnl.DBFile.put_ucdvar1(self, vname, mname, vec, centering, 
+        _intnl.DBFile.put_ucdvar1(self, vname, mname, vec, centering,
                 _convert_optlist(optlist))
 
-    def put_ucdvar(self, vname, mname, varnames, vars, 
+    def put_ucdvar(self, vname, mname, varnames, vars,
             centering, optlist={}):
-        _intnl.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering, 
+        _intnl.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering,
                 _convert_optlist(optlist))
 
     def put_defvars(self, vname, vars):
@@ -195,8 +183,6 @@ class SiloFile(_intnl.DBFile):
                 _convert_optlist(optlist))
 
 
-
-
 class ParallelSiloFile:
     """A :class:`SiloFile` that automatically creates a parallel master file.
 
@@ -227,8 +213,8 @@ class ParallelSiloFile:
             head_pathname = "%s.silo" % pathname
             self.master_file = SiloFile(head_pathname, *args, **kwargs)
 
-            self.rank_filenames = [rank_pathname_pattern % (pathname, rank)
-                    for rank in ranks]
+            self.rank_filenames = [rank_pathname_pattern % (pathname, fn_rank)
+                    for fn_rank in ranks]
         else:
             self.master_file = None
 
@@ -250,9 +236,9 @@ class ParallelSiloFile:
     def put_zonelist_2(self, *args, **kwargs):
         self.data_file.put_zonelist_2(*args, **kwargs)
 
-    def put_ucdmesh(self, mname, coordnames, coords, 
+    def put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name, optlist):
-        self.data_file.put_ucdmesh(mname, coordnames, coords, 
+        self.data_file.put_ucdmesh(mname, coordnames, coords,
             nzones, zonel_name, facel_name, optlist)
 
         self._added_mesh(mname, DBObjectType.DB_UCDMESH, optlist)
@@ -261,9 +247,9 @@ class ParallelSiloFile:
         self.data_file.put_ucdvar1(vname, mname, vec, centering, optlist)
         self._added_variable(vname, DBObjectType.DB_UCDVAR, optlist)
 
-    def put_ucdvar(self, vname, mname, varnames, vars, 
+    def put_ucdvar(self, vname, mname, varnames, vars,
             centering, optlist={}):
-        self.data_file.put_ucdvar(vname, mname, varnames, vars, 
+        self.data_file.put_ucdvar(vname, mname, varnames, vars,
             centering, optlist={})
         self._added_variable(vname, DBObjectType.DB_UCDVAR, optlist)
 
@@ -302,21 +288,21 @@ class ParallelSiloFile:
         self._added_variable(vname, DBObjectType.DB_QUADVAR, optlist)
 
     def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
-        self.data_file.put_quadvar(vname, mname, varnames, vars, 
+        self.data_file.put_quadvar(vname, mname, varnames, vars,
                 dims, centering, optlist)
         self._added_variable(vname, DBObjectType.DB_QUADVAR, optlist)
 
     # -------------------------------------------------------------------------
     def _added_mesh(self, mname, type, optlist):
         if self.master_file:
-            self.master_file.put_multimesh(mname, 
+            self.master_file.put_multimesh(mname,
                     [("%s:%s" % (rank_fn, mname), type)
                         for rank_fn in self.rank_filenames],
                     optlist)
 
     def _added_variable(self, vname, type, optlist):
         if self.master_file:
-            self.master_file.put_multivar(vname, 
+            self.master_file.put_multivar(vname,
                     [("%s:%s" % (rank_fn, vname), type)
                         for rank_fn in self.rank_filenames],
                     optlist)
