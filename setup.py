@@ -124,7 +124,9 @@ def main():
 
             # dependencies
             setup_requires=requirements,
-            install_requires=requirements,
+            install_requires=[
+                    "pytools>=2013.2"
+                    ] + requirements,
 
             packages=[
                     "pyvisfile",
