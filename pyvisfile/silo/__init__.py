@@ -79,6 +79,11 @@ def _convert_optlist(ol_dict):
     for key, value in ol_dict.iteritems():
         if isinstance(value, int):
             ol.add_int_option(key, value)
+        elif isinstance(value, tuple):
+            for el in value:
+                if not isinstance(el, int):
+                    raise TypeError('For now only tuples of int are implemented as option value!')
+            ol.add_option(key, value)
         else:
             ol.add_option(key, value)
 
