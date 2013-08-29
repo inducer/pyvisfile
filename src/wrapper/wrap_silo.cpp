@@ -427,6 +427,20 @@ namespace
               ));
       }
 
+      void add_option(int option, tuple values_py)
+      {
+        std::vector<int> values;
+
+        PYTHON_FOREACH(value_py, values_py)
+        {
+          int value = extract<int> (value_py);
+          values.push_back(value);
+        }
+        CALL_GUARDED(DBAddOption,(m_optlist, option,
+              add_storage_data((void *) &values.front(), values.size()*sizeof(int))
+              ));
+      }
+
       DBoptlist *get_optlist()
       {
         return m_optlist;
@@ -1520,6 +1534,7 @@ BOOST_PYTHON_MODULE(_internal)
       .def("add_int_option", (void (cl::*)(int, int)) &cl::add_option)
       .def("add_option", (void (cl::*)(int, double)) &cl::add_option)
       .def("add_option", (void (cl::*)(int, const std::string &)) &cl::add_option)
+      .def("add_option", (void (cl::*)(int, tuple)) &cl::add_option)
       ;
   }
 
