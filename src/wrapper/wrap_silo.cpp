@@ -726,6 +726,108 @@ namespace
 
   // }}}
 
+  // {{{ ucd mesh wrapper
+
+  class DBucdmeshWrapper : boost::noncopyable
+  {
+    public:
+      DBucdmesh   *m_data;
+
+      DBucdmeshWrapper(DBquadmesh *data)
+        : m_data(data)
+      { }
+      ~DBucdmeshWrapper()
+      {
+        DBFreeUcdmesh(m_data);
+      }
+
+      PYVISFILE_TYPED_ACCESSOR(int, id);
+      PYVISFILE_TYPED_ACCESSOR(int, block_no);
+      PYVISFILE_TYPED_ACCESSOR(int, group_no);
+      PYVISFILE_STRING_ACCESSOR(name);
+      PYVISFILE_TYPED_ACCESSOR(int, cycle);
+      PYVISFILE_TYPED_ACCESSOR(int, coord_sys);
+      PYVISFILE_TYPED_ACCESSOR(int, topo_dim);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(std::string, units, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(std::string, labels, 3);
+
+      // FIXME: implement coords
+
+      // not wrapped: datatype
+      PYVISFILE_TYPED_ACCESSOR(float, time);
+      PYVISFILE_TYPED_ACCESSOR(double, dtime);
+
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(float, min_extents, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(float, max_extents, 3);
+
+      PYVISFILE_TYPED_ACCESSOR(int, ndims);
+      PYVISFILE_TYPED_ACCESSOR(int, nnodes);
+      PYVISFILE_TYPED_ACCESSOR(int, origin);
+
+      // FIXME: implement faces
+      // FIXME: implement zones
+      // FIXME: implement edges
+      // 
+      // FIXME: implement gnodeno
+      // FIXME: implement nodeno
+      // FIXME: implement phzones
+
+      PYVISFILE_TYPED_ACCESSOR(int, guihide);
+      PYVISFILE_STRING_ACCESSOR(mrgtree_name);
+      PYVISFILE_TYPED_ACCESSOR(int, tv_connectivity);
+      PYVISFILE_TYPED_ACCESSOR(int, disjoint_mode);
+      PYVISFILE_TYPED_ACCESSOR(int, gnznodtype);
+  };
+
+  // }}}
+
+  // {{{ ucd var wrapper
+
+  class DBucdvarWrapper : boost::noncopyable
+  {
+    public:
+
+    public:
+      DBucdvar   *m_data;
+
+      DBucdvarWrapper(DBquadvar *data)
+        : m_data(data)
+      { }
+      ~DBucdvarWrapper()
+      {
+        DBFreeUcdvar(m_data);
+      }
+
+
+      PYVISFILE_TYPED_ACCESSOR(int, id);
+      PYVISFILE_STRING_ACCESSOR(name);
+      PYVISFILE_TYPED_ACCESSOR(int, cycle);
+      PYVISFILE_STRING_ACCESSOR(units);
+      PYVISFILE_STRING_ACCESSOR(label);
+      PYVISFILE_TYPED_ACCESSOR(float, time);
+      PYVISFILE_TYPED_ACCESSOR(double, dtime);
+      PYVISFILE_TYPED_ACCESSOR(int, meshid);
+
+      // FIXME: implement vals
+      PYVISFILE_TYPED_ACCESSOR(int, datatype);
+      PYVISFILE_TYPED_ACCESSOR(int, nels);
+      PYVISFILE_TYPED_ACCESSOR(int, nvals);
+      PYVISFILE_TYPED_ACCESSOR(int, ndims);
+      PYVISFILE_TYPED_ACCESSOR(int, origin);
+      PYVISFILE_TYPED_ACCESSOR(int, centering);
+      // FIXME: implement mixvals
+      PYVISFILE_TYPED_ACCESSOR(int, mixlen);
+      PYVISFILE_TYPED_ACCESSOR(int, use_specmf);
+      PYVISFILE_TYPED_ACCESSOR(int, ascii_labels);
+      PYVISFILE_STRING_ACCESSOR(meshname);
+      PYVISFILE_TYPED_ACCESSOR(int, guihide);
+      // FIXME: region_pnames
+      PYVISFILE_TYPED_ACCESSOR(int, conserved);
+      PYVISFILE_TYPED_ACCESSOR(int, extensive);
+  };
+
+  // }}}
+
   // }}}
 
 
@@ -983,6 +1085,9 @@ namespace
             PYUBLAS_PYERROR(TypeError, "unsupported variable type");
         }
       }
+
+      PYVISFILE_DBFILE_GET_WRAPPER(ucdmesh, Ucdmesh);
+      PYVISFILE_DBFILE_GET_WRAPPER(ucdvar, Ucdvar);
 
       // }}}
 
