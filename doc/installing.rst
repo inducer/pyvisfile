@@ -3,8 +3,12 @@
 Installation
 ============
 
-This tutorial will walk you through the process of installing Pylo. To
-follow, you really only need three basic things:
+This tutorial will walk you through the process of installing PyVisfile. If
+you'd like to only use PyVisfile's Vtk writing capability, you may skip to
+:ref:`download-and-unpack`.  If you'd also like to write Silo files, you need
+to follow the entire set of instructions.
+
+To follow, you really only need three basic things:
 
 * A UNIX-like machine with web access.
 * A C++ compiler, preferably a Version 4.x gcc.
@@ -21,8 +25,11 @@ your liking, just be sure to be consistent in your changes.
     show that these *do* require root privileges *if* you are using a
     Python interpreter that is installed globally.
 
+With Silo capability
+--------------------
+
 Step 1: Install :mod:`pyublas`
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -34,7 +41,7 @@ this, please follow `PyUblas's installation instructions
 <http://documen.tician.de/pyublas/installing.html>`_.
 
 Step 2: Download and build libsilo
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Download the `Silo source code
 <https://wci.llnl.gov/codes/silo/downloads.html>`_, version 4.6.1 or
@@ -46,7 +53,7 @@ newer. Then unpack, build and install it::
     $ make install
 
 Step 3: Update your build configuration file
---------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 During prior steps of this installation, you will have created
 a file called :file:`.aksetup-defaults.py`  in your home directory. 
@@ -68,15 +75,20 @@ the Silo software, of course.
     The order of the entries in the build configuration file does not
     matter.
 
+.. _download-and-unpack:
+
+Common installation
+-------------------
+
 Step 4: Download and unpack PyVisfile
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 `Download PyVisfile <http://pypi.python.org/pypi/pyvisfile>`_ and unpack it::
 
     $ tar xfz pyvisfile-VERSION.tar.gz
 
 Step 5: Build :mod:`pyvisfile`
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Just type::
 
