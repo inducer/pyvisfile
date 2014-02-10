@@ -3,7 +3,64 @@
 __copyright__ = "Copyright (C) 2007 Andreas Kloeckner"
 import numpy as np
 
+__doc__ = """
 
+Constants
+---------
+
+Vector formats
+^^^^^^^^^^^^^^
+
+.. data:: VF_LIST_OF_COMPONENTS
+
+    ``[[x0,y0,z0], [x1,y1,z1]``
+
+.. data:: VF_LIST_OF_VECTORS
+
+    ``[[x0,x1], [y0,y1], [z0,z1]]``
+
+Element types
+^^^^^^^^^^^^^
+
+.. data:: VTK_VERTEX
+.. data:: VTK_POLY_VERTEX
+.. data:: VTK_LINE
+.. data:: VTK_POLY_LINE
+.. data:: VTK_TRIANGLE
+.. data:: VTK_TRIANGLE_STRIP
+.. data:: VTK_POLYGON
+.. data:: VTK_PIXEL
+.. data:: VTK_QUAD
+.. data:: VTK_TETRA
+.. data:: VTK_VOXEL
+.. data:: VTK_HEXAHEDRON
+.. data:: VTK_WEDGE
+.. data:: VTK_PYRAMID
+
+Building blocks
+---------------
+
+.. autoclass:: DataArray
+.. autoclass:: UnstructuredGrid
+.. autoclass:: StructuredGrid
+
+XML elements
+^^^^^^^^^^^^^^
+
+.. autoclass:: XMLElement
+
+XML generators
+^^^^^^^^^^^^^^
+
+.. autoclass:: InlineXMLGenerator
+.. autoclass:: AppendedDataXMLGenerator
+.. autoclass:: ParallelXMLGenerator
+
+Convenience functions
+---------------------
+
+.. autofunction:: write_structured_grid
+"""
 
 
 VTK_INT8 = "Int8"
@@ -50,12 +107,10 @@ CELL_NODE_COUNT = {
         }
 
 
-VF_LIST_OF_COMPONENTS = 0 # [[x0,y0,z0], [x1,y1,z1]
-VF_LIST_OF_VECTORS = 1 # [[x0,x1], [y0,y1], [z0,z1]]
+VF_LIST_OF_COMPONENTS = 0  # [[x0,y0,z0], [x1,y1,z1]
+VF_LIST_OF_VECTORS = 1  # [[x0,x1], [y0,y1], [z0,z1]]
 
 _U32CHAR = np.dtype(np.uint32).char
-
-
 
 
 # Ah, the joys of home-baked non-compliant XML goodness.
@@ -75,9 +130,11 @@ class XMLElementBase(object):
         self.children.append(child)
 
 
-
-
 class XMLElement(XMLElementBase):
+    """
+    .. automethod:: write
+    """
+
     def __init__(self, tag, **attributes):
         XMLElementBase.__init__(self)
         self.tag = tag
@@ -85,8 +142,8 @@ class XMLElement(XMLElementBase):
 
     def write(self, file):
         attr_string = "".join(
-                " %s=\"%s\"" % (key,value)
-                for key,value in self.attributes.iteritems())
+                " %s=\"%s\"" % (key, value)
+                for key, value in self.attributes.iteritems())
         if self.children:
             file.write("<%s%s>\n" % (self.tag, attr_string))
             for child in self.children:
@@ -98,9 +155,6 @@ class XMLElement(XMLElementBase):
             file.write("</%s>\n" % self.tag)
         else:
             file.write("<%s%s/>\n" % (self.tag, attr_string))
-
-
-
 
 
 class XMLRoot(XMLElementBase):
@@ -117,7 +171,6 @@ class XMLRoot(XMLElementBase):
             else:
                 # likely a string instance, write it directly
                 file.write(child)
-
 
 
 class EncodedBuffer:
@@ -142,9 +195,6 @@ class EncodedBuffer:
         raise NotImplementedError
 
 
-
-
-
 class BinaryEncodedBuffer:
     def __init__(self, buffer):
         self.buffer = buffer
@@ -160,8 +210,6 @@ class BinaryEncodedBuffer:
 
     def add_to_xml_element(self, xml_element):
         raise NotImplementedError
-
-
 
 
 class Base64EncodedBuffer:
@@ -190,8 +238,6 @@ class Base64EncodedBuffer:
         xml_element.add_child(self.b64data)
 
         return len(self.b64header) + len(self.b64data)
-
-
 
 
 class Base64ZLibEncodedBuffer:
@@ -226,10 +272,6 @@ class Base64ZLibEncodedBuffer:
         return len(self.b64header) + len(self.b64data)
 
 
-
-
-
-
 class DataArray(object):
     def __init__(self, name, container, vector_padding=3,
             vector_format=VF_LIST_OF_COMPONENTS, components=None):
@@ -242,21 +284,34 @@ class DataArray(object):
             return
 
         def vec_type(vec):
-            if vec.dtype == np.int8: return VTK_INT8
-            elif vec.dtype == np.uint8: return VTK_UINT8
-            elif vec.dtype == np.int16: return VTK_INT16
-            elif vec.dtype == np.uint16: return VTK_UINT16
-            elif vec.dtype == np.int32: return VTK_INT32
-            elif vec.dtype == np.uint32: return VTK_UINT32
-            elif vec.dtype == np.int64: return VTK_INT64
-            elif vec.dtype == np.uint64: return VTK_UINT64
-            elif vec.dtype == np.float32: return VTK_FLOAT32
-            elif vec.dtype == np.float64: return VTK_FLOAT64
+            if vec.dtype == np.int8:
+                return VTK_INT8
+            elif vec.dtype == np.uint8:
+                return VTK_UINT8
+            elif vec.dtype == np.int16:
+                return VTK_INT16
+            elif vec.dtype == np.uint16:
+                return VTK_UINT16
+            elif vec.dtype == np.int32:
+                return VTK_INT32
+            elif vec.dtype == np.uint32:
+                return VTK_UINT32
+            elif vec.dtype == np.int64:
+                return VTK_INT64
+            elif vec.dtype == np.uint64:
+                return VTK_UINT64
+            elif vec.dtype == np.float32:
+                return VTK_FLOAT32
+            elif vec.dtype == np.float64:
+                return VTK_FLOAT64
             else:
-                raise TypeError, "Unsupported vector type '%s' in VTK writer" % (vec.dtype)
+                raise TypeError(
+                        "Unsupported vector type '%s' in VTK writer" % (vec.dtype))
 
         if not isinstance(container, np.ndarray):
-            raise ValueError, "cannot convert object of type `%s' to DataArray" % type(container)
+            raise ValueError(
+                    "cannot convert object of type `%s' to DataArray"
+                    % type(container))
 
         if not isinstance(container, np.ndarray):
             raise TypeError("expected numpy array, got '%s' instead"
@@ -275,8 +330,10 @@ class DataArray(object):
             if vector_format == VF_LIST_OF_COMPONENTS:
                 container = container.T.copy()
 
-            assert len(container.shape) == 2, "numpy vectors of rank >2 are not supported"
-            assert container.strides[1] == container.itemsize, "2D numpy arrays must be row-major"
+            assert len(container.shape) == 2, \
+                    "numpy vectors of rank >2 are not supported"
+            assert container.strides[1] == container.itemsize, \
+                    "2D numpy arrays must be row-major"
             if vector_padding > container.shape[1]:
                 container = np.asarray(np.hstack((
                         container,
@@ -330,9 +387,12 @@ class DataArray(object):
         return visitor.gen_data_array(self)
 
 
-
-
 class UnstructuredGrid(object):
+    """
+    .. automethod:: add_pointdata
+    .. automethod:: add_celldata
+    """
+
     def __init__(self, points, cells, cell_types):
         self.point_count = len(points)
         self.cell_count = len(cells)
@@ -379,9 +439,12 @@ class UnstructuredGrid(object):
         self.celldata.append(data_array)
 
 
-
-
 class StructuredGrid(object):
+    """
+    .. automethod:: add_pointdata
+    .. automethod:: add_celldata
+    """
+
     def __init__(self, mesh):
         self.mesh = mesh
         if mesh.shape[0] != 3:
@@ -411,8 +474,6 @@ class StructuredGrid(object):
         self.celldata.append(data_array)
 
 
-
-
 def make_vtkfile(filetype, compressor):
     import sys
     if sys.byteorder == "little":
@@ -424,18 +485,17 @@ def make_vtkfile(filetype, compressor):
     if compressor == "zlib":
         kwargs["compressor"] = "vtkZLibDataCompressor"
 
-    return XMLElement("VTKFile", type=filetype, version="0.1", byte_order=bo, **kwargs)
-
-
+    return XMLElement("VTKFile",
+            type=filetype, version="0.1", byte_order=bo, **kwargs)
 
 
 class XMLGenerator(object):
     def __init__(self, compressor=None):
         if compressor == "zlib":
             try:
-                import zlib
+                import zlib  # noqa
             except ImportError:
-                compress = False
+                compressor = None
         elif compressor is None:
             pass
         else:
@@ -444,6 +504,8 @@ class XMLGenerator(object):
         self.compressor = compressor
 
     def __call__(self, vtkobj):
+        """Return an :class:`XMLElement`."""
+
         child = self.rec(vtkobj)
         vtkf = make_vtkfile(child.tag, self.compressor)
         vtkf.add_child(child)
@@ -453,10 +515,11 @@ class XMLGenerator(object):
         return vtkobj.invoke_visitor(self)
 
 
-
-
-
 class InlineXMLGenerator(XMLGenerator):
+    """
+    .. automethod:: __call__
+    """
+
     def gen_unstructured_grid(self, ugrid):
         el = XMLElement("UnstructuredGrid")
         piece = XMLElement("Piece",
@@ -526,9 +589,11 @@ class InlineXMLGenerator(XMLGenerator):
         return el
 
 
-
-
 class AppendedDataXMLGenerator(InlineXMLGenerator):
+    """
+    .. automethod:: __call__
+    """
+
     def __init__(self, compressor=None):
         InlineXMLGenerator.__init__(self, compressor)
 
@@ -537,6 +602,8 @@ class AppendedDataXMLGenerator(InlineXMLGenerator):
         self.app_data.add_child("_")
 
     def __call__(self, vtkobj):
+        """Return an :class:`XMLElement`."""
+
         xmlroot = XMLGenerator.__call__(self, vtkobj)
         self.app_data.add_child("\n")
         xmlroot.children[0].add_child(self.app_data)
@@ -552,9 +619,11 @@ class AppendedDataXMLGenerator(InlineXMLGenerator):
         return el
 
 
-
-
 class ParallelXMLGenerator(XMLGenerator):
+    """
+    .. automethod:: __call__
+    """
+
     def __init__(self, pathnames):
         XMLGenerator.__init__(self, compressor=None)
 
@@ -589,12 +658,11 @@ class ParallelXMLGenerator(XMLGenerator):
         return el
 
 
-
-
 def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
     grid = StructuredGrid(mesh)
 
     from pytools.obj_array import with_object_array_or_scalar
+
     def do_reshape(fld):
         return fld.T.copy().reshape(-1)
 
@@ -616,5 +684,3 @@ def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
     outf = open(file_name, "w")
     AppendedDataXMLGenerator()(grid).write(outf)
     outf.close()
-
-
