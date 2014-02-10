@@ -5,10 +5,15 @@ Installation
 
 This tutorial will walk you through the process of installing PyVisfile. If
 you'd like to only use PyVisfile's Vtk writing capability, you may skip to
-:ref:`download-and-unpack`.  If you'd also like to write Silo files, you need
-to follow the entire set of instructions.
+:ref:`download-and-unpack`. Or, even easier, this command should install
+:mod:`pyvisfile`::
 
-To follow, you really only need three basic things:
+    pip install pyvisfile
+
+If you'd also like to write Silo files, you need to follow the entire set of
+instructions for now.
+
+To follow, you need basic things:
 
 * A UNIX-like machine with web access.
 * A C++ compiler, preferably a Version 4.x gcc.
