@@ -447,12 +447,11 @@ class StructuredGrid(object):
 
     def __init__(self, mesh):
         self.mesh = mesh
-        if mesh.shape[0] != 3:
-            raise ValueError("Mesh must consist of three-dimensional points")
+        self.ndims = mesh.shape[0]
 
         self.shape = mesh.shape[1:]
         self.points = DataArray(
-                "points", mesh.T.copy().reshape(-1, 3),
+                "points", mesh.T.copy().reshape(-1, self.ndims),
                 vector_format=VF_LIST_OF_VECTORS)
 
         self.pointdata = []
@@ -554,10 +553,10 @@ class InlineXMLGenerator(XMLGenerator):
         extent = []
         for dim in range(3):
             extent.append(0)
-            if dim < len(sgrid.shape):
+            if dim < sgrid.ndims:
                 extent.append(sgrid.shape[dim]-1)
             else:
-                extent.append(1)
+                extent.append(0)
         extent_str = " ".join(str(i) for i in extent)
 
         el = XMLElement("StructuredGrid", WholeExtent=extent_str)
