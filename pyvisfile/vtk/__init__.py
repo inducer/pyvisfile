@@ -394,7 +394,6 @@ class UnstructuredGrid(object):
     """
 
     def __init__(self, points, cells, cell_types):
-        self.point_count = len(points)
         self.cell_count = len(cells)
 
         self.point_count, self.points = points
