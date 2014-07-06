@@ -445,12 +445,20 @@ class StructuredGrid(object):
     """
 
     def __init__(self, mesh):
+        """
+        :arg mesh: has shape *(ndims, nx, ny, nz)*
+            (ny, nz may be omitted)
+        """
         self.mesh = mesh
-        self.ndims = mesh.shape[0]
 
-        self.shape = mesh.shape[1:]
+        self.ndims = mesh.shape[0]
+        transpose_arg = tuple(range(1, 1+self.ndims)) + (0,)
+        mesh = mesh.transpose(transpose_arg).copy()
+
+        self.shape = mesh.shape[:-1][::-1]
+        mesh = mesh.reshape(-1, self.ndims)
         self.points = DataArray(
-                "points", mesh.T.copy().reshape(-1, self.ndims),
+                "points", mesh,
                 vector_format=VF_LIST_OF_VECTORS)
 
         self.pointdata = []
