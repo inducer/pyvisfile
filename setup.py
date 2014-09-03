@@ -136,7 +136,8 @@ def main():
             ext_package="pyvisfile.silo",
             ext_modules=ext_modules,
 
-            zip_safe=False)
+            zip_safe=False,
+            use_2to3=True)
 
 
 if __name__ == '__main__':
