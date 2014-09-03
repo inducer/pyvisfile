@@ -58,7 +58,7 @@ def main():
             library_dirs=LIBRARY_DIRS + EXTRA_LIBRARY_DIRS,
             libraries=LIBRARIES + EXTRA_LIBRARIES,
             extra_compile_args=conf["CXXFLAGS"],
-            define_macros=list(EXTRA_DEFINES.iteritems()),
+            define_macros=list(EXTRA_DEFINES.items()),
             ))
 
         requirements.append("PyUblas>=0.92.1")
