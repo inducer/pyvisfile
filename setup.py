@@ -39,9 +39,9 @@ def main():
     EXTRA_LIBRARIES = []
 
     ver_dic = {}
-    exec(compile(
-        open("pyvisfile/__init__.py").read(),
-        "pyvisfile/__init__.py", 'exec'), ver_dic)
+    ver_file_name = "pyvisfile/__init__.py"
+    with open(ver_file_name, "r") as inf:
+        exec(compile(inf.read(), ver_file_name, 'exec'), ver_dic)
 
     requirements = []
     ext_modules = []
@@ -101,21 +101,27 @@ def main():
             for the latest Silo source code.
             """,
             classifiers=[
-               'Development Status :: 4 - Beta',
-               'Intended Audience :: Developers',
-               'Intended Audience :: Other Audience',
-               'Intended Audience :: Science/Research',
-               'License :: OSI Approved :: MIT License',
-               'Natural Language :: English',
-               'Programming Language :: C++',
-               'Programming Language :: Python',
-               'Topic :: Multimedia :: Graphics :: 3D Modeling',
-               'Topic :: Scientific/Engineering',
-               'Topic :: Scientific/Engineering :: Mathematics',
-               'Topic :: Scientific/Engineering :: Physics',
-               'Topic :: Scientific/Engineering :: Visualization',
-               'Topic :: Software Development :: Libraries',
-               ],
+                'Development Status :: 4 - Beta',
+                'Intended Audience :: Developers',
+                'Intended Audience :: Other Audience',
+                'Intended Audience :: Science/Research',
+                'License :: OSI Approved :: MIT License',
+                'Natural Language :: English',
+                'Programming Language :: C++',
+                'Programming Language :: Python',
+                'Programming Language :: Python :: 2',
+                'Programming Language :: Python :: 2.6',
+                'Programming Language :: Python :: 2.7',
+                'Programming Language :: Python :: 3',
+                'Programming Language :: Python :: 3.3',
+                'Programming Language :: Python :: 3.4',
+                'Topic :: Multimedia :: Graphics :: 3D Modeling',
+                'Topic :: Scientific/Engineering',
+                'Topic :: Scientific/Engineering :: Mathematics',
+                'Topic :: Scientific/Engineering :: Physics',
+                'Topic :: Scientific/Engineering :: Visualization',
+                'Topic :: Software Development :: Libraries',
+                ],
 
             author=u"Andreas Kloeckner",
             author_email="inform@tiker.net",
@@ -125,7 +131,7 @@ def main():
             # dependencies
             setup_requires=requirements,
             install_requires=[
-                    "pytools>=2013.2"
+                    "pytools>=2013.2",
                     ] + requirements,
 
             packages=[
@@ -136,8 +142,7 @@ def main():
             ext_package="pyvisfile.silo",
             ext_modules=ext_modules,
 
-            zip_safe=False,
-            use_2to3=True)
+            zip_safe=False)
 
 
 if __name__ == '__main__':

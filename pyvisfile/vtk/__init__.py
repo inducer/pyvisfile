@@ -3,6 +3,10 @@
 __copyright__ = "Copyright (C) 2007 Andreas Kloeckner"
 import numpy as np
 
+import sys
+if sys.version_info > (3,):
+    buffer = memoryview
+
 __doc__ = """
 
 Constants
@@ -143,7 +147,7 @@ class XMLElement(XMLElementBase):
     def write(self, file):
         attr_string = "".join(
                 " %s=\"%s\"" % (key, value)
-                for key, value in self.attributes.iteritems())
+                for key, value in self.attributes.items())
         if self.children:
             file.write("<%s%s>\n" % (self.tag, attr_string))
             for child in self.children:
@@ -217,8 +221,8 @@ class Base64EncodedBuffer:
         from struct import pack
         from base64 import b64encode
         self.b64header = b64encode(
-                pack(_U32CHAR, len(buffer)))
-        self.b64data = b64encode(buffer)
+                pack(_U32CHAR, len(buffer))).decode()
+        self.b64data = b64encode(buffer).decode()
 
     def encoder(self):
         return "base64"
