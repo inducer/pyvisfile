@@ -220,8 +220,12 @@ class Base64EncodedBuffer:
     def __init__(self, buffer):
         from struct import pack
         from base64 import b64encode
+        if sys.version_info > (3,):
+            length = buffer.nbytes
+        else:
+            length = len(buffer)
         self.b64header = b64encode(
-                pack(_U32CHAR, len(buffer))).decode()
+                pack(_U32CHAR, length)).decode()
         self.b64data = b64encode(buffer).decode()
 
     def encoder(self):
