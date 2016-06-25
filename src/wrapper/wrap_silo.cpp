@@ -503,6 +503,7 @@ namespace
 
   // {{{ data wrappers
 
+
   // {{{ data wrapper helpers
 #define PYVISFILE_TYPED_ACCESSOR(TYPE,NAME) \
   TYPE NAME() const { return m_data->NAME; }
@@ -571,6 +572,7 @@ namespace
   PYVISFILE_CURVE_DATA_GETTER(y);
 
   // }}}
+
 
   // {{{ quad mesh wrapper
 
@@ -724,10 +726,163 @@ namespace
     return tuple(result);
   }
 
-  // }}}
 
   // }}}
 
+  // }}}
+
+
+ // {{{ ucd mesh wrapper
+
+  class DBucdmeshWrapper : boost::noncopyable
+  {
+    public:
+      DBucdmesh   *m_data;
+
+      DBucdmeshWrapper(DBucdmesh *data)
+        : m_data(data)
+      { }
+      ~DBucdmeshWrapper()
+      {
+        DBFreeUcdmesh(m_data);
+      }
+
+      PYVISFILE_TYPED_ACCESSOR(int, id);
+      PYVISFILE_TYPED_ACCESSOR(int, block_no);
+      PYVISFILE_TYPED_ACCESSOR(int, group_no);
+      PYVISFILE_STRING_ACCESSOR(name);
+      PYVISFILE_TYPED_ACCESSOR(int, cycle);
+      PYVISFILE_TYPED_ACCESSOR(int, coord_sys);
+      PYVISFILE_TYPED_ACCESSOR(int, topo_dim);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(std::string, units, 3);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(std::string, labels, 3);
+      //not wrapped: coords
+//      PYVISFILE_TYPED_ACCESSOR(int, datatype);
+      PYVISFILE_TYPED_ACCESSOR(float, time);
+      PYVISFILE_TYPED_ACCESSOR(double, dtime);
+
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(float, min_extents, 6);
+      PYVISFILE_TYPED_ARRAY_ACCESSOR(float, max_extents, 6);
+
+      PYVISFILE_TYPED_ACCESSOR(int, ndims);
+      PYVISFILE_TYPED_ACCESSOR(int, nnodes);
+      PYVISFILE_TYPED_ACCESSOR(int, origin);
+      //not wrapped: faces, zones, edges, gnodeno, nodeno, phzones
+      //
+      PYVISFILE_TYPED_ACCESSOR(int, guihide);
+      PYVISFILE_STRING_ACCESSOR(mrgtree_name);
+
+      PYVISFILE_TYPED_ACCESSOR(int, tv_connectivity);
+      PYVISFILE_TYPED_ACCESSOR(int, disjoint_mode);
+  };
+
+  object ucdmesh_coords(object py_ucdmesh)
+  {
+    DBucdmeshWrapper &ucdmesh((extract<DBucdmeshWrapper &>(py_ucdmesh)));
+
+    list result;
+    for (unsigned i = 0; i < ucdmesh.m_data->ndims; ++i)
+    {
+      npy_intp dims[] = { ucdmesh.m_data->dims[i] };
+      handle<> coord_array(PyArray_SimpleNewFromData(1, dims,
+            silo_typenum_to_numpy_typenum(ucdmesh.m_data->datatype),
+            ucdmesh.m_data->coords[i]));
+      PyArray_BASE(coord_array.get()) = py_ucdmesh.ptr();
+      Py_INCREF(PyArray_BASE(coord_array.get()));
+      result.append(coord_array);
+    }
+
+    return tuple(result);
+  }
+
+  // }}}
+
+  // {{{ ucd var wrapper
+
+  class DBucdvarWrapper : boost::noncopyable
+  {
+    public:
+      DBucdvar   *m_data;
+
+      DBucdvarWrapper(DBucdvar *data)
+        : m_data(data)
+      { }
+      ~DBucdvarWrapper()
+      {
+        DBFreeUcdvar(m_data);
+      }
+
+      PYVISFILE_TYPED_ACCESSOR(int, id);
+      PYVISFILE_STRING_ACCESSOR(name);
+      PYVISFILE_TYPED_ACCESSOR(int, cycle);
+      PYVISFILE_STRING_ACCESSOR(units);
+      PYVISFILE_STRING_ACCESSOR(label);
+
+      PYVISFILE_TYPED_ACCESSOR(float, time);
+      PYVISFILE_TYPED_ACCESSOR(double, dtime);
+
+      PYVISFILE_TYPED_ACCESSOR(int, meshid);
+      // not wrapped: vals
+      // PYVISFILE_TYPED_ACCESSOR(int, datatype);
+
+      PYVISFILE_TYPED_ACCESSOR(int, nels);
+      PYVISFILE_TYPED_ACCESSOR(int, nvals);
+      PYVISFILE_TYPED_ACCESSOR(int, ndims);
+      PYVISFILE_TYPED_ACCESSOR(int, origin);
+
+      PYVISFILE_TYPED_ACCESSOR(int, centering);
+      // not wrapped: mixvals
+      PYVISFILE_TYPED_ACCESSOR(int, mixlen);
+
+      PYVISFILE_TYPED_ACCESSOR(int, use_specmf);
+      PYVISFILE_TYPED_ACCESSOR(int, ascii_labels);
+
+      PYVISFILE_STRING_ACCESSOR(meshname);
+      PYVISFILE_TYPED_ACCESSOR(int, guihide);
+      // not wrapped: region_pnames
+  };
+
+  object ucdvar_vals(object py_ucdvar)
+  {
+    DBucdvarWrapper &ucdvar((extract<DBucdvarWrapper &>(py_ucdvar)));
+
+    npy_intp dims[3];
+
+    for (unsigned i = 0; i < ucdvar.m_data->ndims; ++i)
+      dims[i] = ucdvar.m_data->dims[i];
+
+    int ary_flags = 0;
+    if (ucdvar.m_data->major_order)
+      ary_flags |= NPY_CARRAY;
+    else
+      ary_flags |= NPY_FARRAY;
+
+    list result;
+    for (unsigned i = 0; i < ucdvar.m_data->nvals; ++i)
+    {
+      PyArray_Descr *tp_descr;
+      tp_descr = PyArray_DescrNewFromType(
+          silo_typenum_to_numpy_typenum(ucdvar.m_data->datatype));
+      if (tp_descr == 0)
+        throw error_already_set();
+
+      handle<> val_array(PyArray_NewFromDescr(
+          &PyArray_Type, tp_descr,
+          ucdvar.m_data->ndims, dims, /*strides*/ NULL,
+          ucdvar.m_data->vals[i], ary_flags, /*obj*/NULL));
+
+      PyArray_BASE(val_array.get()) = py_ucdvar.ptr();
+      Py_INCREF(PyArray_BASE(val_array.get()));
+      result.append(val_array);
+    }
+
+    return tuple(result);
+  }
+
+
+  // }}}
+
+  // }}}
 
 
 
@@ -771,7 +926,7 @@ namespace
     if (!obj) \
       throw std::runtime_error("DBGet" #CAMEL_TYPE " failed"); \
     return new DB##LOWER_TYPE##Wrapper(obj); \
-  } 
+  }
 
 
 
@@ -779,7 +934,8 @@ namespace
   class DBfileWrapper : boost::noncopyable
   {
     public:
-      // {{{ construction and administrativa
+
+        // {{{ construction and administrativa
       DBfileWrapper(const char *name, int target, int mode)
         : m_db_is_open(false),
         m_dbfile(DBOpen(name, target, mode))
@@ -1590,6 +1746,40 @@ BOOST_PYTHON_MODULE(_internal)
       .add_property("coords", make_function(quadmesh_coords))
       ;
   }
+  {
+    typedef DBucdmeshWrapper cl;
+    class_<cl, boost::noncopyable>("DBUcdMesh", no_init)
+      .DEF_SIMPLE_RO_PROPERTY(id)
+      .DEF_SIMPLE_RO_PROPERTY(block_no)
+      .DEF_SIMPLE_RO_PROPERTY(group_no)
+      .DEF_SIMPLE_RO_PROPERTY(name)
+      .DEF_SIMPLE_RO_PROPERTY(cycle)
+      .DEF_SIMPLE_RO_PROPERTY(coord_sys)
+      .DEF_SIMPLE_RO_PROPERTY(topo_dim)
+      .DEF_SIMPLE_RO_PROPERTY(units)
+      .DEF_SIMPLE_RO_PROPERTY(labels)
+      .DEF_SIMPLE_RO_PROPERTY(coords)
+      .DEF_SIMPLE_RO_PROPERTY(datatype)
+      .DEF_SIMPLE_RO_PROPERTY(time)
+      .DEF_SIMPLE_RO_PROPERTY(dtime)
+      .DEF_SIMPLE_RO_PROPERTY(min_extents)
+      .DEF_SIMPLE_RO_PROPERTY(max_extents)
+      .DEF_SIMPLE_RO_PROPERTY(ndims)
+      .DEF_SIMPLE_RO_PROPERTY(nnodes)
+      .DEF_SIMPLE_RO_PROPERTY(origin)
+      .DEF_SIMPLE_RO_PROPERTY(faces)
+      .DEF_SIMPLE_RO_PROPERTY(zones)
+      .DEF_SIMPLE_RO_PROPERTY(edges)
+      .DEF_SIMPLE_RO_PROPERTY(gnodeno)
+      .DEF_SIMPLE_RO_PROPERTY(nodeno)
+      .DEF_SIMPLE_RO_PROPERTY(phzones)
+      .DEF_SIMPLE_RO_PROPERTY(guihide)
+      .DEF_SIMPLE_RO_PROPERTY(mrgtree_name)
+      .DEF_SIMPLE_RO_PROPERTY(tv_connectivity)
+      .DEF_SIMPLE_RO_PROPERTY(disjoint_mode)
+      .add_property("coords", make_function(ucdmesh_coords))
+      ;
+  }
 
   {
     typedef DBquadvarWrapper cl;
@@ -1622,6 +1812,38 @@ BOOST_PYTHON_MODULE(_internal)
       .add_property("vals", make_function(quadvar_vals))
       ;
   }
+
+  {
+    typedef DBucdvarWrapper cl;
+    class_<cl, boost::noncopyable>("DBUcdVar", no_init)
+      .DEF_SIMPLE_RO_PROPERTY(id)
+      .DEF_SIMPLE_RO_PROPERTY(name)
+      .DEF_SIMPLE_RO_PROPERTY(cycle)
+      .DEF_SIMPLE_RO_PROPERTY(units)
+      .DEF_SIMPLE_RO_PROPERTY(label)
+      .DEF_SIMPLE_RO_PROPERTY(time)
+      .DEF_SIMPLE_RO_PROPERTY(dtime)
+
+      .DEF_SIMPLE_RO_PROPERTY(meshid)
+      .DEF_SIMPLE_RO_PROPERTY(vals)
+      .DEF_SIMPLE_RO_PROPERTY(datatype)
+
+      .DEF_SIMPLE_RO_PROPERTY(nels)
+      .DEF_SIMPLE_RO_PROPERTY(nvals)
+      .DEF_SIMPLE_RO_PROPERTY(ndims)
+      .DEF_SIMPLE_RO_PROPERTY(origin)
+      .DEF_SIMPLE_RO_PROPERTY(centering)
+      .DEF_SIMPLE_RO_PROPERTY(mixvals)
+      .DEF_SIMPLE_RO_PROPERTY(mixlen)
+
+      .DEF_SIMPLE_RO_PROPERTY(use_specmf)
+      .DEF_SIMPLE_RO_PROPERTY(ascii_labels)
+      .DEF_SIMPLE_RO_PROPERTY(meshname)
+      .DEF_SIMPLE_RO_PROPERTY(guihide)
+      .add_property("vals", make_function(ucdvar_vals))
+      ;
+  }
+
 
   {
     typedef DBtocCopy cl;
@@ -1668,6 +1890,7 @@ BOOST_PYTHON_MODULE(_internal)
 #endif
   DEF_SIMPLE_FUNCTION(get_silo_version);
 }
+
 
 // }}}
 
