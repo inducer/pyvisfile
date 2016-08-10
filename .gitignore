@@ -26,3 +26,5 @@ distribute-*.egg
 *.vtu
 *.vts
 .eggs
+
+.cache
