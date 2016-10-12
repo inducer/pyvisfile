@@ -22,6 +22,7 @@ def get_config_schema():
 
 
 def main():
+    from setuptools import find_packages
     from aksetup_helper import hack_distutils, get_config, setup, \
             PyUblasExtension
 
@@ -134,11 +135,7 @@ def main():
                     "pytools>=2013.2",
                     ] + requirements,
 
-            packages=[
-                    "pyvisfile",
-                    "pyvisfile.silo",
-                    "pyvisfile.vtk"
-                    ],
+            packages=find_packages(),
             ext_package="pyvisfile.silo",
             ext_modules=ext_modules,
 
