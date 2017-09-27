@@ -133,6 +133,7 @@ def main():
             setup_requires=requirements,
             install_requires=[
                     "pytools>=2013.2",
+                    "six",
                     ] + requirements,
 
             packages=find_packages(),
