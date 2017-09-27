@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from pyvisfile.vtk import write_structured_grid
 
 import numpy as np

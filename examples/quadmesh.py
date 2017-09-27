@@ -1,5 +1,6 @@
 # modified from original code by Matthieu Haefele (IPP, Max-Planck-Gesellschaft)
 
+from __future__ import absolute_import
 import numpy
 import pyvisfile.silo as silo
 

@@ -1,5 +1,6 @@
 # contributed by Luke Olson
 
+from __future__ import absolute_import
 import numpy as np
 
 n = 50
