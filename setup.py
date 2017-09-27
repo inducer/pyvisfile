@@ -82,7 +82,7 @@ def main():
               `VisIt <https://wci.llnl.gov/codes/visit/>`_
               large-scale visualization program.
 
-            pyvisfiles supports many mesh geometries, such such as unstructured
+            pyvisfile supports many mesh geometries, such such as unstructured
             and rectangular structured meshes, particle meshes, as well as
             scalar and vector variables on them. In addition, pyvisfile allows the
             semi-automatic writing of parallelization-segmented visualization files
