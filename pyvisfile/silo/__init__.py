@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
+from __future__ import division, absolute_import
+import six
 
 
 """PyVisfile exposes the functionality of libsilo to Python using the
@@ -35,6 +36,8 @@ def _ignore_extra_int_vector_warning():
     from warnings import filterwarnings
     filterwarnings("ignore", module="pyvisfile.silo",
             category=RuntimeWarning, lineno=43)
+
+
 _ignore_extra_int_vector_warning()
 
 
@@ -55,9 +58,12 @@ _intnl = sys.modules["pyvisfile.silo._internal"]
 
 
 def _export_symbols():
-    for name, value in _intnl.symbols().iteritems():
+    for name, value in six.iteritems(_intnl.symbols()):
         globals()[name] = value
+
+
 _export_symbols()
+
 
 DBObjectType = _intnl.DBObjectType
 DBdatatype = _intnl.DBdatatype
@@ -76,13 +82,14 @@ def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
     ol = _intnl.DBOptlist(optcount, optcount * 150)
 
-    for key, value in ol_dict.iteritems():
+    for key, value in six.iteritems(ol_dict):
         if isinstance(value, int):
             ol.add_int_option(key, value)
         elif isinstance(value, tuple):
             for el in value:
                 if not isinstance(el, int):
-                    raise TypeError('For now only tuples of int are implemented as option value!')
+                    raise TypeError('For now only tuples of int are '
+                            'implemented as option value!')
             ol.add_option(key, value)
         else:
             ol.add_option(key, value)
