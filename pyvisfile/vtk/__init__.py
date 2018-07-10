@@ -410,7 +410,7 @@ class UnstructuredGrid(object):
         try:
             self.cell_count, self.cell_connectivity, \
                     self.cell_offsets = cells
-        except:
+        except Exception:
             self.cell_count = len(cell_types)
 
             offsets = np.cumsum(np.fromiter(
