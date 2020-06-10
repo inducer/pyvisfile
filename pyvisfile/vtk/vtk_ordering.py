@@ -157,7 +157,7 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):
             )
 
     assert len(node_tuples) == len(node_to_index)
-    return [node_tuples[v] for v in node_tuples]
+    return [node_to_index[v] for v in node_tuples]
 
 # }}}
 

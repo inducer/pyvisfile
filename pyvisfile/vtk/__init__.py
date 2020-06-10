@@ -240,7 +240,7 @@ class XMLRoot(XMLElementBase):
 # }}}
 
 
-# {{{
+# {{{ encoded buffers
 
 _U32CHAR = np.dtype(np.uint32).char
 
@@ -347,6 +347,10 @@ class Base64ZLibEncodedBuffer:
 
         return len(self.b64header) + len(self.b64data)
 
+# }}}
+
+
+# {{{ data array
 
 class DataArray(object):
     def __init__(self, name, container, vector_padding=3,
@@ -438,6 +442,10 @@ class DataArray(object):
     def invoke_visitor(self, visitor):
         return visitor.gen_data_array(self)
 
+# }}}
+
+
+# {{{ grids
 
 class UnstructuredGrid(object):
     """
@@ -530,8 +538,12 @@ class StructuredGrid(object):
     def add_celldata(self, data_array):
         self.celldata.append(data_array)
 
+# }}}
 
-def make_vtkfile(filetype, compressor):
+
+# {{{ vtk xml writers
+
+def make_vtkfile(filetype, compressor, version="0.1"):
     import sys
     if sys.byteorder == "little":
         bo = "LittleEndian"
@@ -543,11 +555,11 @@ def make_vtkfile(filetype, compressor):
         kwargs["compressor"] = "vtkZLibDataCompressor"
 
     return XMLElement("VTKFile",
-            type=filetype, version="0.1", byte_order=bo, **kwargs)
+            type=filetype, version=version, byte_order=bo, **kwargs)
 
 
 class XMLGenerator(object):
-    def __init__(self, compressor=None):
+    def __init__(self, compressor=None, vtk_file_version=None):
         if compressor == "zlib":
             try:
                 import zlib  # noqa
@@ -558,13 +570,18 @@ class XMLGenerator(object):
         else:
             raise ValueError("Invalid compressor name `%s'" % compressor)
 
+        if vtk_file_version is None:
+            vtk_file_version = "0.1"
+
+        self.vtk_file_version = vtk_file_version
         self.compressor = compressor
 
     def __call__(self, vtkobj):
         """Return an :class:`XMLElement`."""
 
         child = self.rec(vtkobj)
-        vtkf = make_vtkfile(child.tag, self.compressor)
+        vtkf = make_vtkfile(child.tag, self.compressor,
+                version=self.vtk_file_version)
         vtkf.add_child(child)
         return XMLRoot(vtkf)
 
@@ -658,8 +675,8 @@ class AppendedDataXMLGenerator(InlineXMLGenerator):
     .. automethod:: __call__
     """
 
-    def __init__(self, compressor=None):
-        InlineXMLGenerator.__init__(self, compressor)
+    def __init__(self, compressor=None, vtk_file_version=None):
+        InlineXMLGenerator.__init__(self, compressor, vtk_file_version)
 
         self.base64_len = 0
         self.app_data = XMLElement("AppendedData", encoding="base64")
