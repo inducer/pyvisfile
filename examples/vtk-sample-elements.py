@@ -1,32 +1,47 @@
 import numpy as np
+import numpy.linalg as la
+
 import matplotlib.pyplot as plt
 
 
-def plot_node_ordering(filename, points):
+VTK_LAGRANGE_SIMPLICES = [
+        "VTK_LAGRANGE_CURVE",
+        "VTK_LAGRANGE_TRIANGLE",
+        "VTK_LAGRANGE_TETRAHEDRON",
+        ]
+
+
+def plot_node_ordering(filename, points, show=False):
+    if points.shape[0] == 1:
+        points = np.hstack([points, np.zeros_like(points)])
+
     if points.shape[0] == 2:
         fig = plt.figure(figsize=(8, 8), dpi=300)
         ax = fig.gca()
         ax.plot(points[0], points[1], "o")
     elif points.shape[0] == 3:
-        from mpl_toolkits.mplot3d import art3d
+        from mpl_toolkits.mplot3d import art3d      # noqa: F401
 
         fig = plt.figure(figsize=(8, 8), dpi=300)
         ax = fig.gca(projection="3d")
         ax.plot(points[0], points[1], points[2], "o")
+
+        ax.view_init(0, 90)
     else:
-        raise ValueError("dimension not supported")
+        raise ValueError("dimension not supported: %d" % points.shape[0])
 
     ax.grid()
     for i, p in enumerate(points.T):
-        ax.text(*p, str(i), color="k")
+        if abs(p[1]) < 1.0e-14:
+            ax.text(*p, str(i), color="k", fontsize=12)
 
     print("output: %s.png" % filename)
     fig.savefig(filename)
-    if 0:
+    if show:
         plt.show(block=True)
 
 
-def create_sample_element(cell_type, order=3):
+def create_sample_element(cell_type, order=3, visualize=True):
     try:
         import vtk
         from vtkmodules.util.numpy_support import vtk_to_numpy
@@ -44,31 +59,49 @@ def create_sample_element(cell_type, order=3):
     if "LAGRANGE" in cell_type:
         source.SetCellOrder(order)
     source.Update()
-
-    filename = "sample_%s.vtu" % cell_type.lower()
-    print("cell type: %s" % cell_type)
-    print("output: %s" % filename)
-
     grid = source.GetOutput()
 
-    # write vtk file
-    writer = vtk.vtkXMLUnstructuredGridWriter()
-    writer.SetFileName(filename)
-    writer.SetCompressorTypeToNone()
-    writer.SetDataModeToAscii()
-    writer.SetInputData(grid)
-    writer.Write()
+    if visualize:
+        filename = "sample_%s.vtu" % cell_type.lower()
+        print("cell type: %s" % cell_type)
+        print("output: %s" % filename)
 
-    # write numbered matplotlib file
+        writer = vtk.vtkXMLUnstructuredGridWriter()
+        writer.SetFileName(filename)
+        writer.SetCompressorTypeToNone()
+        writer.SetDataModeToAscii()
+        writer.SetInputData(grid)
+        writer.Write()
+
     cell = grid.GetCell(0)
     points = vtk_to_numpy(cell.GetPoints().GetData()).T
 
     dim = cell.GetCellDimension()
-    points = points[0:max(dim, 2)]
+    points = points[0:dim]
 
-    filename = "sample_%s" % cell_type.lower()
-    plot_node_ordering(filename, points)
+    if cell_type in VTK_LAGRANGE_SIMPLICES:
+        from pyvisfile.vtk.vtk_ordering import vtk_lagrange_simplex_node_tuples
+        nodes = np.array(vtk_lagrange_simplex_node_tuples(dim, order))
+
+        error = la.norm(nodes/order - points.T)
+        print("error[%d]: %.5e" % (order, error))
+        assert error < 5.0e-7
+
+    if visualize:
+        filename = "sample_%s" % cell_type.lower()
+        plot_node_ordering(filename, points, show=False)
+
+        if cell_type in VTK_LAGRANGE_SIMPLICES:
+            filename = "sample_%s_new" % cell_type.lower()
+            plot_node_ordering(filename, nodes.T, show=False)
 
 
 if __name__ == "__main__":
-    create_sample_element("VTK_LAGRANGE_TRIANGLE", order=5)
+    if 1:
+        for cell_type in VTK_LAGRANGE_SIMPLICES:
+            print("cell_type: ", cell_type)
+            for order in range(1, 11):
+                create_sample_element(
+                        cell_type, order=order, visualize=False)
+
+    create_sample_element("VTK_LAGRANGE_TETRAHEDRON", order=4)
