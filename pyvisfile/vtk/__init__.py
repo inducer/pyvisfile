@@ -639,15 +639,15 @@ class InlineXMLGenerator(XMLGenerator):
         return el
 
     def gen_data_array(self, data):
-        keys = {
+        attrs = {
             "type": data.type,
             "Name": data.name,
             "format": "binary"
         }
         if data.components > 1:
-            keys["NumberOfComponents"] = data.components
+            attrs["NumberOfComponents"] = data.components
 
-        el = XMLElement("DataArray", **keys)
+        el = XMLElement("DataArray", **attrs)
         data.encode(self.compressor, el)
         el.add_child("\n")
         return el
@@ -674,16 +674,16 @@ class AppendedDataXMLGenerator(InlineXMLGenerator):
         return xmlroot
 
     def gen_data_array(self, data):
-        keys = {
+        attrs = {
             "type": data.type,
             "Name": data.name,
             "format": "appended",
             "offset": self.base64_len,
         }
         if data.components > 1:
-            keys["NumberOfComponents"] = data.components
+            attrs["NumberOfComponents"] = data.components
 
-        el = XMLElement("DataArray", **keys)
+        el = XMLElement("DataArray", **attrs)
         self.base64_len += data.encode(self.compressor, self.app_data)
 
         return el
