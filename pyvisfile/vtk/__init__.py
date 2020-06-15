@@ -571,6 +571,7 @@ class XMLGenerator(object):
             raise ValueError("Invalid compressor name `%s'" % compressor)
 
         if vtk_file_version is None:
+            # https://www.paraview.org/Wiki/VTK_XML_Formats
             vtk_file_version = "0.1"
 
         self.vtk_file_version = vtk_file_version
