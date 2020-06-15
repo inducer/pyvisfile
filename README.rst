@@ -1,3 +1,16 @@
+PyVisfile: Write Vtk/Silo Visualization Files Efficiently
+---------------------------------------------------------
+
+.. image:: https://gitlab.tiker.net/inducer/pyvisfile/badges/master/pipeline.svg
+    :alt: Gitlab Build Status
+    :target: https://gitlab.tiker.net/inducer/pyvisfile/commits/master
+.. image:: https://github.com/inducer/pyvisfile/workflows/CI/badge.svg?branch=master&event=push
+    :alt: Github Build Status
+    :target: https://github.com/inducer/pyvisfile/actions?query=branch%3Amaster+workflow%3ACI+event%3Apush
+.. image:: https://badge.fury.io/py/pyvisfile.png
+    :alt: Python Package Index Release Page
+    :target: https://pypi.org/project/pyvisfile/
+
 Pyvisfile allows you to write a variety of visualization file formats,
 including
 
