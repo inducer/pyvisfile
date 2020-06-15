@@ -11,7 +11,7 @@ def add_tuple_to_list(ary, x):
 # }}}
 
 
-# {{{ VTK_LAGRANGE_SIMPLICES (i.e. CURVE/TRIANGLE/TETRAHEDRON)
+# {{{ VTK_LAGRANGE_${SIMPLEX} (i.e. CURVE/TRIANGLE/TETRAHEDRON)
 
 def vtk_lagrange_curve_node_tuples(order, is_consistent=False):
     if is_consistent:
