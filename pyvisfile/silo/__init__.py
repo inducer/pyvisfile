@@ -1,25 +1,31 @@
-# PyVisfile Copyright (C) 2007,2010 Andreas Kloeckner
-#
-# Python wrapper around libsilo
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 from __future__ import division, absolute_import
+
+__copyright__ = "Copyright (C) 2007,2010 Andreas Kloeckner"
+
 import six
 
+__license__ = """
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-"""PyVisfile exposes the functionality of libsilo to Python using the
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
+
+__doc__ = """PyVisfile exposes the functionality of libsilo to Python using the
 Boost.Python wrapper library.
 
 To use pyvisfile, you would typically create a SiloFile instance and then
@@ -57,12 +63,28 @@ except ImportError:
 _intnl = sys.modules["pyvisfile.silo._internal"]
 
 
+# {{{ handle symbols
+
+_intnl_symbols = _intnl.symbols()
+
+
 def _export_symbols():
-    for name, value in six.iteritems(_intnl.symbols()):
+    for name, value in six.iteritems(_intnl_symbols):
         globals()[name] = value
 
 
 _export_symbols()
+
+# These are technically redundant, but they help avoid Flake8 warnings below.
+
+DB_COLLINEAR = _intnl_symbols["DB_COLLINEAR"]
+DB_LOCAL = _intnl_symbols["DB_LOCAL"]
+DB_NOCLOBBER = _intnl_symbols["DB_NOCLOBBER"]
+DB_UNKNOWN = _intnl_symbols["DB_UNKNOWN"]
+DB_PDB = _intnl_symbols["DB_PDB"]
+DB_APPEND = _intnl_symbols["DB_APPEND"]
+
+# }}}
 
 
 DBObjectType = _intnl.DBObjectType
@@ -318,3 +340,5 @@ class ParallelSiloFile:
                     [("%s:%s" % (rank_fn, vname), type)
                         for rank_fn in self.rank_filenames],
                     optlist)
+
+# vim: foldmethod=marker
