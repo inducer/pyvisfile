@@ -162,6 +162,6 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):
 # }}}
 
 
-# {{{ VTK_LAGRANGE_QUADS (i.e. QUADRILATERAL/HEXAHEDRON)
+# {{{ VTK_LAGRANGE_${QUAD} (i.e. QUADRILATERAL/HEXAHEDRON)
 
 # }}}
