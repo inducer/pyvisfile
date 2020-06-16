@@ -1,6 +1,52 @@
+__copyright__ = "Copyright (C) 2020 Alexandru Fikl"
+
+__license__ = """
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
 from pytools import (
         add_tuples,
         generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam)
+
+
+__doc__ = """
+VTK High-Order Lagrange Elements
+--------------------------------
+
+The high-order elements are described in
+`this blog post <https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/>`_. The ordering in the new elements is as
+follows:
+
+    1. vertices of the element (in an order that matches the linear elements,
+       e.g. :data:`~pyvisfile.vtk.VTK_TRIANGLE`)
+    2. Edge (or face in 2D) nodes in sequence.
+    3. Face (3D only) nodes. These are only the nodes interior to the face,
+       i.e. without the edges, and they are reported by the same rules
+       recursively.
+    4. Interior nodes are also defined recursively.
+
+To a large extent, matches the order used by ``gmsh`` and described
+`here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`_.
+
+.. autofunction:: vtk_lagrange_simplex_node_tuples
+.. autofunction:: vtk_lagrange_simplex_node_tuples_to_permutation
+"""     # noqa
 
 
 # {{{
@@ -137,6 +183,22 @@ def vtk_lagrange_tetrahedron_node_tuples(order):
 
 
 def vtk_lagrange_simplex_node_tuples(dims, order, is_consistent=False):
+    """
+    :arg dims: dimension of the simplex, i.e. 1 corresponds to a curve, 2 to
+        a triangle, etc.
+    :arg order: order of the polynomial representation, which also defines
+        the number of nodes on the simplex.
+    :arg is_consistent: If *True*, 1D curve node ordering will follow the
+        same rules as the higher-dimensional simplices by putting the
+        vertices first. This is not the default in VTK as of version 8.1,
+        when the higher-order elements were introduced.
+
+    :return: a :class:`list` of ``dims``-dimensional tuples of integers
+        up to ``order`` in the ordering expected by VTK. This list can be
+        passed to :func:`vtk_lagrange_simplex_node_tuples_to_permutation`
+        to obtain a permutation from the order used by :mod:`modepy`.
+    """
+
     if dims == 1:
         return vtk_lagrange_curve_node_tuples(order, is_consistent=is_consistent)
     elif dims == 2:
