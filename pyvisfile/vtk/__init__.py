@@ -38,11 +38,11 @@ Vector formats
 
 .. data:: VF_LIST_OF_COMPONENTS
 
-    ``[[x0,y0,z0], [x1,y1,z1]``
+    ``[[x0, y0, z0], [x1, y1, z1]]``
 
 .. data:: VF_LIST_OF_VECTORS
 
-    ``[[x0,x1], [y0,y1], [z0,z1]]``
+    ``[[x0, x1], [y0, y1], [z0, z1]]``
 
 Element types
 ^^^^^^^^^^^^^
@@ -61,6 +61,13 @@ Element types
 .. data:: VTK_HEXAHEDRON
 .. data:: VTK_WEDGE
 .. data:: VTK_PYRAMID
+
+.. data:: VTK_LAGRANGE_CURVE
+.. data:: VTK_LAGRANGE_TRIANGLE
+.. data:: VTK_LAGRANGE_QUADRILATERAL
+.. data:: VTK_LAGRANGE_TETRAHEDRON
+.. data:: VTK_LAGRANGE_HEXAHEDRON
+.. data:: VTK_LAGRANGE_WEDGE
 
 Building blocks
 ---------------
@@ -87,6 +94,7 @@ Convenience functions
 .. autofunction:: write_structured_grid
 """
 
+# {{{ types
 
 VTK_INT8 = "Int8"
 VTK_UINT8 = "UInt8"
@@ -99,6 +107,29 @@ VTK_UINT64 = "UInt64"
 VTK_FLOAT32 = "Float32"
 VTK_FLOAT64 = "Float64"
 
+
+NUMPY_TO_VTK_TYPES = {
+        np.int8: VTK_INT8,
+        np.uint8: VTK_UINT8,
+        np.int16: VTK_INT16,
+        np.uint16: VTK_UINT16,
+        np.int32: VTK_INT32,
+        np.uint32: VTK_UINT32,
+        np.int64: VTK_INT64,
+        np.uint64: VTK_UINT64,
+        np.float32: VTK_FLOAT32,
+        np.float64: VTK_FLOAT64,
+        }
+
+# }}}
+
+
+# {{{ cell types
+
+# NOTE: should keep in sync with
+# https://gitlab.kitware.com/vtk/vtk/-/blob/master/Common/DataModel/vtkCellType.h
+
+# linear cells
 VTK_VERTEX = 1
 VTK_POLY_VERTEX = 2
 VTK_LINE = 3
@@ -113,6 +144,22 @@ VTK_VOXEL = 11
 VTK_HEXAHEDRON = 12
 VTK_WEDGE = 13
 VTK_PYRAMID = 14
+
+# NOTE: these were added in VTK 8.1 as part of the commit
+# https://gitlab.kitware.com/vtk/vtk/-/commit/cc5101a805386f205631357bba782b2a7d17531a
+
+# high-order Lagrange cells
+VTK_LAGRANGE_CURVE = 68
+VTK_LAGRANGE_TRIANGLE = 69
+VTK_LAGRANGE_QUADRILATERAL = 70
+VTK_LAGRANGE_TETRAHEDRON = 71
+VTK_LAGRANGE_HEXAHEDRON = 72
+VTK_LAGRANGE_WEDGE = 73
+
+# }}}
+
+
+# {{{ cell node counts
 
 CELL_NODE_COUNT = {
         VTK_VERTEX: 1,
@@ -129,14 +176,28 @@ CELL_NODE_COUNT = {
         VTK_HEXAHEDRON: 8,
         VTK_WEDGE: 6,
         VTK_PYRAMID: 5,
+        # VTK_LAGRANGE_CURVE: no a-priori size
+        # VTK_LAGRANGE_TRIANGLE: no a-priori size
+        # VTK_LAGRANGE_QUADRILATERAL: no a-priori size
+        # VTK_LAGRANGE_TETRAHEDRON: no a-priori size
+        # VTK_LAGRANGE_HEXAHEDRON: no a-priori size
+        # VTK_LAGRANGE_WEDGE: no a-priori size
         }
 
+# }}}
 
-VF_LIST_OF_COMPONENTS = 0  # [[x0,y0,z0], [x1,y1,z1]
-VF_LIST_OF_VECTORS = 1  # [[x0,x1], [y0,y1], [z0,z1]]
 
-_U32CHAR = np.dtype(np.uint32).char
+# {{{ vector format
 
+# e.g. [[x0, y0, z0], [x1, y1, z1]]
+VF_LIST_OF_COMPONENTS = 0
+# e.g. [[x0, x1], [y0, y1], [z0, z1]]
+VF_LIST_OF_VECTORS = 1
+
+# }}}
+
+
+# {{{ xml
 
 # Ah, the joys of home-baked non-compliant XML goodness.
 class XMLElementBase(object):
@@ -196,6 +257,13 @@ class XMLRoot(XMLElementBase):
             else:
                 # likely a string instance, write it directly
                 file.write(child)
+
+# }}}
+
+
+# {{{ encoded buffers
+
+_U32CHAR = np.dtype(np.uint32).char
 
 
 class EncodedBuffer:
@@ -300,6 +368,10 @@ class Base64ZLibEncodedBuffer:
 
         return len(self.b64header) + len(self.b64data)
 
+# }}}
+
+
+# {{{ data array
 
 class DataArray(object):
     def __init__(self, name, container, vector_padding=3,
@@ -312,48 +384,19 @@ class DataArray(object):
             self.encoded_buffer = container.encoded_buffer
             return
 
-        def vec_type(vec):
-            if vec.dtype == np.int8:
-                return VTK_INT8
-            elif vec.dtype == np.uint8:
-                return VTK_UINT8
-            elif vec.dtype == np.int16:
-                return VTK_INT16
-            elif vec.dtype == np.uint16:
-                return VTK_UINT16
-            elif vec.dtype == np.int32:
-                return VTK_INT32
-            elif vec.dtype == np.uint32:
-                return VTK_UINT32
-            elif vec.dtype == np.int64:
-                return VTK_INT64
-            elif vec.dtype == np.uint64:
-                return VTK_UINT64
-            elif vec.dtype == np.float32:
-                return VTK_FLOAT32
-            elif vec.dtype == np.float64:
-                return VTK_FLOAT64
-            else:
-                raise TypeError(
-                        "Unsupported vector type '%s' in VTK writer" % (vec.dtype))
-
         if not isinstance(container, np.ndarray):
             raise ValueError(
                     "cannot convert object of type `%s' to DataArray"
                     % type(container))
 
-        if not isinstance(container, np.ndarray):
-            raise TypeError("expected numpy array, got '%s' instead"
-                    % type(container))
-
-        if container.dtype == object:
+        if container.dtype.char == "O":
             for subvec in container:
                 if not isinstance(subvec, np.ndarray):
                     raise TypeError("expected numpy array, got '%s' instead"
                             % type(subvec))
 
             container = np.array(list(container))
-            assert container.dtype != object
+            assert container.dtype.char != "O"
 
         if len(container.shape) > 1:
             if vector_format == VF_LIST_OF_COMPONENTS:
@@ -363,6 +406,7 @@ class DataArray(object):
                     "numpy vectors of rank >2 are not supported"
             assert container.strides[1] == container.itemsize, \
                     "2D numpy arrays must be row-major"
+
             if vector_padding > container.shape[1]:
                 container = np.asarray(np.hstack((
                         container,
@@ -374,11 +418,15 @@ class DataArray(object):
             self.components = container.shape[1]
         else:
             self.components = 1
-        self.type = vec_type(container)
+
+        self.type = NUMPY_TO_VTK_TYPES.get(container.dtype.type, None)
+        if self.type is None:
+            raise TypeError("unsupported vector type: '%s'" % (container.dtype))
+
         if not container.flags.c_contiguous:
             container = container.copy()
-        buf = buffer(container)
 
+        buf = buffer(container)
         self.encoded_buffer = BinaryEncodedBuffer(buf)
 
     def get_encoded_buffer(self, encoder, compressor):
@@ -415,6 +463,10 @@ class DataArray(object):
     def invoke_visitor(self, visitor):
         return visitor.gen_data_array(self)
 
+# }}}
+
+
+# {{{ grids
 
 class UnstructuredGrid(object):
     """
@@ -450,8 +502,7 @@ class UnstructuredGrid(object):
     def copy(self):
         return UnstructuredGrid(
                 (self.point_count, self.points),
-                (self.cell_count, self.cell_connectivity,
-                    self.cell_offsets),
+                (self.cell_count, self.cell_connectivity, self.cell_offsets),
                 self.cell_types)
 
     def vtk_extension(self):
@@ -508,8 +559,12 @@ class StructuredGrid(object):
     def add_celldata(self, data_array):
         self.celldata.append(data_array)
 
+# }}}
 
-def make_vtkfile(filetype, compressor):
+
+# {{{ vtk xml writers
+
+def make_vtkfile(filetype, compressor, version="0.1"):
     import sys
     if sys.byteorder == "little":
         bo = "LittleEndian"
@@ -521,11 +576,27 @@ def make_vtkfile(filetype, compressor):
         kwargs["compressor"] = "vtkZLibDataCompressor"
 
     return XMLElement("VTKFile",
-            type=filetype, version="0.1", byte_order=bo, **kwargs)
+            type=filetype, version=version, byte_order=bo, **kwargs)
 
 
 class XMLGenerator(object):
-    def __init__(self, compressor=None):
+    def __init__(self, compressor=None, vtk_file_version=None):
+        """
+        :arg vtk_file_version: a string ``"x.y"`` with the desired VTK
+            XML file format version. Relevant versions are as follows:
+
+            * ``"0.1"`` is the original version.
+            * ``"1.0"`` added support for 64-bit indices and offsets, as
+              described `here <https://www.paraview.org/Wiki/VTK_XML_Formats>`_.
+            * ``"2.0"`` added support for ghost array data, as
+              described `here <https://blog.kitware.com/ghost-and-blanking-visibility-changes/>`_.
+            * ``"2.1"``: added support for writing additional information
+              attached to a :class:`DataArray` using
+              `information keys <https://vtk.org/doc/nightly/html/IOXMLInformationFormat.html>`_.
+            * ``"2.2"``: changed the node numbering of the hexahedron, as
+              described `here <https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6678>`_.
+        """     # noqa
+
         if compressor == "zlib":
             try:
                 import zlib  # noqa
@@ -536,13 +607,19 @@ class XMLGenerator(object):
         else:
             raise ValueError("Invalid compressor name `%s'" % compressor)
 
+        if vtk_file_version is None:
+            # https://www.paraview.org/Wiki/VTK_XML_Formats
+            vtk_file_version = "0.1"
+
+        self.vtk_file_version = vtk_file_version
         self.compressor = compressor
 
     def __call__(self, vtkobj):
         """Return an :class:`XMLElement`."""
 
         child = self.rec(vtkobj)
-        vtkf = make_vtkfile(child.tag, self.compressor)
+        vtkf = make_vtkfile(child.tag, self.compressor,
+                version=self.vtk_file_version)
         vtkf.add_child(child)
         return XMLRoot(vtkf)
 
@@ -552,6 +629,7 @@ class XMLGenerator(object):
 
 class InlineXMLGenerator(XMLGenerator):
     """
+    .. automethod:: __init__
     .. automethod:: __call__
     """
 
@@ -629,8 +707,8 @@ class AppendedDataXMLGenerator(InlineXMLGenerator):
     .. automethod:: __call__
     """
 
-    def __init__(self, compressor=None):
-        InlineXMLGenerator.__init__(self, compressor)
+    def __init__(self, compressor=None, vtk_file_version=None):
+        InlineXMLGenerator.__init__(self, compressor, vtk_file_version)
 
         self.base64_len = 0
         self.app_data = XMLElement("AppendedData", encoding="base64")

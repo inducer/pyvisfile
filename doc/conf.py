@@ -23,6 +23,8 @@
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
         "sphinx.ext.autodoc",
+        "sphinx.ext.intersphinx",
+        "sphinx.ext.mathjax",
         ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -145,7 +147,7 @@ htmlhelp_basename = 'PyVisfiledoc'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-latex_documents = [("index", "pyvisfile.tex", 
+latex_documents = [("index", "pyvisfile.tex",
     "PyVisfile documentation", "Andreas Kloeckner",
     "manual")]
 
@@ -157,3 +159,9 @@ latex_documents = [("index", "pyvisfile.tex",
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+intersphinx_mapping = {
+    'http://docs.python.org/': None,
+    'http://docs.scipy.org/doc/numpy/': None,
+    'https://documen.tician.de/modepy': None,
+}
