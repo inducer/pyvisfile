@@ -2,6 +2,9 @@
 This example can be used to check if the VTK ordering and the ones implemented
 in :mod:`pyvisfil.vtk.vtk_ordering` match. It can be useful for debugging
 and implementing additional element types.
+
+To facilitate this comparison, and unlike the rest of the package, this example
+makes use of the Vtk Python bindings.
 """
 
 import numpy as np
