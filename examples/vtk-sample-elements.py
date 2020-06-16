@@ -1,3 +1,9 @@
+"""
+This example can be used to check if the VTK ordering and the ones implemented
+in :mod:`pyvisfil.vtk.vtk_ordering` match. It can be useful for debugging
+and implementing additional element types.
+"""
+
 import numpy as np
 import numpy.linalg as la
 
@@ -97,11 +103,10 @@ def create_sample_element(cell_type, order=3, visualize=True):
 
 
 if __name__ == "__main__":
-    if 1:
-        for cell_type in VTK_LAGRANGE_SIMPLICES:
-            print("cell_type: ", cell_type)
-            for order in range(1, 11):
-                create_sample_element(
+    for cell_type in VTK_LAGRANGE_SIMPLICES:
+        print("cell_type: ", cell_type)
+        for order in range(1, 11):
+            create_sample_element(
                         cell_type, order=order, visualize=False)
 
     create_sample_element("VTK_LAGRANGE_TETRAHEDRON", order=4)
