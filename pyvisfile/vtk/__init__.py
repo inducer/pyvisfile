@@ -581,6 +581,22 @@ def make_vtkfile(filetype, compressor, version="0.1"):
 
 class XMLGenerator(object):
     def __init__(self, compressor=None, vtk_file_version=None):
+        """
+        :arg vtk_file_version: a string ``"x.y"`` with the desired VTK
+            XML file format version. Relevant versions are as follows:
+
+            * ``"0.1"`` is the original version.
+            * ``"1.0"`` added support for 64-bit indices and offsets, as
+              described `here <https://www.paraview.org/Wiki/VTK_XML_Formats>`_.
+            * ``"2.0"`` added support for ghost array data, as
+              described `here <https://blog.kitware.com/ghost-and-blanking-visibility-changes/>`_.
+            * ``"2.1"``: added support for writing additional information
+              attached to a :class:`DataArray` using
+              `information keys <https://vtk.org/doc/nightly/html/IOXMLInformationFormat.html>`_.
+            * ``"2.2"``: changed the node numbering of the hexahedron, as
+              described `here <https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6678>`_.
+        """     # noqa
+
         if compressor == "zlib":
             try:
                 import zlib  # noqa
@@ -613,6 +629,7 @@ class XMLGenerator(object):
 
 class InlineXMLGenerator(XMLGenerator):
     """
+    .. automethod:: __init__
     .. automethod:: __call__
     """
 
