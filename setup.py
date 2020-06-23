@@ -90,6 +90,7 @@ def main():
 
             # dependencies
             setup_requires=requirements,
+            python_requires="~=3.6",
             install_requires=[
                     "pytools>=2013.2",
                     "six",
