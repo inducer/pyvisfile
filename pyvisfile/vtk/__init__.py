@@ -774,19 +774,17 @@ class ParallelXMLGenerator(XMLGenerator):
 def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
     grid = StructuredGrid(mesh)
 
-    from pytools.obj_array import with_object_array_or_scalar
+    from pytools.obj_array import obj_array_vectorize
 
     def do_reshape(fld):
         return fld.T.copy().reshape(-1)
 
     for name, field in cell_data:
-        reshaped_fld = with_object_array_or_scalar(do_reshape, field,
-                            obj_array_only=True)
+        reshaped_fld = obj_array_vectorize(do_reshape, field)
         grid.add_pointdata(DataArray(name, reshaped_fld))
 
     for name, field in point_data:
-        reshaped_fld = with_object_array_or_scalar(do_reshape, field,
-                obj_array_only=True)
+        reshaped_fld = obj_array_vectorize(do_reshape, field)
         grid.add_pointdata(DataArray(name, reshaped_fld))
 
     from os.path import exists
