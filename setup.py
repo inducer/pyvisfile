@@ -26,7 +26,8 @@ def main():
             PyUblasExtension
 
     hack_distutils()
-    conf = get_config(get_config_schema())
+    conf = get_config(get_config_schema(),
+            warn_about_no_config=False)
 
     INCLUDE_DIRS = conf["BOOST_INC_DIR"]  # noqa
 
