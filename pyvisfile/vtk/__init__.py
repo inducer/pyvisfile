@@ -24,8 +24,6 @@ THE SOFTWARE.
 
 import numpy as np
 
-buffer = memoryview
-
 __doc__ = """
 
 Constants
@@ -420,7 +418,7 @@ class DataArray:
         if not container.flags.c_contiguous:
             container = container.copy()
 
-        buf = buffer(container)
+        buf = memoryview(container)
         self.encoded_buffer = BinaryEncodedBuffer(buf)
 
     def get_encoded_buffer(self, encoder, compressor):
