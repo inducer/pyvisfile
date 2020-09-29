@@ -381,7 +381,7 @@ class DataArray:
 
         if not isinstance(container, np.ndarray):
             raise ValueError(
-                    f"cannot convert object of type '{type(container)}' to DataArray")
+                f"cannot convert object of type '{type(container)}' to DataArray")
 
         if container.dtype.char == "O":
             for subvec in container:
