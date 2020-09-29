@@ -41,7 +41,7 @@ def main():
 
     ver_dic = {}
     ver_file_name = "pyvisfile/__init__.py"
-    with open(ver_file_name, "r") as inf:
+    with open(ver_file_name) as inf:
         exec(compile(inf.read(), ver_file_name, 'exec'), ver_dic)
 
     requirements = []
@@ -65,7 +65,7 @@ def main():
     setup(name="pyvisfile",
             version=ver_dic["VERSION_TEXT"],
             description="Large-scale Visualization Data Storage",
-            long_description=open("README.rst", "rt").read(),
+            long_description=open("README.rst").read(),
             classifiers=[
                 'Development Status :: 4 - Beta',
                 'Intended Audience :: Developers',
@@ -84,7 +84,7 @@ def main():
                 'Topic :: Software Development :: Libraries',
                 ],
 
-            author=u"Andreas Kloeckner",
+            author="Andreas Kloeckner",
             author_email="inform@tiker.net",
             license="MIT",
             url="http://mathema.tician.de/software/pyvisfile",

@@ -91,8 +91,7 @@ def flatten(list):
     Example: Turn [[a,b,c],[d,e,f]] into [a,b,c,d,e,f].
     """
     for sublist in list:
-        for j in sublist:
-            yield j
+        yield from sublist
 
 
 def humanize(sym_str):
@@ -223,13 +222,13 @@ def expand_value(v, options):
 
 
 def expand_options(options):
-    return dict(
-            (k, expand_value(v, options)) for k, v in options.items())
+    return {
+            k: expand_value(v, options) for k, v in options.items()}
 
 
 class ConfigSchema:
     def __init__(self, options, conf_file="siteconf.py", conf_dir="."):
-        self.optdict = dict((opt.name, opt) for opt in options)
+        self.optdict = {opt.name: opt for opt in options}
         self.options = options
         self.conf_dir = conf_dir
         self.conf_file = conf_file
@@ -250,12 +249,12 @@ class ConfigSchema:
         self.conf_dir = conf_dir
 
     def get_default_config(self):
-        return dict((opt.name, opt.default) for opt in self.options)
+        return {opt.name: opt.default for opt in self.options}
 
     def read_config_from_pyfile(self, filename):
         result = {}
         filevars = {}
-        infile = open(filename, "r")
+        infile = open(filename)
         try:
             contents = infile.read()
         finally:
@@ -274,8 +273,8 @@ class ConfigSchema:
         filevars = {}
 
         try:
-            exec(compile(open(filename, "r").read(), filename, "exec"), filevars)
-        except IOError:
+            exec(compile(open(filename).read(), filename, "exec"), filevars)
+        except OSError:
             pass
 
         if "__builtins__" in filevars:
@@ -290,7 +289,7 @@ class ConfigSchema:
 
         outf = open(filename, "w")
         for key in keys:
-            outf.write("%s = %s\n" % (key, repr(filevars[key])))
+            outf.write("{} = {}\n".format(key, repr(filevars[key])))
         outf.close()
 
         return result
@@ -341,7 +340,7 @@ class ConfigSchema:
             elif key == "__builtins__":
                 pass
             else:
-                raise KeyError("invalid config key in %s: %s" % (
+                raise KeyError("invalid config key in {}: {}".format(
                         filename, key))
 
     def update_config_from_and_modify_command_line(self, config, argv):
@@ -366,7 +365,7 @@ class ConfigSchema:
 
         result = self.get_default_config_with_files()
         if os.access(cfile, os.R_OK):
-            with open(cfile, "r") as inf:
+            with open(cfile) as inf:
                 py_snippet = inf.read()
             self.update_from_python_snippet(result, py_snippet, cfile)
 
@@ -391,15 +390,15 @@ class ConfigSchema:
         for opt in self.options:
             value = config[opt.name]
             if value is not None:
-                outf.write("%s = %s\n" % (opt.name, repr(config[opt.name])))
+                outf.write("{} = {}\n".format(opt.name, repr(config[opt.name])))
         outf.close()
 
     def make_substitutions(self, config):
-        return dict((opt.name, opt.value_to_str(config[opt.name]))
-                for opt in self.options)
+        return {opt.name: opt.value_to_str(config[opt.name])
+                for opt in self.options}
 
 
-class Option(object):
+class Option:
     def __init__(self, name, default=None, help=None):
         self.name = name
         self.default = default
@@ -685,7 +684,7 @@ def substitute(substitutions, fname):
     string_var_re = re.compile(r"\$str\{([A-Za-z_0-9]+)\}")
 
     fname_in = fname+".in"
-    lines = open(fname_in, "r").readlines()
+    lines = open(fname_in).readlines()
     new_lines = []
     for l in lines:
         made_change = True

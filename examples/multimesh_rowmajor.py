@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from six.moves import range
 __author__ = 'Christoph Statz, christoph.statz <at> tu-dresden.de'
 
 import numpy as np

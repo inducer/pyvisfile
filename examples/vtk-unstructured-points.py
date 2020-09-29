@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import numpy as np
 from pyvisfile.vtk import ( 
     UnstructuredGrid, DataArray,

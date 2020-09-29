@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import
-
 __copyright__ = "Copyright (C) 2007,2010 Andreas Kloeckner"
 
 import six
@@ -69,7 +67,7 @@ _intnl_symbols = _intnl.symbols()
 
 
 def _export_symbols():
-    for name, value in six.iteritems(_intnl_symbols):
+    for name, value in _intnl_symbols.items():
         globals()[name] = value
 
 
@@ -104,7 +102,7 @@ def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
     ol = _intnl.DBOptlist(optcount, optcount * 150)
 
-    for key, value in six.iteritems(ol_dict):
+    for key, value in ol_dict.items():
         if isinstance(value, int):
             ol.add_int_option(key, value)
         elif isinstance(value, tuple):
@@ -330,14 +328,14 @@ class ParallelSiloFile:
     def _added_mesh(self, mname, type, optlist):
         if self.master_file:
             self.master_file.put_multimesh(mname,
-                    [("%s:%s" % (rank_fn, mname), type)
+                    [(f"{rank_fn}:{mname}", type)
                         for rank_fn in self.rank_filenames],
                     optlist)
 
     def _added_variable(self, vname, type, optlist):
         if self.master_file:
             self.master_file.put_multivar(vname,
-                    [("%s:%s" % (rank_fn, vname), type)
+                    [(f"{rank_fn}:{vname}", type)
                         for rank_fn in self.rank_filenames],
                     optlist)
 

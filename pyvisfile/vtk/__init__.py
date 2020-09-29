@@ -25,8 +25,7 @@ THE SOFTWARE.
 import numpy as np
 
 import sys
-if sys.version_info > (3,):
-    buffer = memoryview
+buffer = memoryview
 
 __doc__ = """
 
@@ -200,7 +199,7 @@ VF_LIST_OF_VECTORS = 1
 # {{{ xml
 
 # Ah, the joys of home-baked non-compliant XML goodness.
-class XMLElementBase(object):
+class XMLElementBase:
     def __init__(self):
         self.children = []
 
@@ -228,10 +227,10 @@ class XMLElement(XMLElementBase):
 
     def write(self, file):
         attr_string = "".join(
-                " %s=\"%s\"" % (key, value)
+                f" {key}=\"{value}\""
                 for key, value in self.attributes.items())
         if self.children:
-            file.write("<%s%s>\n" % (self.tag, attr_string))
+            file.write(f"<{self.tag}{attr_string}>\n")
             for child in self.children:
                 if isinstance(child, XMLElement):
                     child.write(file)
@@ -240,7 +239,7 @@ class XMLElement(XMLElementBase):
                     file.write(child)
             file.write("</%s>\n" % self.tag)
         else:
-            file.write("<%s%s/>\n" % (self.tag, attr_string))
+            file.write(f"<{self.tag}{attr_string}/>\n")
 
 
 class XMLRoot(XMLElementBase):
@@ -309,10 +308,7 @@ class Base64EncodedBuffer:
     def __init__(self, buffer):
         from struct import pack
         from base64 import b64encode
-        if sys.version_info > (3,):
-            length = buffer.nbytes
-        else:
-            length = len(buffer)
+        length = buffer.nbytes
         self.b64header = b64encode(
                 pack(_U32CHAR, length)).decode()
         self.b64data = b64encode(buffer).decode()
@@ -373,7 +369,7 @@ class Base64ZLibEncodedBuffer:
 
 # {{{ data array
 
-class DataArray(object):
+class DataArray:
     def __init__(self, name, container, vector_padding=3,
             vector_format=VF_LIST_OF_COMPONENTS, components=None):
         self.name = name
@@ -468,7 +464,7 @@ class DataArray(object):
 
 # {{{ grids
 
-class UnstructuredGrid(object):
+class UnstructuredGrid:
     """
     .. automethod:: add_pointdata
     .. automethod:: add_celldata
@@ -518,7 +514,7 @@ class UnstructuredGrid(object):
         self.celldata.append(data_array)
 
 
-class StructuredGrid(object):
+class StructuredGrid:
     """
     .. automethod:: add_pointdata
     .. automethod:: add_celldata
@@ -579,7 +575,7 @@ def make_vtkfile(filetype, compressor, version="0.1"):
             type=filetype, version=version, byte_order=bo, **kwargs)
 
 
-class XMLGenerator(object):
+class XMLGenerator:
     def __init__(self, compressor=None, vtk_file_version=None):
         """
         :arg vtk_file_version: a string ``"x.y"`` with the desired VTK

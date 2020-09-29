@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 from pyvisfile.silo import SiloFile, DB_READ
 db = SiloFile("qmesh.silo", create=False, mode=DB_READ)
 print(db.get_toc().qmesh_names)

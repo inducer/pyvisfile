@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # PyUblas documentation build configuration file, created by
 # sphinx-quickstart on Tue Apr 22 23:46:39 2008.
