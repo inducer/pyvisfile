@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+from aksetup_helper import NumpyExtension
+
+
+class PyUblasExtension(NumpyExtension):
+    def get_module_include_path(self, name):
+        from pkg_resources import Requirement, resource_filename
+        return resource_filename(Requirement.parse(name), "%s/include" % name)
+
+    def get_additional_include_dirs(self):
+        return (NumpyExtension.get_additional_include_dirs(self)
+                + [self.get_module_include_path("pyublas")])
+
 
 def get_config_schema():
     from aksetup_helper import ConfigSchema,  \
@@ -22,8 +34,7 @@ def get_config_schema():
 
 def main():
     from setuptools import find_packages
-    from aksetup_helper import hack_distutils, get_config, setup, \
-            PyUblasExtension
+    from aksetup_helper import hack_distutils, get_config, setup
 
     hack_distutils()
     conf = get_config(get_config_schema(),
