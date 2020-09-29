@@ -236,7 +236,7 @@ class XMLElement(XMLElementBase):
                 else:
                     # likely a string instance, write it directly
                     file.write(child)
-            file.write("</%s>\n" % self.tag)
+            file.write(f"</{self.tag}>\n")
         else:
             file.write(f"<{self.tag}{attr_string}/>\n")
 
@@ -381,14 +381,13 @@ class DataArray:
 
         if not isinstance(container, np.ndarray):
             raise ValueError(
-                    "cannot convert object of type '%s' to DataArray"
-                    % type(container))
+                    f"cannot convert object of type '{type(container)}' to DataArray")
 
         if container.dtype.char == "O":
             for subvec in container:
                 if not isinstance(subvec, np.ndarray):
-                    raise TypeError("expected numpy array, got '%s' instead"
-                            % type(subvec))
+                    raise TypeError(
+                            f"expected numpy array, got '{type(subvec)}' instead")
 
             container = np.array(list(container))
             assert container.dtype.char != "O"
@@ -416,7 +415,7 @@ class DataArray:
 
         self.type = NUMPY_TO_VTK_TYPES.get(container.dtype.type, None)
         if self.type is None:
-            raise TypeError("unsupported vector type: '%s'" % (container.dtype))
+            raise TypeError(f"unsupported vector type: '{container.dtype}'")
 
         if not container.flags.c_contiguous:
             container = container.copy()
@@ -600,7 +599,7 @@ class XMLGenerator:
         elif compressor is None:
             pass
         else:
-            raise ValueError("Invalid compressor name `%s'" % compressor)
+            raise ValueError(f"invalid compressor name '{compressor}'")
 
         if vtk_file_version is None:
             # https://www.paraview.org/Wiki/VTK_XML_Formats
@@ -784,8 +783,7 @@ def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
 
     from os.path import exists
     if exists(file_name):
-        raise RuntimeError("output file '%s' already exists"
-                % file_name)
+        raise RuntimeError(f"output file '{file_name}' already exists")
 
     outf = open(file_name, "w")
     AppendedDataXMLGenerator()(grid).write(outf)

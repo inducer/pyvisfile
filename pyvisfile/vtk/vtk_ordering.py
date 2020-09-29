@@ -206,7 +206,7 @@ def vtk_lagrange_simplex_node_tuples(dims, order, is_consistent=False):
     elif dims == 3:
         return vtk_lagrange_tetrahedron_node_tuples(order)
     else:
-        raise ValueError("unsupported dimension: %d" % dims)
+        raise ValueError(f"unsupported dimension: {dims}")
 
 
 def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):

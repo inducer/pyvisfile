@@ -233,16 +233,17 @@ class ParallelSiloFile:
         self.rank = rank
         self.ranks = ranks
 
-        rank_pathname_pattern = "%s-%05d.silo"
-        rank_pathname = rank_pathname_pattern % (pathname, rank)
+        rank_pathname_pattern = "{}-{:05d}.silo"
+        rank_pathname = rank_pathname_pattern.format(pathname, rank)
 
         self.data_file = SiloFile(rank_pathname, *args, **kwargs)
 
         if self.rank == self.ranks[0]:
-            head_pathname = "%s.silo" % pathname
+            head_pathname = f"{pathname}.silo"
             self.master_file = SiloFile(head_pathname, *args, **kwargs)
 
-            self.rank_filenames = [rank_pathname_pattern % (pathname, fn_rank)
+            self.rank_filenames = [
+                    rank_pathname_pattern.format(pathname, fn_rank)
                     for fn_rank in ranks]
         else:
             self.master_file = None
