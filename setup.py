@@ -9,8 +9,6 @@ def get_config_schema():
     return ConfigSchema(make_boost_base_options() + [
         Switch("USE_SILO", False, "Compile libsilo interface"),
 
-        BoostLibraries("python"),
-
         IncludeDir("SILO", []),
         LibraryDir("SILO", []),
         Libraries("SILO", ["siloh5"]),
@@ -22,22 +20,18 @@ def get_config_schema():
 
 def main():
     from setuptools import find_packages
-    from aksetup_helper import hack_distutils, get_config, setup, \
-            PyUblasExtension
+    from aksetup_helper import (hack_distutils, get_config, setup,
+            ExtensionUsingNumpy, check_pybind11, PybindBuildExtCommand,
+            get_pybind_include)
 
     hack_distutils()
     conf = get_config(get_config_schema(),
             warn_about_no_config=False)
 
-    INCLUDE_DIRS = conf["BOOST_INC_DIR"]  # noqa
-
-    LIBRARY_DIRS = conf["BOOST_LIB_DIR"]  # noqa
-    LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]  # noqa
-
-    EXTRA_DEFINES = {}  # noqa
-    EXTRA_INCLUDE_DIRS = []  # noqa
-    EXTRA_LIBRARY_DIRS = []  # noqa
-    EXTRA_LIBRARIES = []  # noqa
+    extra_defines = {}
+    extra_include_dirs = []
+    extra_library_dirs = []
+    extra_libraries = []
 
     ver_dic = {}
     ver_file_name = "pyvisfile/__init__.py"
@@ -48,19 +42,23 @@ def main():
     ext_modules = []
 
     if conf["USE_SILO"]:
-        EXTRA_DEFINES["USE_SILO"] = 1
-        EXTRA_INCLUDE_DIRS.extend(conf["SILO_INC_DIR"])
-        EXTRA_LIBRARY_DIRS.extend(conf["SILO_LIB_DIR"])
-        EXTRA_LIBRARIES.extend(conf["SILO_LIBNAME"])
+        check_pybind11()
 
-        ext_modules.append(PyUblasExtension("_internal",
+        extra_defines["USE_SILO"] = 1
+        extra_include_dirs.extend(conf["SILO_INC_DIR"])
+        extra_library_dirs.extend(conf["SILO_LIB_DIR"])
+        extra_libraries.extend(conf["SILO_LIBNAME"])
+
+        ext_modules.append(ExtensionUsingNumpy("_internal",
             ["src/wrapper/wrap_silo.cpp"],
-            include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
-            library_dirs=LIBRARY_DIRS + EXTRA_LIBRARY_DIRS,
-            libraries=LIBRARIES + EXTRA_LIBRARIES,
+            include_dirs=[get_pybind_include()] + extra_include_dirs,
+            library_dirs=extra_library_dirs,
+            libraries=extra_libraries,
             extra_compile_args=conf["CXXFLAGS"],
-            define_macros=list(EXTRA_DEFINES.items()),
+            define_macros=list(extra_defines.items()),
+            language="c++",
             ))
+        requirements.append("pybind11>=2.5.0")
 
     setup(name="pyvisfile",
             version=ver_dic["VERSION_TEXT"],
@@ -100,6 +98,7 @@ def main():
             ext_package="pyvisfile.silo",
             ext_modules=ext_modules,
 
+            cmdclass={"build_ext": PybindBuildExtCommand},
             zip_safe=False)
 
 
