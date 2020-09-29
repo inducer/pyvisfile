@@ -24,10 +24,6 @@ THE SOFTWARE.
 
 import numpy as np
 
-import sys
-if sys.version_info > (3,):
-    buffer = memoryview
-
 __doc__ = """
 
 Constants
@@ -200,7 +196,7 @@ VF_LIST_OF_VECTORS = 1
 # {{{ xml
 
 # Ah, the joys of home-baked non-compliant XML goodness.
-class XMLElementBase(object):
+class XMLElementBase:
     def __init__(self):
         self.children = []
 
@@ -228,19 +224,19 @@ class XMLElement(XMLElementBase):
 
     def write(self, file):
         attr_string = "".join(
-                " %s=\"%s\"" % (key, value)
+                f' {key}="{value}"'
                 for key, value in self.attributes.items())
         if self.children:
-            file.write("<%s%s>\n" % (self.tag, attr_string))
+            file.write(f"<{self.tag}{attr_string}>\n")
             for child in self.children:
                 if isinstance(child, XMLElement):
                     child.write(file)
                 else:
                     # likely a string instance, write it directly
                     file.write(child)
-            file.write("</%s>\n" % self.tag)
+            file.write(f"</{self.tag}>\n")
         else:
-            file.write("<%s%s/>\n" % (self.tag, attr_string))
+            file.write(f"<{self.tag}{attr_string}/>\n")
 
 
 class XMLRoot(XMLElementBase):
@@ -250,7 +246,7 @@ class XMLRoot(XMLElementBase):
             self.add_child(child)
 
     def write(self, file):
-        file.write("<?xml version=\"1.0\"?>\n")
+        file.write('<?xml version="1.0"?>\n')
         for child in self.children:
             if isinstance(child, XMLElement):
                 child.write(file)
@@ -309,10 +305,7 @@ class Base64EncodedBuffer:
     def __init__(self, buffer):
         from struct import pack
         from base64 import b64encode
-        if sys.version_info > (3,):
-            length = buffer.nbytes
-        else:
-            length = len(buffer)
+        length = buffer.nbytes
         self.b64header = b64encode(
                 pack(_U32CHAR, length)).decode()
         self.b64data = b64encode(buffer).decode()
@@ -373,7 +366,7 @@ class Base64ZLibEncodedBuffer:
 
 # {{{ data array
 
-class DataArray(object):
+class DataArray:
     def __init__(self, name, container, vector_padding=3,
             vector_format=VF_LIST_OF_COMPONENTS, components=None):
         self.name = name
@@ -386,14 +379,13 @@ class DataArray(object):
 
         if not isinstance(container, np.ndarray):
             raise ValueError(
-                    "cannot convert object of type `%s' to DataArray"
-                    % type(container))
+                f"cannot convert object of type '{type(container)}' to DataArray")
 
         if container.dtype.char == "O":
             for subvec in container:
                 if not isinstance(subvec, np.ndarray):
-                    raise TypeError("expected numpy array, got '%s' instead"
-                            % type(subvec))
+                    raise TypeError(
+                            f"expected numpy array, got '{type(subvec)}' instead")
 
             container = np.array(list(container))
             assert container.dtype.char != "O"
@@ -421,12 +413,12 @@ class DataArray(object):
 
         self.type = NUMPY_TO_VTK_TYPES.get(container.dtype.type, None)
         if self.type is None:
-            raise TypeError("unsupported vector type: '%s'" % (container.dtype))
+            raise TypeError(f"unsupported vector type: '{container.dtype}'")
 
         if not container.flags.c_contiguous:
             container = container.copy()
 
-        buf = buffer(container)
+        buf = memoryview(container)
         self.encoded_buffer = BinaryEncodedBuffer(buf)
 
     def get_encoded_buffer(self, encoder, compressor):
@@ -468,7 +460,7 @@ class DataArray(object):
 
 # {{{ grids
 
-class UnstructuredGrid(object):
+class UnstructuredGrid:
     """
     .. automethod:: add_pointdata
     .. automethod:: add_celldata
@@ -518,7 +510,7 @@ class UnstructuredGrid(object):
         self.celldata.append(data_array)
 
 
-class StructuredGrid(object):
+class StructuredGrid:
     """
     .. automethod:: add_pointdata
     .. automethod:: add_celldata
@@ -579,7 +571,7 @@ def make_vtkfile(filetype, compressor, version="0.1"):
             type=filetype, version=version, byte_order=bo, **kwargs)
 
 
-class XMLGenerator(object):
+class XMLGenerator:
     def __init__(self, compressor=None, vtk_file_version=None):
         """
         :arg vtk_file_version: a string ``"x.y"`` with the desired VTK
@@ -605,7 +597,7 @@ class XMLGenerator(object):
         elif compressor is None:
             pass
         else:
-            raise ValueError("Invalid compressor name `%s'" % compressor)
+            raise ValueError(f"invalid compressor name '{compressor}'")
 
         if vtk_file_version is None:
             # https://www.paraview.org/Wiki/VTK_XML_Formats
@@ -789,8 +781,7 @@ def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
 
     from os.path import exists
     if exists(file_name):
-        raise RuntimeError("output file '%s' already exists"
-                % file_name)
+        raise RuntimeError(f"output file '{file_name}' already exists")
 
     outf = open(file_name, "w")
     AppendedDataXMLGenerator()(grid).write(outf)

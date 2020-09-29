@@ -1,8 +1,4 @@
-from __future__ import division, absolute_import
-
 __copyright__ = "Copyright (C) 2007,2010 Andreas Kloeckner"
-
-import six
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
 
 __doc__ = """PyVisfile exposes the functionality of libsilo to Python using the
 Boost.Python wrapper library.
@@ -69,7 +64,7 @@ _intnl_symbols = _intnl.symbols()
 
 
 def _export_symbols():
-    for name, value in six.iteritems(_intnl_symbols):
+    for name, value in _intnl_symbols.items():
         globals()[name] = value
 
 
@@ -104,14 +99,14 @@ def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
     ol = _intnl.DBOptlist(optcount, optcount * 150)
 
-    for key, value in six.iteritems(ol_dict):
+    for key, value in ol_dict.items():
         if isinstance(value, int):
             ol.add_int_option(key, value)
         elif isinstance(value, tuple):
             for el in value:
                 if not isinstance(el, int):
-                    raise TypeError('For now only tuples of int are '
-                            'implemented as option value!')
+                    raise TypeError("For now only tuples of int are "
+                            "implemented as option value!")
             ol.add_option(key, value)
         else:
             ol.add_option(key, value)
@@ -238,16 +233,17 @@ class ParallelSiloFile:
         self.rank = rank
         self.ranks = ranks
 
-        rank_pathname_pattern = "%s-%05d.silo"
-        rank_pathname = rank_pathname_pattern % (pathname, rank)
+        rank_pathname_pattern = "{}-{:05d}.silo"
+        rank_pathname = rank_pathname_pattern.format(pathname, rank)
 
         self.data_file = SiloFile(rank_pathname, *args, **kwargs)
 
         if self.rank == self.ranks[0]:
-            head_pathname = "%s.silo" % pathname
+            head_pathname = f"{pathname}.silo"
             self.master_file = SiloFile(head_pathname, *args, **kwargs)
 
-            self.rank_filenames = [rank_pathname_pattern % (pathname, fn_rank)
+            self.rank_filenames = [
+                    rank_pathname_pattern.format(pathname, fn_rank)
                     for fn_rank in ranks]
         else:
             self.master_file = None
@@ -330,14 +326,14 @@ class ParallelSiloFile:
     def _added_mesh(self, mname, type, optlist):
         if self.master_file:
             self.master_file.put_multimesh(mname,
-                    [("%s:%s" % (rank_fn, mname), type)
+                    [(f"{rank_fn}:{mname}", type)
                         for rank_fn in self.rank_filenames],
                     optlist)
 
     def _added_variable(self, vname, type, optlist):
         if self.master_file:
             self.master_file.put_multivar(vname,
-                    [("%s:%s" % (rank_fn, vname), type)
+                    [(f"{rank_fn}:{vname}", type)
                         for rank_fn in self.rank_filenames],
                     optlist)
 

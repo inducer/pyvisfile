@@ -41,8 +41,8 @@ def main():
 
     ver_dic = {}
     ver_file_name = "pyvisfile/__init__.py"
-    with open(ver_file_name, "r") as inf:
-        exec(compile(inf.read(), ver_file_name, 'exec'), ver_dic)
+    with open(ver_file_name) as inf:
+        exec(compile(inf.read(), ver_file_name, "exec"), ver_dic)
 
     requirements = []
     ext_modules = []
@@ -65,26 +65,26 @@ def main():
     setup(name="pyvisfile",
             version=ver_dic["VERSION_TEXT"],
             description="Large-scale Visualization Data Storage",
-            long_description=open("README.rst", "rt").read(),
+            long_description=open("README.rst").read(),
             classifiers=[
-                'Development Status :: 4 - Beta',
-                'Intended Audience :: Developers',
-                'Intended Audience :: Other Audience',
-                'Intended Audience :: Science/Research',
-                'License :: OSI Approved :: MIT License',
-                'Natural Language :: English',
-                'Programming Language :: C++',
-                'Programming Language :: Python',
-                'Programming Language :: Python :: 3',
-                'Topic :: Multimedia :: Graphics :: 3D Modeling',
-                'Topic :: Scientific/Engineering',
-                'Topic :: Scientific/Engineering :: Mathematics',
-                'Topic :: Scientific/Engineering :: Physics',
-                'Topic :: Scientific/Engineering :: Visualization',
-                'Topic :: Software Development :: Libraries',
+                "Development Status :: 4 - Beta",
+                "Intended Audience :: Developers",
+                "Intended Audience :: Other Audience",
+                "Intended Audience :: Science/Research",
+                "License :: OSI Approved :: MIT License",
+                "Natural Language :: English",
+                "Programming Language :: C++",
+                "Programming Language :: Python",
+                "Programming Language :: Python :: 3",
+                "Topic :: Multimedia :: Graphics :: 3D Modeling",
+                "Topic :: Scientific/Engineering",
+                "Topic :: Scientific/Engineering :: Mathematics",
+                "Topic :: Scientific/Engineering :: Physics",
+                "Topic :: Scientific/Engineering :: Visualization",
+                "Topic :: Software Development :: Libraries",
                 ],
 
-            author=u"Andreas Kloeckner",
+            author="Andreas Kloeckner",
             author_email="inform@tiker.net",
             license="MIT",
             url="http://mathema.tician.de/software/pyvisfile",
@@ -94,7 +94,6 @@ def main():
             python_requires="~=3.6",
             install_requires=[
                     "pytools>=2013.2",
-                    "six",
                     ] + requirements,
 
             packages=find_packages(),
@@ -104,5 +103,5 @@ def main():
             zip_safe=False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

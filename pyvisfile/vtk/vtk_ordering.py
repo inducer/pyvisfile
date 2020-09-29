@@ -206,17 +206,17 @@ def vtk_lagrange_simplex_node_tuples(dims, order, is_consistent=False):
     elif dims == 3:
         return vtk_lagrange_tetrahedron_node_tuples(order)
     else:
-        raise ValueError("unsupported dimension: %d" % dims)
+        raise ValueError(f"unsupported dimension: {dims}")
 
 
 def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):
     order = max([sum(i) for i in node_tuples])
     dims = len(node_tuples[0])
 
-    node_to_index = dict(
-            (node_tuple, i)
+    node_to_index = {
+            node_tuple: i
             for i, node_tuple in enumerate(gnitstam(order, dims))
-            )
+            }
 
     assert len(node_tuples) == len(node_to_index)
     return [node_to_index[v] for v in node_tuples]
