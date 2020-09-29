@@ -22,5 +22,5 @@ jobs:
         -   name: "Main Script"
             run: |
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
-                . ./prepare-and-run-flake8.sh  "$(basename $GITHUB_REPOSITORY) examples"
+                . ./prepare-and-run-flake8.sh  "$(basename $GITHUB_REPOSITORY)" examples
 
