@@ -1,7 +1,5 @@
 __copyright__ = "Copyright (C) 2007,2010 Andreas Kloeckner"
 
-import six
-
 __license__ = """
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
 
 __doc__ = """PyVisfile exposes the functionality of libsilo to Python using the
 Boost.Python wrapper library.
@@ -108,8 +105,8 @@ def _convert_optlist(ol_dict):
         elif isinstance(value, tuple):
             for el in value:
                 if not isinstance(el, int):
-                    raise TypeError('For now only tuples of int are '
-                            'implemented as option value!')
+                    raise TypeError("For now only tuples of int are "
+                            "implemented as option value!")
             ol.add_option(key, value)
         else:
             ol.add_option(key, value)

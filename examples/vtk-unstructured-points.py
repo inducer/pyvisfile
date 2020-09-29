@@ -1,5 +1,5 @@
 import numpy as np
-from pyvisfile.vtk import ( 
+from pyvisfile.vtk import (
     UnstructuredGrid, DataArray,
     AppendedDataXMLGenerator,
     VTK_VERTEX, VF_LIST_OF_VECTORS, VF_LIST_OF_COMPONENTS)

@@ -24,7 +24,6 @@ THE SOFTWARE.
 
 import numpy as np
 
-import sys
 buffer = memoryview
 
 __doc__ = """
@@ -227,7 +226,7 @@ class XMLElement(XMLElementBase):
 
     def write(self, file):
         attr_string = "".join(
-                f" {key}=\"{value}\""
+                f' {key}="{value}"'
                 for key, value in self.attributes.items())
         if self.children:
             file.write(f"<{self.tag}{attr_string}>\n")
@@ -249,7 +248,7 @@ class XMLRoot(XMLElementBase):
             self.add_child(child)
 
     def write(self, file):
-        file.write("<?xml version=\"1.0\"?>\n")
+        file.write('<?xml version="1.0"?>\n')
         for child in self.children:
             if isinstance(child, XMLElement):
                 child.write(file)
@@ -382,7 +381,7 @@ class DataArray:
 
         if not isinstance(container, np.ndarray):
             raise ValueError(
-                    "cannot convert object of type `%s' to DataArray"
+                    "cannot convert object of type '%s' to DataArray"
                     % type(container))
 
         if container.dtype.char == "O":
