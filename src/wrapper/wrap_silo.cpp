@@ -314,18 +314,14 @@ namespace
     throw std::runtime_error(#NAME " failed");
 
 #define COPY_PY_LIST(TYPE, NAME) \
-  { \
     std::vector<TYPE> NAME; \
     for (auto it: py_##NAME) \
       NAME.push_back(it.cast<TYPE>()); \
-  }
 
 #define MAKE_STRING_POINTER_VECTOR(NAME) \
-{ \
   std::vector<const char *> NAME##_ptrs; \
   for(const std::string &s: NAME) \
     NAME##_ptrs.push_back(s.data()); \
-}
 
   NPY_TYPES get_varlist_dtype(py::sequence varlist)
   {
@@ -371,7 +367,7 @@ namespace
       }
       ~DBoptlistWrapper()
       {
-        CALL_GUARDED(DBFreeOptlist, (m_optlist));
+        DBFreeOptlist(m_optlist);
       }
 
       void add_option(int option, int value)
@@ -414,11 +410,11 @@ namespace
       {
         std::vector<int> values;
 
-        for(py::object py_value: py_values)
+        for(size_t i = 0; i < py::len(py_values); ++i)
         {
-          int value = py_value.cast<int>();
-          values.push_back(value);
+          values.push_back(py_values[i].cast<int>());
         }
+
         CALL_GUARDED(DBAddOption,(m_optlist, option,
               add_storage_data((void *) &values.front(), values.size()*sizeof(int))
               ));
@@ -436,7 +432,7 @@ namespace
           throw std::runtime_error("silo option list storage exhausted"
               "--specify bigger storage size");
 
-        void *dest = m_option_storage.get() + m_option_storage_occupied;
+        void *dest = m_option_storage + m_option_storage_occupied;
         memcpy(dest, data, size);
         m_option_storage_occupied += size;
         return dest;
@@ -471,8 +467,8 @@ namespace
       case DB_DOUBLE:
           return NPY_DOUBLE;
       case DB_CHAR:
-          return NPY_CHAR;
-#if SILO_VERSION_GE(4,7,2)
+          return NPY_STRING;
+#if SILO_VERSION_GE(4, 7, 2)
       case DB_LONG_LONG:
           return NPY_LONGLONG;
 #endif
@@ -502,7 +498,7 @@ namespace
 #define PYVISFILE_TYPED_ARRAY_ACCESSOR(CAST_TO, NAME, SIZE) \
   py::object NAME() const \
   { \
-    py::sequence py_list_result; \
+    py::list py_list_result; \
     for (unsigned i = 0; i < SIZE; ++i) \
       py_list_result.append(CAST_TO(m_data->NAME[i])); \
     return py::make_tuple(py_list_result); \
@@ -538,15 +534,15 @@ namespace
   };
 
 #define PYVISFILE_CURVE_DATA_GETTER(COORD) \
-  handle<> curve_##COORD(py::object py_curve) \
+  py::handle curve_##COORD(py::object py_curve) \
   { \
     DBcurveWrapper &curve(py_curve.cast<DBcurveWrapper &>()); \
     npy_intp dims[] = { curve.m_data->npts }; \
-    handle<> result(PyArray_SimpleNewFromData(1, dims, \
+    py::handle result(PyArray_SimpleNewFromData(1, dims, \
           silo_typenum_to_numpy_typenum(curve.m_data->datatype), \
           curve.m_data->COORD)); \
-    PyArray_BASE(result.get()) = py_curve.ptr(); \
-    Py_INCREF(PyArray_BASE(result.get())); \
+    PyArray_BASE(result.ptr()) = py_curve.ptr(); \
+    Py_INCREF(PyArray_BASE(result.ptr())); \
     return result; \
   }
 
@@ -608,14 +604,14 @@ namespace
     DBquadmeshWrapper &quadmesh(py_quadmesh.cast<DBquadmeshWrapper &>());
 
     py::list result;
-    for (unsigned i = 0; i < quadmesh.m_data->ndims; ++i)
+    for (int i = 0; i < quadmesh.m_data->ndims; ++i)
     {
       npy_intp dims[] = { quadmesh.m_data->dims[i] };
-      handle<> coord_array(PyArray_SimpleNewFromData(1, dims,
+      py::handle coord_array(PyArray_SimpleNewFromData(1, dims,
             silo_typenum_to_numpy_typenum(quadmesh.m_data->datatype),
             quadmesh.m_data->coords[i]));
-      PyArray_BASE(coord_array.get()) = py_quadmesh.ptr();
-      Py_INCREF(PyArray_BASE(coord_array.get()));
+      PyArray_BASE(coord_array.ptr()) = py_quadmesh.ptr();
+      Py_INCREF(PyArray_BASE(coord_array.ptr()));
       result.append(coord_array);
     }
 
@@ -676,7 +672,7 @@ namespace
 
     npy_intp dims[3];
 
-    for (unsigned i = 0; i < quadvar.m_data->ndims; ++i)
+    for (int i = 0; i < quadvar.m_data->ndims; ++i)
       dims[i] = quadvar.m_data->dims[i];
 
     int ary_flags = 0;
@@ -686,21 +682,21 @@ namespace
       ary_flags |= NPY_FARRAY;
 
     py::list result;
-    for (unsigned i = 0; i < quadvar.m_data->nvals; ++i)
+    for (int i = 0; i < quadvar.m_data->nvals; ++i)
     {
       PyArray_Descr *tp_descr;
       tp_descr = PyArray_DescrNewFromType(
           silo_typenum_to_numpy_typenum(quadvar.m_data->datatype));
       if (tp_descr == 0)
-        throw error_already_set();
+        throw py::error_already_set();
 
-      handle<> val_array(PyArray_NewFromDescr(
+      py::handle val_array(PyArray_NewFromDescr(
           &PyArray_Type, tp_descr,
           quadvar.m_data->ndims, dims, /*strides*/ NULL,
           quadvar.m_data->vals[i], ary_flags, /*obj*/NULL));
 
-      PyArray_BASE(val_array.get()) = py_quadvar.ptr();
-      Py_INCREF(PyArray_BASE(val_array.get()));
+      PyArray_BASE(val_array.ptr()) = py_quadvar.ptr();
+      Py_INCREF(PyArray_BASE(val_array.ptr()));
       result.append(val_array);
     }
 
@@ -980,8 +976,9 @@ namespace
         std::vector<int> vartypes;
         std::vector<DBoptlist *> varopts;
 
-        for(py::object entry: py_vars)
+        for(py::object py_entry: py_vars)
         {
+          py::tuple entry = py_entry.cast<py::tuple>();
           varnames_container.push_back(entry[0].cast<std::string>());
           vardefs_container.push_back(entry[1].cast<std::string>());
           if (py::len(entry) == 2)
@@ -999,7 +996,7 @@ namespace
           }
         }
 
-        for (int i = 0; i < py::len(py_vars); i++)
+        for (size_t i = 0; i < py::len(py_vars); i++)
         {
           varnames.push_back(varnames_container[i].data());
           vardefs.push_back(vardefs_container[i].data());
@@ -1387,10 +1384,10 @@ namespace
 
   py::tuple get_silo_version()
   {
-#if PYVISFILE_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
     return py::make_tuple(SILO_VERS_MAJ, SILO_VERS_MIN, SILO_VERS_PAT);
 #else
-    return py::make_tuple(4,5,1);
+    return py::make_tuple(4, 5, 1);
 #endif
   }
 
@@ -1650,7 +1647,7 @@ PYBIND11_MODULE(_internal, m)
           py::arg("value"))
       .def("extend", [](std::vector<int> &self, const py::sequence &py_other)
           {
-            for(const py::object &item:: py_other)
+            for(const py::object &item: py_other)
               self.push_back(item.cast<int>());
           },
           py::arg("iterable"))
