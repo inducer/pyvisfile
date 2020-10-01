@@ -44,12 +44,13 @@ except ImportError:
 
 
 from pyvisfile.silo._internal import (  # noqa: F401
-        # types
+        get_silo_version, set_deprecate_warnings,
+
+        # enums
         DBObjectType, DBdatatype,
 
         # classes
         DBToc, DBCurve, DBQuadMesh, DBQuadVar, IntVector,
-        get_silo_version, set_deprecate_warnings,
 
         # constants
         DB_LOCAL, DB_COLLINEAR, DB_CLOBBER, DB_NOCLOBBER, DB_PDB, DB_NODECENT,
