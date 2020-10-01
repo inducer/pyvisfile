@@ -40,8 +40,11 @@
 #define DEF_SIMPLE_METHOD_WITH_ARGS(NAME, ARGS) \
   def(#NAME, &cl::NAME, args ARGS)
 
+#define DEF_SIMPLE_RO_MEMBER(NAME) \
+  def_readonly(#NAME, &cl::NAME)
+
 #define DEF_SIMPLE_RO_PROPERTY(NAME) \
-  add_property(#NAME, &cl::NAME)
+  def_property_readonly(#NAME, &cl::get##NAME)
 
 #define CALL_GUARDED(NAME, ARGLIST) \
   if (NAME ARGLIST) \
@@ -78,6 +81,22 @@ namespace
     noncopyable(const noncopyable&) = delete;
     noncopyable& operator=(const noncopyable&) = delete;
   };
+
+  py::tuple get_silo_version()
+  {
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
+    return py::make_tuple(SILO_VERS_MAJ, SILO_VERS_MIN, SILO_VERS_PAT);
+#else
+    return py::make_tuple(4, 5, 1);
+#endif
+  }
+
+#if !PYVISFILE_SILO_VERSION_GE(4, 6, 1)
+  int set_dep_warning_dummy(int)
+  {
+    return 0;
+  }
+#endif
 
   // }}}
 
@@ -440,9 +459,6 @@ namespace
 
   // }}}
 
-
-
-
   int get_datatype(int) { return DB_INT; }
   int get_datatype(short) { return DB_SHORT; }
   int get_datatype(long) { return DB_LONG; }
@@ -475,17 +491,14 @@ namespace
     }
   }
 
-
-
-
   // {{{ data wrappers
 
   // {{{ data wrapper helpers
 #define PYVISFILE_TYPED_ACCESSOR(TYPE,NAME) \
-  TYPE NAME() const { return m_data->NAME; }
+  TYPE get##NAME() const { return m_data->NAME; }
 
 #define PYVISFILE_STRING_ACCESSOR(NAME) \
-  py::object NAME() const \
+  py::object get##NAME() const \
   { \
     if (m_data) \
       return py::cast(std::string(m_data->NAME)); \
@@ -494,7 +507,7 @@ namespace
   }
 
 #define PYVISFILE_TYPED_ARRAY_ACCESSOR(CAST_TO, NAME, SIZE) \
-  py::object NAME() const \
+  py::object get##NAME() const \
   { \
     py::list py_list_result; \
     for (unsigned i = 0; i < SIZE; ++i) \
@@ -705,9 +718,6 @@ namespace
 
   // }}}
 
-
-
-
   // {{{ DBtoc copy
 
   struct DBtocCopy : noncopyable
@@ -750,9 +760,6 @@ namespace
       throw std::runtime_error("DBGet" #CAMEL_TYPE " failed"); \
     return new DB##LOWER_TYPE##Wrapper(obj); \
   }
-
-
-
 
   class DBfileWrapper: noncopyable
   {
@@ -820,10 +827,7 @@ namespace
             ));
       }
 
-
-
-
-#if PYVISFILE_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
       void put_zonelist_2(const char *name, int nzones, int ndims,
           const std::vector<int> &nodelist, int lo_offset, int hi_offset,
           const std::vector<int> &shapetype,
@@ -863,7 +867,7 @@ namespace
         int ndims = coords.shape(0);
         int nnodes = coords.shape(1);
 
-        auto coords_unchecked = coords.unchecked<2>();
+        auto coords_unchecked = coords.unchecked();
         std::vector<const T *> coord_starts;
         for (int d = 0; d < ndims; d++)
           coord_starts.push_back(&coords_unchecked(d, 0));
@@ -890,9 +894,6 @@ namespace
             get_datatype(T()), centering,
             optlist.get_optlist()));
       }
-
-
-
 
       template<class T>
       void put_ucdvar_backend(const char *vname, const char *mname,
@@ -933,9 +934,6 @@ namespace
             /* mixvar */ NULL, /* mixlen */ 0,
             get_datatype(T()), centering, optlist.get_optlist()));
       }
-
-
-
 
       void put_ucdvar(const char *vname, const char *mname,
           py::object py_varnames, py::object py_vars,
@@ -998,7 +996,7 @@ namespace
           vardefs.push_back(vardefs_container[i].data());
         }
 
-#if PYVISFILE_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
         CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), py::len(py_vars),
             const_cast<char **>(&varnames.front()),
             &vartypes.front(),
@@ -1026,7 +1024,7 @@ namespace
         int ndims = coords.shape(0);
         int npoints = coords.shape(1);
 
-        auto coords_unchecked = coords.unchecked<2>();
+        auto coords_unchecked = coords.unchecked();
         std::vector<float *> coord_starts;
         for (int d = 0; d < ndims; d++)
           coord_starts.push_back((float *) &coords_unchecked(d, 0));
@@ -1035,9 +1033,6 @@ namespace
               ndims, &coord_starts.front(), npoints,
               get_datatype(T()), optlist.get_optlist()));
       }
-
-
-
 
       template <class T>
       void put_pointvar1(const char *vname, const char *mname,
@@ -1049,9 +1044,6 @@ namespace
               (float *) v.data(), v.size(),
               get_datatype(T()), optlist.get_optlist()));
       }
-
-
-
 
       template <class T>
       void put_pointvar_backend(const char *vname, const char *mname,
@@ -1084,9 +1076,6 @@ namespace
               optlist.get_optlist()));
       }
 
-
-
-
       void put_pointvar(const char *vname, const char *mname,
           py::object py_vars, DBoptlistWrapper &optlist)
       {
@@ -1108,7 +1097,7 @@ namespace
       // {{{ quad mesh/var
 
       template <class T>
-      void put_quadmesh_backend(const char *name, py::list py_coords,
+      void put_quadmesh_backend(const char *name, py::sequence py_coords,
           int coordtype, DBoptlistWrapper &optlist)
       {
         std::vector<int> dims;
@@ -1131,9 +1120,6 @@ namespace
               optlist.get_optlist()));
       }
 
-
-
-
       void put_quadmesh(const char *name, py::object py_coords,
           int coordtype, DBoptlistWrapper &optlist)
       {
@@ -1149,10 +1135,6 @@ namespace
             PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
-
-
-
-
 
       template <class T>
       void put_quadvar_backend(const char *vname, const char *mname,
@@ -1196,9 +1178,6 @@ namespace
               centering,
               optlist.get_optlist()));
       }
-
-
-
 
       void put_quadvar(const char *vname, const char *mname,
           py::object py_varnames, py::object py_vars, py::object py_dims,
@@ -1245,7 +1224,7 @@ namespace
 
       // {{{ multi mesh/var
 
-      void put_multimesh(const char *name, py::sequence names_and_types,
+      void put_multimesh(const char *name, py::sequence py_names_and_types,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1253,8 +1232,9 @@ namespace
         std::vector<std::string> meshnames;
         std::vector<int> meshtypes;
 
-        for(py::object name_and_type: names_and_types)
+        for(py::object py_name_and_type: py_names_and_types)
         {
+          py::tuple name_and_type = py_name_and_type.cast<py::tuple>();
           meshnames.push_back(name_and_type[0].cast<std::string>());
           meshtypes.push_back(name_and_type[1].cast<int>());
         }
@@ -1267,10 +1247,7 @@ namespace
               optlist.get_optlist()));
       }
 
-
-
-
-      void put_multivar(const char *name, py::sequence names_and_types,
+      void put_multivar(const char *name, py::sequence py_names_and_types,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1278,8 +1255,9 @@ namespace
         std::vector<std::string> varnames;
         std::vector<int> vartypes;
 
-        for(py::object name_and_type: names_and_types)
+        for(py::object py_name_and_type: py_names_and_types)
         {
+          py::tuple name_and_type = py_name_and_type.cast<py::tuple>();
           varnames.push_back(name_and_type[0].cast<std::string>());
           vartypes.push_back(name_and_type[1].cast<int>());
         }
@@ -1313,8 +1291,6 @@ namespace
               npoints,
               optlist.get_optlist()));
       }
-
-
 
       PYVISFILE_DBFILE_GET_WRAPPER(curve, Curve);
 
@@ -1373,30 +1349,9 @@ namespace
   };
   // }}}
 
-
-
-
-  py::tuple get_silo_version()
-  {
-#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
-    return py::make_tuple(SILO_VERS_MAJ, SILO_VERS_MIN, SILO_VERS_PAT);
-#else
-    return py::make_tuple(4, 5, 1);
-#endif
-  }
-
-
-
-  int set_dep_warning_dummy(int)
-  {
-    return 0;
-  }
 }
 
-
-
-
-// {{{ main wrapper function --------------------------------------------------
+// {{{ main wrapper function
 
 static bool import_numpy_helper()
 {
@@ -1493,14 +1448,14 @@ PYBIND11_MODULE(_internal, m)
       .def("put_curve", &cl::put_curve<float>)
       .def("put_curve", &cl::put_curve<double>)
       .def("get_curve", &cl::get_curve,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
       .def("get_quadmesh", &cl::get_quadmesh,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
       .def("get_quadvar", &cl::get_quadvar,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
 
       .def("get_toc", &cl::get_toc,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
       ;
   }
 
@@ -1528,14 +1483,14 @@ PYBIND11_MODULE(_internal, m)
       .DEF_SIMPLE_RO_PROPERTY(xunits)
       .DEF_SIMPLE_RO_PROPERTY(yunits)
       .DEF_SIMPLE_RO_PROPERTY(reference)
-      .add_property("x", make_function(curve_x))
-      .add_property("y", make_function(curve_y))
+      .def_property_readonly("x", &curve_x)
+      .def_property_readonly("y", &curve_y)
       ;
   }
 
   {
     typedef DBquadmeshWrapper cl;
-    py::class_<cl>("DBQuadMesh")
+    py::class_<cl>(m, "DBQuadMesh")
       .DEF_SIMPLE_RO_PROPERTY(id)
       .DEF_SIMPLE_RO_PROPERTY(block_no)
       .DEF_SIMPLE_RO_PROPERTY(group_no)
@@ -1564,7 +1519,7 @@ PYBIND11_MODULE(_internal, m)
       .DEF_SIMPLE_RO_PROPERTY(size_index)
       .DEF_SIMPLE_RO_PROPERTY(guihide)
       .DEF_SIMPLE_RO_PROPERTY(mrgtree_name)
-      .add_property("coords", make_function(quadmesh_coords))
+      .def_property_readonly("coords", &quadmesh_coords)
       ;
   }
 
@@ -1596,37 +1551,37 @@ PYBIND11_MODULE(_internal, m)
       .DEF_SIMPLE_RO_PROPERTY(ascii_labels)
       .DEF_SIMPLE_RO_PROPERTY(meshname)
       .DEF_SIMPLE_RO_PROPERTY(guihide)
-      .add_property("vals", make_function(quadvar_vals))
+      .def_property_readonly("vals", &quadvar_vals)
       ;
   }
 
   {
     typedef DBtocCopy cl;
     py::class_<cl, noncopyable>(m, "DBToc")
-      .DEF_SIMPLE_RO_PROPERTY(curve_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimeshadj_names)
-      .DEF_SIMPLE_RO_PROPERTY(multivar_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimat_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimatspecies_names)
-      .DEF_SIMPLE_RO_PROPERTY(csgmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(csgvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(defvars_names)
-      .DEF_SIMPLE_RO_PROPERTY(qmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(qvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(ucdmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(ucdvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(ptmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(ptvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(mat_names)
-      .DEF_SIMPLE_RO_PROPERTY(matspecies_names)
-      .DEF_SIMPLE_RO_PROPERTY(var_names)
-      .DEF_SIMPLE_RO_PROPERTY(obj_names)
-      .DEF_SIMPLE_RO_PROPERTY(dir_names)
-      .DEF_SIMPLE_RO_PROPERTY(array_names)
-      .DEF_SIMPLE_RO_PROPERTY(mrgtree_names)
-      .DEF_SIMPLE_RO_PROPERTY(groupelmap_names)
-      .DEF_SIMPLE_RO_PROPERTY(mrgvar_names)
+      .DEF_SIMPLE_RO_MEMBER(curve_names)
+      .DEF_SIMPLE_RO_MEMBER(multimesh_names)
+      .DEF_SIMPLE_RO_MEMBER(multimeshadj_names)
+      .DEF_SIMPLE_RO_MEMBER(multivar_names)
+      .DEF_SIMPLE_RO_MEMBER(multimat_names)
+      .DEF_SIMPLE_RO_MEMBER(multimatspecies_names)
+      .DEF_SIMPLE_RO_MEMBER(csgmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(csgvar_names)
+      .DEF_SIMPLE_RO_MEMBER(defvars_names)
+      .DEF_SIMPLE_RO_MEMBER(qmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(qvar_names)
+      .DEF_SIMPLE_RO_MEMBER(ucdmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(ucdvar_names)
+      .DEF_SIMPLE_RO_MEMBER(ptmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(ptvar_names)
+      .DEF_SIMPLE_RO_MEMBER(mat_names)
+      .DEF_SIMPLE_RO_MEMBER(matspecies_names)
+      .DEF_SIMPLE_RO_MEMBER(var_names)
+      .DEF_SIMPLE_RO_MEMBER(obj_names)
+      .DEF_SIMPLE_RO_MEMBER(dir_names)
+      .DEF_SIMPLE_RO_MEMBER(array_names)
+      .DEF_SIMPLE_RO_MEMBER(mrgtree_names)
+      .DEF_SIMPLE_RO_MEMBER(groupelmap_names)
+      .DEF_SIMPLE_RO_MEMBER(mrgvar_names)
       ;
   }
 
@@ -1636,8 +1591,8 @@ PYBIND11_MODULE(_internal, m)
       .def(py::init<>())
       .def("reserve", &cl::reserve,
           py::arg("advised_size"))
-      .def("__len__", &cl.size)
-      .def("append", &cl::push_back,
+      .def("__len__", &cl::size)
+      .def("append", (void (std::vector<int>::*)(const int &)) &cl::push_back,
           py::arg("value"))
       .def("extend", [](std::vector<int> &self, const py::sequence &py_other)
           {
@@ -1649,9 +1604,9 @@ PYBIND11_MODULE(_internal, m)
   }
 
 #if PYVISFILE_SILO_VERSION_GE(4,6,1)
-  def("set_deprecate_warnings", DBSetDeprecateWarnings);
+  m.def("set_deprecate_warnings", DBSetDeprecateWarnings);
 #else
-  def("set_deprecate_warnings", set_dep_warning_dummy);
+  m.def("set_deprecate_warnings", set_dep_warning_dummy);
 #endif
   DEF_SIMPLE_FUNCTION(get_silo_version);
 }
