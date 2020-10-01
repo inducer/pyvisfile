@@ -32,8 +32,6 @@ ParallelSiloFile to automatically create a master file along with your
 SiloFile.
 """
 
-
-import sys
 try:
     import pyvisfile.silo._internal as _silo
 except ImportError:
@@ -45,7 +43,7 @@ except ImportError:
     raise
 
 
-from pyvisfile.silo._internal import (
+from pyvisfile.silo._internal import (  # noqa: F401
         # types
         DBObjectType, DBdatatype,
 
@@ -55,7 +53,7 @@ from pyvisfile.silo._internal import (
 
         # constants
         DB_LOCAL, DB_COLLINEAR, DB_CLOBBER, DB_NOCLOBBER, DB_PDB, DB_NODECENT,
-        DB_HDF5, DB_READ, DB_UNKNOWN,
+        DB_HDF5, DB_READ, DB_UNKNOWN, DB_APPEND,
         DB_ZONETYPE_TRIANGLE, DB_ZONECENT,
 
         DBOPT_CYCLE, DBOPT_DTIME, DBOPT_XUNITS, DBOPT_YUNITS, DBOPT_ZUNITS,
