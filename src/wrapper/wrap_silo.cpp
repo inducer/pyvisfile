@@ -53,9 +53,9 @@ namespace
 {
   // basics -------------------------------------------------------------------
   template <class T>
-  std::unique_ptr<std::vector<T> > construct_vector(py::object iterable)
+  std::unique_ptr<std::vector<T>> construct_vector(py::object iterable)
   {
-    std::unique_ptr<std::vector<T> > result(new std::vector<T>());
+    std::unique_ptr<std::vector<T>> result(new std::vector<T>());
     copy(
         stl_input_iterator<T>(iterable),
         stl_input_iterator<T>(),
@@ -425,7 +425,7 @@ namespace
 
         PYTHON_FOREACH(value_py, values_py)
         {
-          int value = extract<int> (value_py);
+          int value = valye.cast<int>();
           values.push_back(value);
         }
         CALL_GUARDED(DBAddOption,(m_optlist, option,
@@ -549,7 +549,7 @@ namespace
 #define PYVISFILE_CURVE_DATA_GETTER(COORD) \
   handle<> curve_##COORD(py::object py_curve) \
   { \
-    DBcurveWrapper &curve((extract<DBcurveWrapper &>(py_curve))); \
+    DBcurveWrapper &curve(py_curve.cast<DBcurveWrapper &>()); \
     npy_intp dims[] = { curve.m_data->npts }; \
     handle<> result(PyArray_SimpleNewFromData(1, dims, \
           silo_typenum_to_numpy_typenum(curve.m_data->datatype), \
@@ -614,7 +614,7 @@ namespace
 
   py::object quadmesh_coords(py::object py_quadmesh)
   {
-    DBquadmeshWrapper &quadmesh((extract<DBquadmeshWrapper &>(py_quadmesh)));
+    DBquadmeshWrapper &quadmesh(py_quadmesh.cast<DBquadmeshWrapper &>());
 
     py::list result;
     for (unsigned i = 0; i < quadmesh.m_data->ndims; ++i)
@@ -681,7 +681,7 @@ namespace
 
   py::object quadvar_vals(py::object py_quadvar)
   {
-    DBquadvarWrapper &quadvar((extract<DBquadvarWrapper &>(py_quadvar)));
+    DBquadvarWrapper &quadvar(py_quadvar.cast<DBquadvarWrapper &>());
 
     npy_intp dims[3];
 
@@ -930,7 +930,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
+          numpy_vector<T> v = var_py.cast<numpy_vector<T>>();
           if (first)
           {
             vlength = v.size();
@@ -993,8 +993,8 @@ namespace
 
         PYTHON_FOREACH(entry, vars_py)
         {
-          varnames_container.push_back(extract<std::string>(entry[0]));
-          vardefs_container.push_back(extract<std::string>(entry[1]));
+          varnames_container.push_back(entry[0].cast<std::string>());
+          vardefs_container.push_back(entry[1].cast<std::string>());
           if (py::len(entry) == 2)
           {
             vartypes.push_back(DB_VARTYPE_SCALAR);
@@ -1002,9 +1002,9 @@ namespace
           }
           else
           {
-            vartypes.push_back(extract<int>(entry[2]));
+            vartypes.push_back(entry[2].cast<int>());
             if (py::len(entry) == 4)
-              varopts.push_back(extract<DBoptlistWrapper *>(entry[3])()->get_optlist());
+              varopts.push_back(entry[3].cast<DBoptlistWrapper *>()->get_optlist());
             else
               varopts.push_back(NULL);
           }
@@ -1083,7 +1083,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
+          numpy_vector<T> v = var_py.cast<numpy_vector<T>>();
           if (first)
           {
             vlength = v.size();
@@ -1136,7 +1136,7 @@ namespace
 
         PYTHON_FOREACH(coord_dim_py, coords_py)
         {
-          numpy_vector<T> coord_dim = extract<numpy_vector<T> >(coord_dim_py);
+          numpy_vector<T> coord_dim = coord_dim_py.cast<numpy_vector<T>>();
           dims.push_back(coord_dim.size());
           coords.push_back((float *) coord_dim.data().data());
         }
@@ -1194,7 +1194,7 @@ namespace
 
         PYTHON_FOREACH(var_py, vars_py)
         {
-          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
+          numpy_vector<T> v = var_py.cast<numpy_vector<T>>();
           if (first)
           {
             vlength = v.size();
@@ -1281,8 +1281,8 @@ namespace
 
         PYTHON_FOREACH(name_and_type, names_and_types)
         {
-          meshnames.push_back(extract<std::string>(name_and_type[0]));
-          meshtypes.push_back(extract<int>(name_and_type[1]));
+          meshnames.push_back(name_and_type[0].cast<std::string>());
+          meshtypes.push_back(name_and_type[1].cast<int>());
         }
         MAKE_STRING_POINTER_VECTOR(meshnames)
 
@@ -1306,8 +1306,8 @@ namespace
 
         PYTHON_FOREACH(name_and_type, names_and_types)
         {
-          varnames.push_back(extract<std::string>(name_and_type[0]));
-          vartypes.push_back(extract<int>(name_and_type[1]));
+          varnames.push_back(name_and_type[0].cast<std::string>());
+          vartypes.push_back(name_and_type[1].cast<int>());
         }
 
         MAKE_STRING_POINTER_VECTOR(varnames)
