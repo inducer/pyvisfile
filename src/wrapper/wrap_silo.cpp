@@ -74,6 +74,19 @@ namespace
 {
   // {{{ helpers
 
+  // https://stackoverflow.com/a/26221725
+  template<typename ... Args>
+  char *string_format(const std::string& format, Args ... args)
+  {
+    size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1;
+    if (size <= 0)
+      throw std::runtime_error("Error during formatting.");
+
+    std::unique_ptr<char[]> buf(new char[size]);
+    snprintf(buf.get(), size, format.c_str(), args ...);
+    return buf.get();
+  }
+
   // https://stackoverflow.com/a/44175911
   class noncopyable {
   public:
@@ -989,7 +1002,9 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
+            PYTHON_ERROR(ValueError, string_format(
+                  "field components of '%s' need to have matching lengths",
+                  vname));
           vars.push_back((float *) v.data());
         }
 
@@ -1132,7 +1147,9 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
+            PYTHON_ERROR(ValueError, string_format(
+                  "field components of '%s' need to have matching lengths",
+                  vname));
 
           vars.push_back((float *) v.data());
         }
@@ -1230,7 +1247,9 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
+            PYTHON_ERROR(ValueError, string_format(
+                  "field components of '%s' need to have matching lengths",
+                  vname));
           vars.push_back((float *) v.data());
         }
 
