@@ -46,20 +46,12 @@
 
 namespace py = pybind11;
 
+// NOTE: for IntVector
+PYBIND11_MAKE_OPAQUE(std::vector<int>);
+
 namespace
 {
   // {{{ helpers
-
-  template <class T>
-  std::unique_ptr<std::vector<T>> construct_vector(py::object iterable)
-  {
-    std::unique_ptr<std::vector<T>> result(new std::vector<T>());
-    copy(
-        stl_input_iterator<T>(iterable),
-        stl_input_iterator<T>(),
-        back_inserter(*result));
-    return result;
-  }
 
   // https://stackoverflow.com/a/44175911
   class noncopyable {
@@ -322,11 +314,11 @@ namespace
     throw std::runtime_error(#NAME " failed");
 
 #define COPY_PY_LIST(TYPE, NAME) \
-  std::vector<TYPE> NAME; \
-  std::copy( \
-      stl_input_iterator<TYPE>(NAME##_py), \
-      stl_input_iterator<TYPE>(), \
-      back_inserter(NAME)); \
+  { \
+    std::vector<TYPE> NAME; \
+    for (auto it: py_##NAME) \
+      NAME.push_back(it.cast<TYPE>()); \
+  }
 
 #define MAKE_STRING_POINTER_VECTOR(NAME) \
 { \
@@ -1646,12 +1638,22 @@ PYBIND11_MODULE(_internal, m)
       .DEF_SIMPLE_RO_PROPERTY(mrgvar_names)
       ;
   }
+
   {
     typedef std::vector<int> cl;
     py::class_<cl>(m, "IntVector")
-      .def("__init__", make_constructor(construct_vector<int>))
-      .def("reserve", &cl::reserve, py::arg("advised_size"))
-      .def(vector_indexing_suite<cl> ())
+      .def(py::init<>())
+      .def("reserve", &cl::reserve,
+          py::arg("advised_size"))
+      .def("__len__", &cl.size)
+      .def("append", &cl::push_back,
+          py::arg("value"))
+      .def("extend", [](std::vector<int> &self, const py::sequence &py_other)
+          {
+            for(const py::object &item:: py_other)
+              self.push_back(item.cast<int>());
+          },
+          py::arg("iterable"))
       ;
   }
 
