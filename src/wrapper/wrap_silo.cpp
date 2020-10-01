@@ -102,11 +102,10 @@ namespace
 
   // {{{ constants
 
-  py::dict symbols()
+  void silo_expose_symbols(py::module &m)
   {
-    py::dict result;
 #define EXPORT_CONSTANT(NAME) \
-    result[#NAME] = NAME
+    m.attr(#NAME) = NAME
 
     /* Drivers */
     EXPORT_CONSTANT(DB_NETCDF);
@@ -335,7 +334,6 @@ namespace
 #endif
 
 #undef EXPORT_CONSTANT
-    return result;
   }
 
   // }}}
@@ -1364,7 +1362,7 @@ PYBIND11_MODULE(_internal, m)
   if (!import_numpy_helper())
     throw py::error_already_set();
 
-  DEF_SIMPLE_FUNCTION(symbols);
+  silo_expose_symbols(m);
 
   py::enum_<DBdatatype>(m, "DBdatatype")
     .ENUM_VALUE(DB_INT)

@@ -33,18 +33,9 @@ SiloFile.
 """
 
 
-def _ignore_extra_int_vector_warning():
-    from warnings import filterwarnings
-    filterwarnings("ignore", module="pyvisfile.silo",
-            category=RuntimeWarning, lineno=43)
-
-
-_ignore_extra_int_vector_warning()
-
-
 import sys
 try:
-    import pyvisfile.silo._internal  # noqa
+    import pyvisfile.silo._internal as _silo
 except ImportError:
     from warnings import warn
     warn("Importing the native-code parts of PyVisfile's silo component failed. "
@@ -53,50 +44,29 @@ except ImportError:
             "This requires the libsilo library.")
     raise
 
-# hackety hack -- not sure why this is needed
-_intnl = sys.modules["pyvisfile.silo._internal"]
 
+from pyvisfile.silo._internal import (
+        # types
+        DBObjectType, DBdatatype,
 
-# {{{ handle symbols
+        # classes
+        DBToc, DBCurve, DBQuadMesh, DBQuadVar, IntVector,
+        get_silo_version, set_deprecate_warnings,
 
-_intnl_symbols = _intnl.symbols()
+        # constants
+        DB_LOCAL, DB_COLLINEAR, DB_CLOBBER, DB_NOCLOBBER, DB_PDB, DB_NODECENT,
+        DB_HDF5, DB_READ, DB_UNKNOWN,
+        DB_ZONETYPE_TRIANGLE, DB_ZONECENT,
 
-
-def _export_symbols():
-    for name, value in _intnl_symbols.items():
-        globals()[name] = value
-
-
-_export_symbols()
-
-# These are technically redundant, but they help avoid Flake8 warnings below.
-
-DB_COLLINEAR = _intnl_symbols["DB_COLLINEAR"]
-DB_LOCAL = _intnl_symbols["DB_LOCAL"]
-DB_NOCLOBBER = _intnl_symbols["DB_NOCLOBBER"]
-DB_UNKNOWN = _intnl_symbols["DB_UNKNOWN"]
-DB_PDB = _intnl_symbols["DB_PDB"]
-DB_APPEND = _intnl_symbols["DB_APPEND"]
-
-# }}}
-
-
-DBObjectType = _intnl.DBObjectType
-DBdatatype = _intnl.DBdatatype
-
-DBToc = _intnl.DBToc
-DBCurve = _intnl.DBCurve
-DBQuadMesh = _intnl.DBQuadMesh
-DBQuadVar = _intnl.DBQuadVar
-
-IntVector = _intnl.IntVector
-get_silo_version = _intnl.get_silo_version
-set_deprecate_warnings = _intnl.set_deprecate_warnings
+        DBOPT_CYCLE, DBOPT_DTIME, DBOPT_XUNITS, DBOPT_YUNITS, DBOPT_ZUNITS,
+        DBOPT_XLABEL, DBOPT_YLABEL, DBOPT_ZLABEL,
+        DBOPT_UNITS, DBOPT_HI_OFFSET, DBOPT_LO_OFFSET
+        )
 
 
 def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
-    ol = _intnl.DBOptlist(optcount, optcount * 150)
+    ol = _silo.DBOptlist(optcount, optcount * 150)
 
     for key, value in ol_dict.items():
         if isinstance(value, int):
@@ -113,7 +83,7 @@ def _convert_optlist(ol_dict):
     return ol
 
 
-class SiloFile(_intnl.DBFile):
+class SiloFile(_silo.DBFile):
     """This class can be used in a Python 2.5 *with* statement."""
     def __enter__(self):
         return self
@@ -129,34 +99,34 @@ class SiloFile(_intnl.DBFile):
                 mode = DB_NOCLOBBER
             if filetype is None:
                 filetype = DB_PDB
-            _intnl.DBFile.__init__(self, pathname, mode, target,
+            _silo.DBFile.__init__(self, pathname, mode, target,
                     fileinfo, filetype)
         else:
             if mode is None:
                 mode = DB_APPEND
             if filetype is None:
                 filetype = DB_UNKNOWN
-            _intnl.DBFile.__init__(self, pathname, filetype, mode)
+            _silo.DBFile.__init__(self, pathname, filetype, mode)
 
     def put_zonelist_2(self, names, nzones, ndims, nodelist, lo_offset, hi_offset,
             shapetype, shapesize, shapecounts, optlist={}):
-        _intnl.DBFile.put_zonelist_2(self, names, nzones, ndims,
+        _silo.DBFile.put_zonelist_2(self, names, nzones, ndims,
                 nodelist, lo_offset, hi_offset,
                 shapetype, shapesize, shapecounts, _convert_optlist(optlist))
 
     def put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name,
             optlist={}):
-        _intnl.DBFile.put_ucdmesh(self, mname, coordnames, coords,
+        _silo.DBFile.put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
-        _intnl.DBFile.put_ucdvar1(self, vname, mname, vec, centering,
+        _silo.DBFile.put_ucdvar1(self, vname, mname, vec, centering,
                 _convert_optlist(optlist))
 
     def put_ucdvar(self, vname, mname, varnames, vars,
             centering, optlist={}):
-        _intnl.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering,
+        _silo.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering,
                 _convert_optlist(optlist))
 
     def put_defvars(self, vname, vars):
@@ -171,43 +141,43 @@ class SiloFile(_intnl.DBFile):
         If the type is not specified, scalar is assumed.
         """
 
-        _intnl.DBFile.put_defvars(self, vname, vars)
+        _silo.DBFile.put_defvars(self, vname, vars)
 
     def put_pointmesh(self, mname, coords, optlist={}):
-        _intnl.DBFile.put_pointmesh(self, mname, coords,
+        _silo.DBFile.put_pointmesh(self, mname, coords,
                 _convert_optlist(optlist))
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
-        _intnl.DBFile.put_pointvar1(self, vname, mname, var,
+        _silo.DBFile.put_pointvar1(self, vname, mname, var,
                 _convert_optlist(optlist))
 
     def put_pointvar(self, vname, mname, vars, optlist={}):
-        _intnl.DBFile.put_pointvar(self, vname, mname, vars,
+        _silo.DBFile.put_pointvar(self, vname, mname, vars,
                 _convert_optlist(optlist))
 
     def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist={}):
-        _intnl.DBFile.put_quadmesh(self, mname, coords, coordtype,
+        _silo.DBFile.put_quadmesh(self, mname, coords, coordtype,
                 _convert_optlist(optlist))
 
     def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
-        _intnl.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
+        _silo.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
                 _convert_optlist(optlist))
 
     def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
-        _intnl.DBFile.put_quadvar(self, vname, mname,
+        _silo.DBFile.put_quadvar(self, vname, mname,
                 varnames, vars, dims, centering,
                 _convert_optlist(optlist))
 
     def put_multimesh(self, mname, mnames_and_types, optlist={}):
-        _intnl.DBFile.put_multimesh(self, mname,
+        _silo.DBFile.put_multimesh(self, mname,
                 mnames_and_types, _convert_optlist(optlist))
 
     def put_multivar(self, vname, vnames_and_types, optlist={}):
-        _intnl.DBFile.put_multivar(self, vname,
+        _silo.DBFile.put_multivar(self, vname,
                 vnames_and_types, _convert_optlist(optlist))
 
     def put_curve(self, curvename, xvals, yvals, optlist={}):
-        _intnl.DBFile.put_curve(self, curvename, xvals, yvals,
+        _silo.DBFile.put_curve(self, curvename, xvals, yvals,
                 _convert_optlist(optlist))
 
 
