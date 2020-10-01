@@ -16,42 +16,41 @@
 
 
 #ifdef SILO_VERS_MAJ
-#define PYVISFILE_SILO_VERSION_GE(Maj,Min,Rel)  \
-        (((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN==Min) && (SILO_VERS_PAT>=Rel)) || \
-         ((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN>Min)) || \
-         (SILO_VERS_MAJ>Maj))
+#define PYVISFILE_SILO_VERSION_GE(Maj, Min, Rel)  \
+        (((SILO_VERS_MAJ == Maj) && (SILO_VERS_MIN == Min) && (SILO_VERS_PAT >= Rel)) || \
+         ((SILO_VERS_MAJ == Maj) && (SILO_VERS_MIN > Min)) || \
+         (SILO_VERS_MAJ > Maj))
 #else
-#define PYVISFILE_SILO_VERSION_GE(Maj,Min,Rel) 0
+#define PYVISFILE_SILO_VERSION_GE(Maj, Min, Rel) 0
 #endif
 
 #define PYTHON_ERROR(TYPE, REASON) \
 { \
   PyErr_SetString(PyExc_##TYPE, REASON); \
-  throw boost::python::error_already_set(); \
+  throw py::error_already_set(); \
 }
-
-
-
 
 #define ENUM_VALUE(NAME) \
   value(#NAME, NAME)
+
 #define DEF_SIMPLE_FUNCTION(NAME) \
   m.def(#NAME, &NAME)
+
 #define DEF_SIMPLE_METHOD(NAME) \
   def(#NAME, &cl::NAME)
+
 #define DEF_SIMPLE_METHOD_WITH_ARGS(NAME, ARGS) \
   def(#NAME, &cl::NAME, args ARGS)
+
 #define DEF_SIMPLE_RO_PROPERTY(NAME) \
   add_property(#NAME, &cl::NAME)
 
-
-
 namespace py = pybind11;
-
 
 namespace
 {
-  // basics -------------------------------------------------------------------
+  // {{{ helpers
+
   template <class T>
   std::unique_ptr<std::vector<T>> construct_vector(py::object iterable)
   {
@@ -63,7 +62,7 @@ namespace
     return result;
   }
 
-
+  // }}}
 
 
 
@@ -972,7 +971,7 @@ namespace
                 centering, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
@@ -1119,7 +1118,7 @@ namespace
             put_pointvar_backend<double>(vname, mname, py_vars, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
@@ -1166,7 +1165,7 @@ namespace
             put_quadmesh_backend<double>(name, py_coords, coordtype, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
@@ -1239,7 +1238,7 @@ namespace
                 py_dims, centering, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
@@ -1674,4 +1673,4 @@ PYBIND11_MODULE(_internal, m)
 
 // }}}
 
-// vim: foldmethod=marker
+// vim: ts=2:sw=2:foldmethod=marker
