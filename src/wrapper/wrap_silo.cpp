@@ -2,6 +2,7 @@
 // Copyright (C) 2007 Andreas Kloeckner
 
 #include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 #include <numpy/arrayobject.h>
 
 #include <vector>
@@ -41,6 +42,20 @@
 
 #define DEF_SIMPLE_RO_PROPERTY(NAME) \
   add_property(#NAME, &cl::NAME)
+
+#define CALL_GUARDED(NAME, ARGLIST) \
+  if (NAME ARGLIST) \
+    throw std::runtime_error(#NAME " failed");
+
+#define COPY_PY_LIST(TYPE, NAME) \
+    std::vector<TYPE> NAME; \
+    for (auto it: py_##NAME) \
+      NAME.push_back(it.cast<TYPE>()); \
+
+#define MAKE_STRING_POINTER_VECTOR(NAME) \
+  std::vector<const char *> NAME##_ptrs; \
+  for(const std::string &s: NAME) \
+    NAME##_ptrs.push_back(s.data()); \
 
 // }}}
 
@@ -305,23 +320,6 @@ namespace
   }
 
   // }}}
-
-
-
-
-#define CALL_GUARDED(NAME, ARGLIST) \
-  if (NAME ARGLIST) \
-    throw std::runtime_error(#NAME " failed");
-
-#define COPY_PY_LIST(TYPE, NAME) \
-    std::vector<TYPE> NAME; \
-    for (auto it: py_##NAME) \
-      NAME.push_back(it.cast<TYPE>()); \
-
-#define MAKE_STRING_POINTER_VECTOR(NAME) \
-  std::vector<const char *> NAME##_ptrs; \
-  for(const std::string &s: NAME) \
-    NAME##_ptrs.push_back(s.data()); \
 
   NPY_TYPES get_varlist_dtype(py::sequence varlist)
   {
@@ -853,7 +851,7 @@ namespace
       // {{{ ucd mesh/var
       template <class T>
       void put_ucdmesh(const char *name,
-             py::object py_coordnames, numpy_vector<T> coords,
+             py::sequence py_coordnames, py::array_t<T> coords,
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {
@@ -862,12 +860,13 @@ namespace
         if (coords.ndim() != 2)
           throw std::invalid_argument("need 2d array");
 
-        int ndims = coords.dims()[0];
-        int nnodes = coords.dims()[1];
+        int ndims = coords.shape(0);
+        int nnodes = coords.shape(1);
 
+        auto coords_unchecked = coords.unchecked<2>();
         std::vector<const T *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          coord_starts.push_back(&coords.sub(d, 0));
+          coord_starts.push_back(&coords_unchecked(d, 0));
 
         CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims,
             /* coordnames*/ NULL,
@@ -876,19 +875,16 @@ namespace
             get_datatype(T()), optlist.get_optlist()));
       }
 
-
-
-
       template <class T>
       void put_ucdvar1(const char *vname, const char *mname,
-          const numpy_vector<T> &v,
+          const py::array_t<T> &v,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname,
-            (float *) &v.sub(0),
+            (float *) v.data(),
             v.size(),
             /* mixvar */ NULL, /* mixlen */ 0,
             get_datatype(T()), centering,
@@ -918,7 +914,7 @@ namespace
 
         for(py::object py_var: py_vars)
         {
-          numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
+          py::array_t<T> v = py_var.cast<py::array_t<T>>();
           if (first)
           {
             vlength = v.size();
@@ -926,7 +922,7 @@ namespace
           }
           else if (vlength != int(v.size()))
             PYTHON_ERROR(ValueError, "field components need to have matching lengths");
-          vars.push_back((float *) v.data().data());
+          vars.push_back((float *) v.data());
         }
 
         CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname,
@@ -1019,7 +1015,7 @@ namespace
       // {{{ point mesh/var
 
       template <class T>
-      void put_pointmesh(const char *id, const numpy_vector<T> &coords,
+      void put_pointmesh(const char *id, const py::array_t<T> &coords,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1027,12 +1023,13 @@ namespace
         if (coords.ndim() != 2)
           throw std::invalid_argument("need 2d array");
 
-        int ndims = coords.dims()[0];
-        int npoints = coords.dims()[1];
+        int ndims = coords.shape(0);
+        int npoints = coords.shape(1);
 
+        auto coords_unchecked = coords.unchecked<2>();
         std::vector<float *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          coord_starts.push_back((float *) &coords.sub(d,0));
+          coord_starts.push_back((float *) &coords_unchecked(d, 0));
 
         CALL_GUARDED(DBPutPointmesh, (m_dbfile, id,
               ndims, &coord_starts.front(), npoints,
@@ -1044,12 +1041,12 @@ namespace
 
       template <class T>
       void put_pointvar1(const char *vname, const char *mname,
-          const numpy_vector<T> &v, DBoptlistWrapper &optlist)
+          const py::array_t<T> &v, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         CALL_GUARDED(DBPutPointvar1, (m_dbfile, vname, mname,
-              (float *) v.data().data(), v.size(),
+              (float *) v.data(), v.size(),
               get_datatype(T()), optlist.get_optlist()));
       }
 
@@ -1069,7 +1066,7 @@ namespace
 
         for(py::object py_var: py_vars)
         {
-          numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
+          py::array_t<T> v = py_var.cast<py::array_t<T>>();
           if (first)
           {
             vlength = v.size();
@@ -1078,7 +1075,7 @@ namespace
           else if (vlength != int(v.size()))
             PYTHON_ERROR(ValueError, "field components need to have matching lengths");
 
-          vars.push_back((float *) v.data().data());
+          vars.push_back((float *) v.data());
         }
 
         CALL_GUARDED(DBPutPointvar, (m_dbfile, vname, mname,
@@ -1119,9 +1116,9 @@ namespace
 
         for(py::object py_coord_dim: py_coords)
         {
-          numpy_vector<T> coord_dim = py_coord_dim.cast<numpy_vector<T>>();
+          py::array_t<T> coord_dim = py_coord_dim.cast<py::array_t<T>>();
           dims.push_back(coord_dim.size());
-          coords.push_back((float *) coord_dim.data().data());
+          coords.push_back((float *) coord_dim.data());
         }
 
         CALL_GUARDED(DBPutQuadmesh, (m_dbfile, name,
@@ -1177,7 +1174,7 @@ namespace
 
         for(py::object py_var: py_vars)
         {
-          numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
+          py::array_t<T> v = py_var.cast<py::array_t<T>>();
           if (first)
           {
             vlength = v.size();
@@ -1185,7 +1182,7 @@ namespace
           }
           else if (vlength != int(v.size()))
             PYTHON_ERROR(ValueError, "field components need to have matching lengths");
-          vars.push_back((float *) v.data().data());
+          vars.push_back((float *) v.data());
         }
 
         CALL_GUARDED(DBPutQuadvar, (m_dbfile, vname, mname,
@@ -1223,19 +1220,16 @@ namespace
         }
       }
 
-
-
-
       template <class T>
       void put_quadvar1(const char *vname, const char *mname,
-          numpy_vector<T> var, py::object py_dims,
+          py::array_t<T> var, py::sequence py_dims,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         COPY_PY_LIST(int, dims);
 
         CALL_GUARDED(DBPutQuadvar1, (m_dbfile, vname, mname,
-              (float *) var.data().data(),
+              (float *) var.data(),
               &dims.front(),
               dims.size(),
               /* mix stuff */ NULL, 0,
@@ -1305,16 +1299,16 @@ namespace
 
       template <class T>
       void put_curve(const char *curvename,
-          const numpy_vector<T> &xvals,
-          const numpy_vector<T> &yvals,
+          const py::array_t<T> &xvals,
+          const py::array_t<T> &yvals,
           DBoptlistWrapper &optlist)
       {
         if (xvals.size() != yvals.size())
           PYTHON_ERROR(ValueError, "xvals and yvals must have the same length");
         int npoints = xvals.size();
         CALL_GUARDED(DBPutCurve, (m_dbfile, curvename,
-              const_cast<void *>(reinterpret_cast<const void *>(xvals.data().data())),
-              const_cast<void *>(reinterpret_cast<const void *>(yvals.data().data())),
+              const_cast<void *>(reinterpret_cast<const void *>(xvals.data())),
+              const_cast<void *>(reinterpret_cast<const void *>(yvals.data())),
               get_datatype(T()),
               npoints,
               optlist.get_optlist()));
