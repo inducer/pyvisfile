@@ -1,19 +1,14 @@
 // PyVisfile - A Python wrapper around Silo
 // Copyright (C) 2007 Andreas Kloeckner
 
-
 #include <pybind11/pybind11.h>
 #include <numpy/arrayobject.h>
 
-#include <boost/foreach.hpp>
-#include <boost/scoped_array.hpp>
 #include <vector>
 #include <stdexcept>
 #include <iostream>
 
 #include <silo.h>
-
-
 
 #ifdef SILO_VERS_MAJ
 #define PYVISFILE_SILO_VERSION_GE(Maj, Min, Rel)  \
@@ -23,6 +18,8 @@
 #else
 #define PYVISFILE_SILO_VERSION_GE(Maj, Min, Rel) 0
 #endif
+
+// {{{ macros
 
 #define PYTHON_ERROR(TYPE, REASON) \
 { \
@@ -44,6 +41,8 @@
 
 #define DEF_SIMPLE_RO_PROPERTY(NAME) \
   add_property(#NAME, &cl::NAME)
+
+// }}}
 
 namespace py = pybind11;
 
@@ -320,25 +319,18 @@ namespace
       back_inserter(NAME)); \
 
 #define MAKE_STRING_POINTER_VECTOR(NAME) \
+{ \
   std::vector<const char *> NAME##_ptrs; \
-  BOOST_FOREACH(const std::string &s, NAME) \
-    NAME##_ptrs.push_back(s.data());
+  for(const std::string &s: NAME) \
+    NAME##_ptrs.push_back(s.data()); \
+}
 
-#define PYTHON_FOREACH(NAME, ITERABLE) \
-  BOOST_FOREACH(py::object NAME, \
-      std::make_pair( \
-        stl_input_iterator<py::object>(ITERABLE), \
-        stl_input_iterator<py::object>()))
-
-
-
-
-  NPY_TYPES get_varlist_dtype(py::object varlist)
+  NPY_TYPES get_varlist_dtype(py::sequence varlist)
   {
     bool first = true;
     NPY_TYPES result = NPY_NOTYPE;
 
-    PYTHON_FOREACH(var, varlist)
+    for(py::object var: varlist)
     {
       if (!PyArray_Check(var.ptr()))
         PYTHON_ERROR(TypeError, "component of variable list is not numpy array");
@@ -363,7 +355,7 @@ namespace
   {
     private:
       DBoptlist *m_optlist;
-      boost::scoped_array<char> m_option_storage;
+      char *m_option_storage;
       unsigned m_option_storage_size;
       unsigned m_option_storage_occupied;
 
@@ -422,7 +414,7 @@ namespace
       {
         std::vector<int> values;
 
-        PYTHON_FOREACH(py_value, py_values)
+        for(py::object py_value: py_values)
         {
           int value = py_value.cast<int>();
           values.push_back(value);
@@ -911,7 +903,7 @@ namespace
 
       template<class T>
       void put_ucdvar_backend(const char *vname, const char *mname,
-          py::object py_varnames, py::object py_vars,
+          py::sequence py_varnames, py::sequence py_vars,
           /*float *mixvars[], int mixlen,*/
           int centering, DBoptlistWrapper &optlist)
       {
@@ -927,7 +919,7 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(py_var, py_vars)
+        for(py::object py_var: py_vars)
         {
           numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
           if (first)
@@ -979,7 +971,7 @@ namespace
 
       // {{{ defvars
 
-      void put_defvars(std::string id, py::object py_vars)
+      void put_defvars(std::string id, py::sequence py_vars)
       {
         ensure_db_open();
 
@@ -990,7 +982,7 @@ namespace
         std::vector<int> vartypes;
         std::vector<DBoptlist *> varopts;
 
-        PYTHON_FOREACH(entry, py_vars)
+        for(py::object entry: py_vars)
         {
           varnames_container.push_back(entry[0].cast<std::string>());
           vardefs_container.push_back(entry[1].cast<std::string>());
@@ -1071,7 +1063,7 @@ namespace
 
       template <class T>
       void put_pointvar_backend(const char *vname, const char *mname,
-          py::object py_vars,
+          py::sequence py_vars,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1080,7 +1072,7 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(py_var, py_vars)
+        for(py::object py_var: py_vars)
         {
           numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
           if (first)
@@ -1127,13 +1119,13 @@ namespace
       // {{{ quad mesh/var
 
       template <class T>
-      void put_quadmesh_backend(const char *name, py::object py_coords,
+      void put_quadmesh_backend(const char *name, py::list py_coords,
           int coordtype, DBoptlistWrapper &optlist)
       {
         std::vector<int> dims;
         std::vector<float *> coords;
 
-        PYTHON_FOREACH(py_coord_dim, py_coords)
+        for(py::object py_coord_dim: py_coords)
         {
           numpy_vector<T> coord_dim = py_coord_dim.cast<numpy_vector<T>>();
           dims.push_back(coord_dim.size());
@@ -1175,8 +1167,8 @@ namespace
 
       template <class T>
       void put_quadvar_backend(const char *vname, const char *mname,
-          py::object py_varnames, py::object py_vars, py::object py_dims,
-          /*float *mixvar, int mixlen, */int centering,
+          py::sequence py_varnames, py::sequence py_vars, py::sequence py_dims,
+          /* float *mixvar, int mixlen, */ int centering,
           DBoptlistWrapper &optlist)
       {
         COPY_PY_LIST(int, dims);
@@ -1191,7 +1183,7 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(py_var, py_vars)
+        for(py::object py_var: py_vars)
         {
           numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
           if (first)
@@ -1270,7 +1262,7 @@ namespace
 
       // {{{ multi mesh/var
 
-      void put_multimesh(const char *name, py::object names_and_types,
+      void put_multimesh(const char *name, py::sequence names_and_types,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1278,7 +1270,7 @@ namespace
         std::vector<std::string> meshnames;
         std::vector<int> meshtypes;
 
-        PYTHON_FOREACH(name_and_type, names_and_types)
+        for(py::object name_and_type: names_and_types)
         {
           meshnames.push_back(name_and_type[0].cast<std::string>());
           meshtypes.push_back(name_and_type[1].cast<int>());
@@ -1295,7 +1287,7 @@ namespace
 
 
 
-      void put_multivar(const char *name, py::object names_and_types,
+      void put_multivar(const char *name, py::sequence names_and_types,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1303,7 +1295,7 @@ namespace
         std::vector<std::string> varnames;
         std::vector<int> vartypes;
 
-        PYTHON_FOREACH(name_and_type, names_and_types)
+        for(py::object name_and_type: names_and_types)
         {
           varnames.push_back(name_and_type[0].cast<std::string>());
           vartypes.push_back(name_and_type[1].cast<int>());
