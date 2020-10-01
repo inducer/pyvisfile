@@ -1557,7 +1557,7 @@ PYBIND11_MODULE(_internal, m)
 
   {
     typedef DBtocCopy cl;
-    py::class_<cl, noncopyable>(m, "DBToc")
+    py::class_<cl>(m, "DBToc")
       .DEF_SIMPLE_RO_MEMBER(curve_names)
       .DEF_SIMPLE_RO_MEMBER(multimesh_names)
       .DEF_SIMPLE_RO_MEMBER(multimeshadj_names)
@@ -1594,9 +1594,9 @@ PYBIND11_MODULE(_internal, m)
       .def("__len__", &cl::size)
       .def("append", (void (std::vector<int>::*)(const int &)) &cl::push_back,
           py::arg("value"))
-      .def("extend", [](std::vector<int> &self, const py::sequence &py_other)
+      .def("extend", [](std::vector<int> &self, const py::iterable &py_other)
           {
-            for(const py::object &item: py_other)
+            for(const py::handle &item: py_other)
               self.push_back(item.cast<int>());
           },
           py::arg("iterable"))

@@ -43,7 +43,6 @@ _ignore_extra_int_vector_warning()
 
 
 import sys
-import pyublas  # noqa
 try:
     import pyvisfile.silo._internal  # noqa
 except ImportError:
