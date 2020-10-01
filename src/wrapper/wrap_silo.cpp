@@ -419,13 +419,13 @@ namespace
               ));
       }
 
-      void add_option(int option, py::tuple values_py)
+      void add_option(int option, py::tuple py_values)
       {
         std::vector<int> values;
 
-        PYTHON_FOREACH(value_py, values_py)
+        PYTHON_FOREACH(py_value, py_values)
         {
-          int value = valye.cast<int>();
+          int value = py_value.cast<int>();
           values.push_back(value);
         }
         CALL_GUARDED(DBAddOption,(m_optlist, option,
@@ -865,7 +865,7 @@ namespace
       // {{{ ucd mesh/var
       template <class T>
       void put_ucdmesh(const char *name,
-             py::object coordnames_py, numpy_vector<T> coords,
+             py::object py_coordnames, numpy_vector<T> coords,
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {
@@ -912,13 +912,13 @@ namespace
 
       template<class T>
       void put_ucdvar_backend(const char *vname, const char *mname,
-          py::object varnames_py, py::object vars_py,
+          py::object py_varnames, py::object py_vars,
           /*float *mixvars[], int mixlen,*/
           int centering, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
-        if (py::len(varnames_py) != py::len(vars_py))
+        if (py::len(py_varnames) != py::len(py_vars))
           PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
 
         COPY_PY_LIST(std::string, varnames);
@@ -928,9 +928,9 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(var_py, vars_py)
+        PYTHON_FOREACH(py_var, py_vars)
         {
-          numpy_vector<T> v = var_py.cast<numpy_vector<T>>();
+          numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
           if (first)
           {
             vlength = v.size();
@@ -945,7 +945,7 @@ namespace
         }
 
         CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname,
-            py::len(vars_py),
+            py::len(py_vars),
             const_cast<char **>(&varnames_ptrs.front()),
             &vars.front(),
             vlength,
@@ -957,18 +957,18 @@ namespace
 
 
       void put_ucdvar(const char *vname, const char *mname,
-          py::object varnames_py, py::object vars_py,
+          py::object py_varnames, py::object py_vars,
           /*float *mixvars[], int mixlen,*/
           int centering, DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(vars_py))
+        switch (get_varlist_dtype(py_vars))
         {
           case NPY_FLOAT:
-            put_ucdvar_backend<float>(vname, mname, varnames_py, vars_py,
+            put_ucdvar_backend<float>(vname, mname, py_varnames, py_vars,
                 centering, optlist);
             break;
           case NPY_DOUBLE:
-            put_ucdvar_backend<double>(vname, mname, varnames_py, vars_py,
+            put_ucdvar_backend<double>(vname, mname, py_varnames, py_vars,
                 centering, optlist);
             break;
           default:
@@ -980,7 +980,7 @@ namespace
 
       // {{{ defvars
 
-      void put_defvars(std::string id, py::object vars_py)
+      void put_defvars(std::string id, py::object py_vars)
       {
         ensure_db_open();
 
@@ -991,7 +991,7 @@ namespace
         std::vector<int> vartypes;
         std::vector<DBoptlist *> varopts;
 
-        PYTHON_FOREACH(entry, vars_py)
+        PYTHON_FOREACH(entry, py_vars)
         {
           varnames_container.push_back(entry[0].cast<std::string>());
           vardefs_container.push_back(entry[1].cast<std::string>());
@@ -1010,19 +1010,19 @@ namespace
           }
         }
 
-        for (int i = 0; i < py::len(vars_py); i++)
+        for (int i = 0; i < py::len(py_vars); i++)
         {
           varnames.push_back(varnames_container[i].data());
           vardefs.push_back(vardefs_container[i].data());
         }
 
 #if PYVISFILE_SILO_VERSION_GE(4,6,1)
-        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), py::len(vars_py),
+        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), py::len(py_vars),
             const_cast<char **>(&varnames.front()),
             &vartypes.front(),
             const_cast<char **>(&vardefs.front()), &varopts.front()));
 #else
-        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), py::len(vars_py),
+        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), py::len(py_vars),
             &varnames.front(), &vartypes.front(),
             &vardefs.front(), &varopts.front()));
 #endif
@@ -1072,7 +1072,7 @@ namespace
 
       template <class T>
       void put_pointvar_backend(const char *vname, const char *mname,
-          py::object vars_py,
+          py::object py_vars,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1081,9 +1081,9 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(var_py, vars_py)
+        PYTHON_FOREACH(py_var, py_vars)
         {
-          numpy_vector<T> v = var_py.cast<numpy_vector<T>>();
+          numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
           if (first)
           {
             vlength = v.size();
@@ -1099,7 +1099,7 @@ namespace
         }
 
         CALL_GUARDED(DBPutPointvar, (m_dbfile, vname, mname,
-              py::len(vars_py), &vars.front(), vlength,
+              py::len(py_vars), &vars.front(), vlength,
               get_datatype(T()),
               optlist.get_optlist()));
       }
@@ -1108,15 +1108,15 @@ namespace
 
 
       void put_pointvar(const char *vname, const char *mname,
-          py::object vars_py, DBoptlistWrapper &optlist)
+          py::object py_vars, DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(vars_py))
+        switch (get_varlist_dtype(py_vars))
         {
           case NPY_FLOAT:
-            put_pointvar_backend<float>(vname, mname, vars_py, optlist);
+            put_pointvar_backend<float>(vname, mname, py_vars, optlist);
             break;
           case NPY_DOUBLE:
-            put_pointvar_backend<double>(vname, mname, vars_py, optlist);
+            put_pointvar_backend<double>(vname, mname, py_vars, optlist);
             break;
           default:
             PYUBLAS_PYERROR(TypeError, "unsupported variable type");
@@ -1128,15 +1128,15 @@ namespace
       // {{{ quad mesh/var
 
       template <class T>
-      void put_quadmesh_backend(const char *name, py::object coords_py,
+      void put_quadmesh_backend(const char *name, py::object py_coords,
           int coordtype, DBoptlistWrapper &optlist)
       {
         std::vector<int> dims;
         std::vector<float *> coords;
 
-        PYTHON_FOREACH(coord_dim_py, coords_py)
+        PYTHON_FOREACH(py_coord_dim, py_coords)
         {
-          numpy_vector<T> coord_dim = coord_dim_py.cast<numpy_vector<T>>();
+          numpy_vector<T> coord_dim = py_coord_dim.cast<numpy_vector<T>>();
           dims.push_back(coord_dim.size());
           coords.push_back((float *) coord_dim.data().data());
         }
@@ -1154,16 +1154,16 @@ namespace
 
 
 
-      void put_quadmesh(const char *name, py::object coords_py,
+      void put_quadmesh(const char *name, py::object py_coords,
           int coordtype, DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(coords_py))
+        switch (get_varlist_dtype(py_coords))
         {
           case NPY_FLOAT:
-            put_quadmesh_backend<float>(name, coords_py, coordtype, optlist);
+            put_quadmesh_backend<float>(name, py_coords, coordtype, optlist);
             break;
           case NPY_DOUBLE:
-            put_quadmesh_backend<double>(name, coords_py, coordtype, optlist);
+            put_quadmesh_backend<double>(name, py_coords, coordtype, optlist);
             break;
           default:
             PYUBLAS_PYERROR(TypeError, "unsupported variable type");
@@ -1176,13 +1176,13 @@ namespace
 
       template <class T>
       void put_quadvar_backend(const char *vname, const char *mname,
-          py::object varnames_py, py::object vars_py, py::object dims_py,
+          py::object py_varnames, py::object py_vars, py::object py_dims,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         COPY_PY_LIST(int, dims);
 
-        if (py::len(varnames_py) != py::len(vars_py))
+        if (py::len(py_varnames) != py::len(py_vars))
           PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
 
         COPY_PY_LIST(std::string, varnames);
@@ -1192,9 +1192,9 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(var_py, vars_py)
+        PYTHON_FOREACH(py_var, py_vars)
         {
-          numpy_vector<T> v = var_py.cast<numpy_vector<T>>();
+          numpy_vector<T> v = py_var.cast<numpy_vector<T>>();
           if (first)
           {
             vlength = v.size();
@@ -1224,19 +1224,19 @@ namespace
 
 
       void put_quadvar(const char *vname, const char *mname,
-          py::object varnames_py, py::object vars_py, py::object dims_py,
+          py::object py_varnames, py::object py_vars, py::object py_dims,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(vars_py))
+        switch (get_varlist_dtype(py_vars))
         {
           case NPY_FLOAT:
-            put_quadvar_backend<float>(vname, mname, varnames_py, vars_py,
-                dims_py, centering, optlist);
+            put_quadvar_backend<float>(vname, mname, py_varnames, py_vars,
+                py_dims, centering, optlist);
             break;
           case NPY_DOUBLE:
-            put_quadvar_backend<double>(vname, mname, varnames_py, vars_py,
-                dims_py, centering, optlist);
+            put_quadvar_backend<double>(vname, mname, py_varnames, py_vars,
+                py_dims, centering, optlist);
             break;
           default:
             PYUBLAS_PYERROR(TypeError, "unsupported variable type");
@@ -1248,7 +1248,7 @@ namespace
 
       template <class T>
       void put_quadvar1(const char *vname, const char *mname,
-          numpy_vector<T> var, py::object dims_py,
+          numpy_vector<T> var, py::object py_dims,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
