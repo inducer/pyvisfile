@@ -61,11 +61,21 @@ namespace
     return result;
   }
 
+  // https://stackoverflow.com/a/44175911
+  class noncopyable {
+  public:
+    noncopyable() = default;
+    ~noncopyable() = default;
+
+  private:
+    noncopyable(const noncopyable&) = delete;
+    noncopyable& operator=(const noncopyable&) = delete;
+  };
+
   // }}}
 
+  // {{{ constants
 
-
-  // {{{ constants ------------------------------------------------------------
   py::dict symbols()
   {
     py::dict result;
@@ -347,11 +357,9 @@ namespace
     return result;
   }
 
+  // {{{ DBoptlist wrapper
 
-
-
-  // {{{ DBoptlist wrapper ----------------------------------------------------
-  class DBoptlistWrapper : boost::noncopyable
+  class DBoptlistWrapper: noncopyable
   {
     private:
       DBoptlist *m_optlist;
@@ -512,7 +520,7 @@ namespace
 
   // {{{ curve wrapper
 
-  class DBcurveWrapper : boost::noncopyable
+  class DBcurveWrapper: noncopyable
   {
     public:
       DBcurve   *m_data;
@@ -557,7 +565,7 @@ namespace
 
   // {{{ quad mesh wrapper
 
-  class DBquadmeshWrapper : boost::noncopyable
+  class DBquadmeshWrapper: noncopyable
   {
     public:
       DBquadmesh   *m_data;
@@ -626,7 +634,7 @@ namespace
 
   // {{{ quad var wrapper
 
-  class DBquadvarWrapper : boost::noncopyable
+  class DBquadvarWrapper: noncopyable
   {
     public:
       DBquadvar   *m_data;
@@ -714,8 +722,9 @@ namespace
 
 
 
-  // {{{ DBtoc copy -----------------------------------------------------------
-  struct DBtocCopy : boost::noncopyable
+  // {{{ DBtoc copy
+
+  struct DBtocCopy : noncopyable
   {
     py::list curve_names;
     py::list multimesh_names;
@@ -745,7 +754,7 @@ namespace
 
   // }}}
 
-  // {{{ DBfile wrapper -------------------------------------------------------
+  // {{{ DBfile wrapper
 
 #define PYVISFILE_DBFILE_GET_WRAPPER(LOWER_TYPE, CAMEL_TYPE) \
   DB##LOWER_TYPE##Wrapper *get_##LOWER_TYPE(const char *name) \
@@ -759,7 +768,7 @@ namespace
 
 
 
-  class DBfileWrapper : boost::noncopyable
+  class DBfileWrapper: noncopyable
   {
     public:
       // {{{ construction and administrativa
@@ -928,10 +937,7 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError,
-                boost::str(boost::format(
-                    "field components of '%s' need to have matching lengths")
-                  % vname).c_str());
+            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
           vars.push_back((float *) v.data().data());
         }
 
@@ -1081,10 +1087,7 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError,
-                boost::str(boost::format(
-                    "field components of '%s' need to have matching lengths")
-                  % vname).c_str());
+            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
 
           vars.push_back((float *) v.data().data());
         }
@@ -1192,10 +1195,7 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError,
-                boost::str(boost::format(
-                    "field components of '%s' need to have matching lengths")
-                  % vname).c_str());
+            PYTHON_ERROR(ValueError, "field components need to have matching lengths");
           vars.push_back((float *) v.data().data());
         }
 
@@ -1619,7 +1619,7 @@ PYBIND11_MODULE(_internal, m)
 
   {
     typedef DBtocCopy cl;
-    py::class_<cl, boost::noncopyable>(m, "DBToc")
+    py::class_<cl, noncopyable>(m, "DBToc")
       .DEF_SIMPLE_RO_PROPERTY(curve_names)
       .DEF_SIMPLE_RO_PROPERTY(multimesh_names)
       .DEF_SIMPLE_RO_PROPERTY(multimeshadj_names)
