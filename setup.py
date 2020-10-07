@@ -14,9 +14,9 @@ class PyUblasExtension(NumpyExtension):
 
 
 def get_config_schema():
-    from aksetup_helper import ConfigSchema,  \
-            IncludeDir, LibraryDir, Libraries, \
-            Switch, StringListOption, make_boost_base_options
+    from aksetup_helper import (ConfigSchema,
+            IncludeDir, LibraryDir, Libraries,
+            Switch, StringListOption, make_boost_base_options)
 
     return ConfigSchema(make_boost_base_options() + [
         Switch("USE_SILO", False, "Compile libsilo interface"),
