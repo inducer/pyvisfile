@@ -1,9 +1,21 @@
 #!/usr/bin/env python
 
+from aksetup_helper import NumpyExtension
+
+
+class PyUblasExtension(NumpyExtension):
+    def get_module_include_path(self, name):
+        from pkg_resources import Requirement, resource_filename
+        return resource_filename(Requirement.parse(name), "%s/include" % name)
+
+    def get_additional_include_dirs(self):
+        return (NumpyExtension.get_additional_include_dirs(self)
+                + [self.get_module_include_path("pyublas")])
+
 
 def get_config_schema():
     from aksetup_helper import ConfigSchema,  \
-            IncludeDir, LibraryDir, Libraries, BoostLibraries, \
+            IncludeDir, LibraryDir, Libraries, \
             Switch, StringListOption, make_boost_base_options
 
     return ConfigSchema(make_boost_base_options() + [
