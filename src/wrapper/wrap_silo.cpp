@@ -1,86 +1,127 @@
 // PyVisfile - A Python wrapper around Silo
 // Copyright (C) 2007 Andreas Kloeckner
 
+// docs for the various types in v.4.10.2 can be found here (2020-10-01)
+// https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
 
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include <numpy/arrayobject.h>
 
-
-#include <boost/format.hpp>
-#include <boost/foreach.hpp>
-#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
-#include <pyublas/numpy.hpp>
-#include <boost/scoped_array.hpp>
-#include <boost/python.hpp>
-#include <boost/python/stl_iterator.hpp>
 #include <vector>
 #include <stdexcept>
 #include <iostream>
 
 #include <silo.h>
 
-
-
 #ifdef SILO_VERS_MAJ
-#define PYVISFILE_SILO_VERSION_GE(Maj,Min,Rel)  \
-        (((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN==Min) && (SILO_VERS_PAT>=Rel)) || \
-         ((SILO_VERS_MAJ==Maj) && (SILO_VERS_MIN>Min)) || \
-         (SILO_VERS_MAJ>Maj))
+#define PYVISFILE_SILO_VERSION_GE(Maj, Min, Rel)  \
+        (((SILO_VERS_MAJ == Maj) && (SILO_VERS_MIN == Min) && (SILO_VERS_PAT >= Rel)) || \
+         ((SILO_VERS_MAJ == Maj) && (SILO_VERS_MIN > Min)) || \
+         (SILO_VERS_MAJ > Maj))
 #else
-#define PYVISFILE_SILO_VERSION_GE(Maj,Min,Rel) 0
+#define PYVISFILE_SILO_VERSION_GE(Maj, Min, Rel) 0
 #endif
+
+// {{{ macros
 
 #define PYTHON_ERROR(TYPE, REASON) \
 { \
   PyErr_SetString(PyExc_##TYPE, REASON); \
-  throw boost::python::error_already_set(); \
+  throw py::error_already_set(); \
 }
-
-
-
 
 #define ENUM_VALUE(NAME) \
   value(#NAME, NAME)
+
 #define DEF_SIMPLE_FUNCTION(NAME) \
-  def(#NAME, &NAME)
+  m.def(#NAME, &NAME)
+
 #define DEF_SIMPLE_METHOD(NAME) \
   def(#NAME, &cl::NAME)
+
 #define DEF_SIMPLE_METHOD_WITH_ARGS(NAME, ARGS) \
   def(#NAME, &cl::NAME, args ARGS)
+
+#define DEF_SIMPLE_RO_MEMBER(NAME) \
+  def_readonly(#NAME, &cl::NAME)
+
 #define DEF_SIMPLE_RO_PROPERTY(NAME) \
-  add_property(#NAME, &cl::NAME)
+  def_property_readonly(#NAME, &cl::get##NAME)
 
+#define CALL_GUARDED(NAME, ARGLIST) \
+  if (NAME ARGLIST) \
+    throw std::runtime_error(#NAME " failed");
 
+#define COPY_PY_LIST(TYPE, NAME) \
+    std::vector<TYPE> NAME; \
+    for (auto it: py_##NAME) \
+      NAME.push_back(it.cast<TYPE>()); \
 
+#define MAKE_STRING_POINTER_VECTOR(NAME) \
+  std::vector<const char *> NAME##_ptrs; \
+  for(const std::string &s: NAME) \
+    NAME##_ptrs.push_back(s.data()); \
 
-using namespace boost::python;
-using namespace pyublas;
+// }}}
 
+namespace py = pybind11;
 
-
+// NOTE: for IntVector
+PYBIND11_MAKE_OPAQUE(std::vector<int>);
 
 namespace
 {
-  // basics -------------------------------------------------------------------
-  template <class T>
-  std::auto_ptr<std::vector<T> > construct_vector(object iterable)
+  // {{{ helpers
+
+  // https://stackoverflow.com/a/26221725
+  template<typename ... Args>
+  char *string_format(const std::string& format, Args ... args)
   {
-    std::auto_ptr<std::vector<T> > result(new std::vector<T>());
-    copy(
-        stl_input_iterator<T>(iterable),
-        stl_input_iterator<T>(),
-        back_inserter(*result));
-    return result;
+    size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1;
+    if (size <= 0)
+      throw std::runtime_error("Error during formatting.");
+
+    std::unique_ptr<char[]> buf(new char[size]);
+    snprintf(buf.get(), size, format.c_str(), args ...);
+    return buf.get();
   }
 
+  // https://stackoverflow.com/a/44175911
+  class noncopyable {
+  public:
+    noncopyable() = default;
+    ~noncopyable() = default;
 
+  private:
+    noncopyable(const noncopyable&) = delete;
+    noncopyable& operator=(const noncopyable&) = delete;
+  };
 
-
-
-  // {{{ constants ------------------------------------------------------------
-  dict symbols()
+  py::tuple get_silo_version()
   {
-    dict result;
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
+    return py::make_tuple(SILO_VERS_MAJ, SILO_VERS_MIN, SILO_VERS_PAT);
+#else
+    return py::make_tuple(4, 5, 1);
+#endif
+  }
+
+#if !PYVISFILE_SILO_VERSION_GE(4, 6, 1)
+  int set_dep_warning_dummy(int)
+  {
+    return 0;
+  }
+#endif
+
+  // }}}
+
+  // {{{ constants
+
+  void silo_expose_symbols(py::module &m)
+  {
 #define EXPORT_CONSTANT(NAME) \
-    result[#NAME] = NAME
+    m.attr(#NAME) = NAME
 
     /* Drivers */
     EXPORT_CONSTANT(DB_NETCDF);
@@ -88,14 +129,23 @@ namespace
     EXPORT_CONSTANT(DB_TAURUS);
     EXPORT_CONSTANT(DB_UNKNOWN);
     EXPORT_CONSTANT(DB_DEBUG);
+    EXPORT_CONSTANT(DB_HDF5X);
+    EXPORT_CONSTANT(DB_PDBP);
+
     EXPORT_CONSTANT(DB_HDF5);
 
-#if PYVISFILE_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
     EXPORT_CONSTANT(DB_HDF5_SEC2);
     EXPORT_CONSTANT(DB_HDF5_STDIO);
     EXPORT_CONSTANT(DB_HDF5_CORE);
+    EXPORT_CONSTANT(DB_HDF5_LOG);
+    EXPORT_CONSTANT(DB_HDF5_SPLIT);
+    EXPORT_CONSTANT(DB_HDF5_DIRECT);
+    EXPORT_CONSTANT(DB_HDF5_FAMILY);
     EXPORT_CONSTANT(DB_HDF5_MPIO);
     EXPORT_CONSTANT(DB_HDF5_MPIOP);
+    EXPORT_CONSTANT(DB_HDF5_MPIP);
+    EXPORT_CONSTANT(DB_HDF5_SILO);
 #endif
 
     /* Flags for DBCreate */
@@ -167,6 +217,36 @@ namespace
     EXPORT_CONSTANT(DBOPT_REGNAMES);
     EXPORT_CONSTANT(DBOPT_ZONENAMES);
     EXPORT_CONSTANT(DBOPT_HIDE_FROM_GUI);
+    EXPORT_CONSTANT(DBOPT_TOPO_DIM);
+    EXPORT_CONSTANT(DBOPT_REFERENCE);
+    EXPORT_CONSTANT(DBOPT_GROUPINGS_SIZE);
+    EXPORT_CONSTANT(DBOPT_GROUPINGS);
+    EXPORT_CONSTANT(DBOPT_GROUPINGNAMES);
+    EXPORT_CONSTANT(DBOPT_ALLOWMAT0);
+    EXPORT_CONSTANT(DBOPT_MRGTREE_NAME);
+    EXPORT_CONSTANT(DBOPT_REGION_PNAMES);
+    EXPORT_CONSTANT(DBOPT_TENSOR_RANK);
+    EXPORT_CONSTANT(DBOPT_MMESH_NAME);
+    EXPORT_CONSTANT(DBOPT_TV_CONNECTIVITY);
+    EXPORT_CONSTANT(DBOPT_DISJOINT_MODE);
+    EXPORT_CONSTANT(DBOPT_MRGV_ONAMES);
+    EXPORT_CONSTANT(DBOPT_MRGV_RNAMES);
+    EXPORT_CONSTANT(DBOPT_SPECNAMES);
+    EXPORT_CONSTANT(DBOPT_SPECCOLORS);
+    EXPORT_CONSTANT(DBOPT_LLONGNZNUM);
+    EXPORT_CONSTANT(DBOPT_CONSERVED);
+    EXPORT_CONSTANT(DBOPT_EXTENSIVE);
+    EXPORT_CONSTANT(DBOPT_MB_FILE_NS);
+    EXPORT_CONSTANT(DBOPT_MB_BLOCK_NS);
+    EXPORT_CONSTANT(DBOPT_MB_BLOCK_TYPE);
+    EXPORT_CONSTANT(DBOPT_MB_EMPTY_LIST);
+    EXPORT_CONSTANT(DBOPT_MB_EMPTY_COUNT);
+    EXPORT_CONSTANT(DBOPT_MB_REPR_BLOCK_IDX);
+    EXPORT_CONSTANT(DBOPT_MISSING_VALUE);
+    EXPORT_CONSTANT(DBOPT_ALT_ZONENUM_VARS);
+    EXPORT_CONSTANT(DBOPT_ALT_NODENUM_VARS);
+    EXPORT_CONSTANT(DBOPT_GHOST_NODE_LABELS);
+    EXPORT_CONSTANT(DBOPT_GHOST_ZONE_LABELS);
 
     /* Error trapping method */
     EXPORT_CONSTANT(DB_TOP);
@@ -175,6 +255,7 @@ namespace
     EXPORT_CONSTANT(DB_ABORT);
     EXPORT_CONSTANT(DB_SUSPEND);
     EXPORT_CONSTANT(DB_RESUME);
+    EXPORT_CONSTANT(DB_ALL_AND_DRVR);
 
     /* Errors */
     EXPORT_CONSTANT(E_NOERROR);
@@ -188,7 +269,7 @@ namespace
     EXPORT_CONSTANT(E_NOTFOUND);
     EXPORT_CONSTANT(E_TAURSTATE);
     EXPORT_CONSTANT(E_MSERVER);
-    EXPORT_CONSTANT(E_PROTO     );
+    EXPORT_CONSTANT(E_PROTO);
     EXPORT_CONSTANT(E_NOTDIR);
     EXPORT_CONSTANT(E_MAXOPEN);
     EXPORT_CONSTANT(E_NOTFILTER);
@@ -201,7 +282,17 @@ namespace
     EXPORT_CONSTANT(E_INVALIDNAME);
     EXPORT_CONSTANT(E_NOOVERWRITE);
     EXPORT_CONSTANT(E_CHECKSUM);
-    EXPORT_CONSTANT(E_NERRORS);
+    EXPORT_CONSTANT(E_COMPRESSION);
+    EXPORT_CONSTANT(E_GRABBED);
+    EXPORT_CONSTANT(E_NOTREG);
+    EXPORT_CONSTANT(E_CONCURRENT);
+    EXPORT_CONSTANT(E_DRVRCANTOPEN);
+    EXPORT_CONSTANT(E_BADOPTCLASS);
+    EXPORT_CONSTANT(E_NOTENABLEDINBUILD);
+    EXPORT_CONSTANT(E_MAXFILEOPTSETS);
+    EXPORT_CONSTANT(E_NOHDF5);
+    EXPORT_CONSTANT(E_EMPTYOBJECT);
+    EXPORT_CONSTANT(E_OBJBUFFULL);
 
     /* Definitions for MAJOR_ORDER */
     EXPORT_CONSTANT(DB_ROWMAJOR);
@@ -219,6 +310,8 @@ namespace
     EXPORT_CONSTANT(DB_ZONECENT);
     EXPORT_CONSTANT(DB_FACECENT);
     EXPORT_CONSTANT(DB_BNDCENT);
+    EXPORT_CONSTANT(DB_EDGECENT);
+    EXPORT_CONSTANT(DB_BLOCKCENT);
 
     /* Definitions for COORD_SYSTEM */
     EXPORT_CONSTANT(DB_CARTESIAN);
@@ -234,9 +327,14 @@ namespace
     /* Definitions for PLANAR */
     EXPORT_CONSTANT(DB_AREA);
     EXPORT_CONSTANT(DB_VOLUME);
+
     /* Definitions for flag values */
     EXPORT_CONSTANT(DB_ON);
     EXPORT_CONSTANT(DB_OFF);
+
+    /* Definitions for disjoint flags */
+    EXPORT_CONSTANT(DB_ABUTTING);
+    EXPORT_CONSTANT(DB_FLOATING);
 
     /* Definitions for derived variable types */
     EXPORT_CONSTANT(DB_VARTYPE_SCALAR);
@@ -247,6 +345,10 @@ namespace
     EXPORT_CONSTANT(DB_VARTYPE_MATERIAL);
     EXPORT_CONSTANT(DB_VARTYPE_SPECIES);
     EXPORT_CONSTANT(DB_VARTYPE_LABEL);
+
+    /* Definitions for ghost labels */
+    EXPORT_CONSTANT(DB_GHOSTTYPE_NOGHOST);
+    EXPORT_CONSTANT(DB_GHOSTTYPE_INTDUP);
 
     /* Definitions for CSG boundary types */
     EXPORT_CONSTANT(DBCSG_QUADRIC_G);
@@ -296,6 +398,11 @@ namespace
     EXPORT_CONSTANT(DBCSG_XFORM);
     EXPORT_CONSTANT(DBCSG_SWEEP);
 
+    /* Definitions for MRG tree traversal flags */
+    EXPORT_CONSTANT(DB_PREORDER);
+    EXPORT_CONSTANT(DB_POSTORDER);
+    EXPORT_CONSTANT(DB_FROMCWR);
+
 #if PYVISFILE_SILO_VERSION_GE(4,6,1)
     /* Shape types */
     EXPORT_CONSTANT(DB_ZONETYPE_BEAM);
@@ -309,45 +416,16 @@ namespace
 #endif
 
 #undef EXPORT_CONSTANT
-    return result;
   }
 
   // }}}
 
-
-
-
-#define CALL_GUARDED(NAME, ARGLIST) \
-  if (NAME ARGLIST) \
-    throw std::runtime_error(#NAME " failed");
-
-#define COPY_PY_LIST(TYPE, NAME) \
-  std::vector<TYPE> NAME; \
-  std::copy( \
-      stl_input_iterator<TYPE>(NAME##_py), \
-      stl_input_iterator<TYPE>(), \
-      back_inserter(NAME)); \
-
-#define MAKE_STRING_POINTER_VECTOR(NAME) \
-  std::vector<const char *> NAME##_ptrs; \
-  BOOST_FOREACH(const std::string &s, NAME) \
-    NAME##_ptrs.push_back(s.data());
-
-#define PYTHON_FOREACH(NAME, ITERABLE) \
-  BOOST_FOREACH(object NAME, \
-      std::make_pair( \
-        stl_input_iterator<object>(ITERABLE), \
-        stl_input_iterator<object>()))
-
-
-
-
-  NPY_TYPES get_varlist_dtype(object varlist)
+  NPY_TYPES get_varlist_dtype(py::sequence varlist)
   {
     bool first = true;
     NPY_TYPES result = NPY_NOTYPE;
 
-    PYTHON_FOREACH(var, varlist)
+    for(py::object var: varlist)
     {
       if (!PyArray_Check(var.ptr()))
         PYTHON_ERROR(TypeError, "component of variable list is not numpy array");
@@ -364,15 +442,13 @@ namespace
     return result;
   }
 
+  // {{{ DBoptlist wrapper
 
-
-
-  // {{{ DBoptlist wrapper ----------------------------------------------------
-  class DBoptlistWrapper : boost::noncopyable
+  class DBoptlistWrapper: noncopyable
   {
     private:
       DBoptlist *m_optlist;
-      boost::scoped_array<char> m_option_storage;
+      char *m_option_storage;
       unsigned m_option_storage_size;
       unsigned m_option_storage_occupied;
 
@@ -388,7 +464,7 @@ namespace
       }
       ~DBoptlistWrapper()
       {
-        CALL_GUARDED(DBFreeOptlist, (m_optlist));
+        DBFreeOptlist(m_optlist);
       }
 
       void add_option(int option, int value)
@@ -427,15 +503,15 @@ namespace
               ));
       }
 
-      void add_option(int option, tuple values_py)
+      void add_option(int option, py::tuple py_values)
       {
         std::vector<int> values;
 
-        PYTHON_FOREACH(value_py, values_py)
+        for(size_t i = 0; i < py::len(py_values); ++i)
         {
-          int value = extract<int> (value_py);
-          values.push_back(value);
+          values.push_back(py_values[i].cast<int>());
         }
+
         CALL_GUARDED(DBAddOption,(m_optlist, option,
               add_storage_data((void *) &values.front(), values.size()*sizeof(int))
               ));
@@ -453,7 +529,7 @@ namespace
           throw std::runtime_error("silo option list storage exhausted"
               "--specify bigger storage size");
 
-        void *dest = m_option_storage.get() + m_option_storage_occupied;
+        void *dest = m_option_storage + m_option_storage_occupied;
         memcpy(dest, data, size);
         m_option_storage_occupied += size;
         return dest;
@@ -462,9 +538,6 @@ namespace
   };
 
   // }}}
-
-
-
 
   int get_datatype(int) { return DB_INT; }
   int get_datatype(short) { return DB_SHORT; }
@@ -488,8 +561,8 @@ namespace
       case DB_DOUBLE:
           return NPY_DOUBLE;
       case DB_CHAR:
-          return NPY_CHAR;
-#if SILO_VERSION_GE(4,7,2)
+          return NPY_STRING;
+#if SILO_VERSION_GE(4, 7, 2)
       case DB_LONG_LONG:
           return NPY_LONGLONG;
 #endif
@@ -498,38 +571,35 @@ namespace
     }
   }
 
-
-
-
   // {{{ data wrappers
 
   // {{{ data wrapper helpers
 #define PYVISFILE_TYPED_ACCESSOR(TYPE,NAME) \
-  TYPE NAME() const { return m_data->NAME; }
+  TYPE get##NAME() const { return m_data->NAME; }
 
 #define PYVISFILE_STRING_ACCESSOR(NAME) \
-  object NAME() const \
+  py::object get##NAME() const \
   { \
     if (m_data) \
-      return object(std::string(m_data->NAME)); \
+      return py::cast(std::string(m_data->NAME)); \
     else \
-      return object(); \
+      return py::none(); \
   }
 
 #define PYVISFILE_TYPED_ARRAY_ACCESSOR(CAST_TO, NAME, SIZE) \
-  object NAME() const \
+  py::object get##NAME() const \
   { \
-    list py_list_result; \
+    py::list py_list_result; \
     for (unsigned i = 0; i < SIZE; ++i) \
       py_list_result.append(CAST_TO(m_data->NAME[i])); \
-    return tuple(py_list_result); \
+    return py::make_tuple(py_list_result); \
   }
 
   // }}}
 
   // {{{ curve wrapper
 
-  class DBcurveWrapper : boost::noncopyable
+  class DBcurveWrapper: noncopyable
   {
     public:
       DBcurve   *m_data;
@@ -555,15 +625,15 @@ namespace
   };
 
 #define PYVISFILE_CURVE_DATA_GETTER(COORD) \
-  handle<> curve_##COORD(object py_curve) \
+  py::handle curve_##COORD(py::object py_curve) \
   { \
-    DBcurveWrapper &curve((extract<DBcurveWrapper &>(py_curve))); \
+    DBcurveWrapper &curve(py_curve.cast<DBcurveWrapper &>()); \
     npy_intp dims[] = { curve.m_data->npts }; \
-    handle<> result(PyArray_SimpleNewFromData(1, dims, \
+    py::handle result(PyArray_SimpleNewFromData(1, dims, \
           silo_typenum_to_numpy_typenum(curve.m_data->datatype), \
           curve.m_data->COORD)); \
-    PyArray_BASE(result.get()) = py_curve.ptr(); \
-    Py_INCREF(PyArray_BASE(result.get())); \
+    PyArray_BASE(result.ptr()) = py_curve.ptr(); \
+    Py_INCREF(PyArray_BASE(result.ptr())); \
     return result; \
   }
 
@@ -574,7 +644,7 @@ namespace
 
   // {{{ quad mesh wrapper
 
-  class DBquadmeshWrapper : boost::noncopyable
+  class DBquadmeshWrapper: noncopyable
   {
     public:
       DBquadmesh   *m_data;
@@ -620,30 +690,30 @@ namespace
       PYVISFILE_STRING_ACCESSOR(mrgtree_name);
   };
 
-  object quadmesh_coords(object py_quadmesh)
+  py::object quadmesh_coords(py::object py_quadmesh)
   {
-    DBquadmeshWrapper &quadmesh((extract<DBquadmeshWrapper &>(py_quadmesh)));
+    DBquadmeshWrapper &quadmesh(py_quadmesh.cast<DBquadmeshWrapper &>());
 
-    list result;
-    for (unsigned i = 0; i < quadmesh.m_data->ndims; ++i)
+    py::list result;
+    for (int i = 0; i < quadmesh.m_data->ndims; ++i)
     {
       npy_intp dims[] = { quadmesh.m_data->dims[i] };
-      handle<> coord_array(PyArray_SimpleNewFromData(1, dims,
+      py::handle coord_array(PyArray_SimpleNewFromData(1, dims,
             silo_typenum_to_numpy_typenum(quadmesh.m_data->datatype),
             quadmesh.m_data->coords[i]));
-      PyArray_BASE(coord_array.get()) = py_quadmesh.ptr();
-      Py_INCREF(PyArray_BASE(coord_array.get()));
+      PyArray_BASE(coord_array.ptr()) = py_quadmesh.ptr();
+      Py_INCREF(PyArray_BASE(coord_array.ptr()));
       result.append(coord_array);
     }
 
-    return tuple(result);
+    return py::make_tuple(result);
   }
 
   // }}}
 
   // {{{ quad var wrapper
 
-  class DBquadvarWrapper : boost::noncopyable
+  class DBquadvarWrapper: noncopyable
   {
     public:
       DBquadvar   *m_data;
@@ -687,13 +757,13 @@ namespace
       // TODO: region_pnames
   };
 
-  object quadvar_vals(object py_quadvar)
+  py::object quadvar_vals(py::object py_quadvar)
   {
-    DBquadvarWrapper &quadvar((extract<DBquadvarWrapper &>(py_quadvar)));
+    DBquadvarWrapper &quadvar(py_quadvar.cast<DBquadvarWrapper &>());
 
     npy_intp dims[3];
 
-    for (unsigned i = 0; i < quadvar.m_data->ndims; ++i)
+    for (int i = 0; i < quadvar.m_data->ndims; ++i)
       dims[i] = quadvar.m_data->dims[i];
 
     int ary_flags = 0;
@@ -702,67 +772,65 @@ namespace
     else
       ary_flags |= NPY_FARRAY;
 
-    list result;
-    for (unsigned i = 0; i < quadvar.m_data->nvals; ++i)
+    py::list result;
+    for (int i = 0; i < quadvar.m_data->nvals; ++i)
     {
       PyArray_Descr *tp_descr;
       tp_descr = PyArray_DescrNewFromType(
           silo_typenum_to_numpy_typenum(quadvar.m_data->datatype));
       if (tp_descr == 0)
-        throw error_already_set();
+        throw py::error_already_set();
 
-      handle<> val_array(PyArray_NewFromDescr(
+      py::handle val_array(PyArray_NewFromDescr(
           &PyArray_Type, tp_descr,
           quadvar.m_data->ndims, dims, /*strides*/ NULL,
           quadvar.m_data->vals[i], ary_flags, /*obj*/NULL));
 
-      PyArray_BASE(val_array.get()) = py_quadvar.ptr();
-      Py_INCREF(PyArray_BASE(val_array.get()));
+      PyArray_BASE(val_array.ptr()) = py_quadvar.ptr();
+      Py_INCREF(PyArray_BASE(val_array.ptr()));
       result.append(val_array);
     }
 
-    return tuple(result);
+    return py::make_tuple(result);
   }
 
   // }}}
 
   // }}}
 
+  // {{{ DBtoc copy
 
-
-
-  // {{{ DBtoc copy -----------------------------------------------------------
-  struct DBtocCopy : boost::noncopyable
+  struct DBtocCopy : noncopyable
   {
-    list curve_names;
-    list multimesh_names;
-    list multimeshadj_names;
-    list multivar_names;
-    list multimat_names;
-    list multimatspecies_names;
-    list csgmesh_names;
-    list csgvar_names;
-    list defvars_names;
-    list qmesh_names;
-    list qvar_names;
-    list ucdmesh_names;
-    list ucdvar_names;
-    list ptmesh_names;
-    list ptvar_names;
-    list mat_names;
-    list matspecies_names;
-    list var_names;
-    list obj_names;
-    list dir_names;
-    list array_names;
-    list mrgtree_names;
-    list groupelmap_names;
-    list mrgvar_names;
+    py::list curve_names;
+    py::list multimesh_names;
+    py::list multimeshadj_names;
+    py::list multivar_names;
+    py::list multimat_names;
+    py::list multimatspecies_names;
+    py::list csgmesh_names;
+    py::list csgvar_names;
+    py::list defvars_names;
+    py::list qmesh_names;
+    py::list qvar_names;
+    py::list ucdmesh_names;
+    py::list ucdvar_names;
+    py::list ptmesh_names;
+    py::list ptvar_names;
+    py::list mat_names;
+    py::list matspecies_names;
+    py::list var_names;
+    py::list obj_names;
+    py::list dir_names;
+    py::list array_names;
+    py::list mrgtree_names;
+    py::list groupelmap_names;
+    py::list mrgvar_names;
   };
 
   // }}}
 
-  // {{{ DBfile wrapper -------------------------------------------------------
+  // {{{ DBfile wrapper
 
 #define PYVISFILE_DBFILE_GET_WRAPPER(LOWER_TYPE, CAMEL_TYPE) \
   DB##LOWER_TYPE##Wrapper *get_##LOWER_TYPE(const char *name) \
@@ -771,12 +839,9 @@ namespace
     if (!obj) \
       throw std::runtime_error("DBGet" #CAMEL_TYPE " failed"); \
     return new DB##LOWER_TYPE##Wrapper(obj); \
-  } 
+  }
 
-
-
-
-  class DBfileWrapper : boost::noncopyable
+  class DBfileWrapper: noncopyable
   {
     public:
       // {{{ construction and administrativa
@@ -842,10 +907,7 @@ namespace
             ));
       }
 
-
-
-
-#if PYVISFILE_SILO_VERSION_GE(4,6,1)
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
       void put_zonelist_2(const char *name, int nzones, int ndims,
           const std::vector<int> &nodelist, int lo_offset, int hi_offset,
           const std::vector<int> &shapetype,
@@ -873,7 +935,7 @@ namespace
       // {{{ ucd mesh/var
       template <class T>
       void put_ucdmesh(const char *name,
-             object coordnames_py, numpy_vector<T> coords,
+             py::sequence py_coordnames, py::array_t<T> coords,
              int nzones, const char *zonel_name, const char *facel_name,
              DBoptlistWrapper &optlist)
       {
@@ -882,12 +944,13 @@ namespace
         if (coords.ndim() != 2)
           throw std::invalid_argument("need 2d array");
 
-        int ndims = coords.dims()[0];
-        int nnodes = coords.dims()[1];
+        int ndims = coords.shape(0);
+        int nnodes = coords.shape(1);
 
+        auto coords_unchecked = coords.unchecked();
         std::vector<const T *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          coord_starts.push_back(&coords.sub(d, 0));
+          coord_starts.push_back(&coords_unchecked(d, 0));
 
         CALL_GUARDED(DBPutUcdmesh, (m_dbfile, name, ndims,
             /* coordnames*/ NULL,
@@ -896,37 +959,31 @@ namespace
             get_datatype(T()), optlist.get_optlist()));
       }
 
-
-
-
       template <class T>
       void put_ucdvar1(const char *vname, const char *mname,
-          const numpy_vector<T> &v,
+          const py::array_t<T> &v,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         CALL_GUARDED(DBPutUcdvar1, (m_dbfile, vname, mname,
-            (float *) &v.sub(0),
+            (float *) v.data(),
             v.size(),
             /* mixvar */ NULL, /* mixlen */ 0,
             get_datatype(T()), centering,
             optlist.get_optlist()));
       }
 
-
-
-
       template<class T>
       void put_ucdvar_backend(const char *vname, const char *mname,
-          object varnames_py, object vars_py,
+          py::sequence py_varnames, py::sequence py_vars,
           /*float *mixvars[], int mixlen,*/
           int centering, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
-        if (len(varnames_py) != len(vars_py))
+        if (py::len(py_varnames) != py::len(py_vars))
           PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
 
         COPY_PY_LIST(std::string, varnames);
@@ -936,24 +993,23 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(var_py, vars_py)
+        for(py::object py_var: py_vars)
         {
-          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
+          py::array_t<T> v = py_var.cast<py::array_t<T>>();
           if (first)
           {
             vlength = v.size();
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError,
-                boost::str(boost::format(
-                    "field components of '%s' need to have matching lengths")
-                  % vname).c_str());
-          vars.push_back((float *) v.data().data());
+            PYTHON_ERROR(ValueError, string_format(
+                  "field components of '%s' need to have matching lengths",
+                  vname));
+          vars.push_back((float *) v.data());
         }
 
         CALL_GUARDED(DBPutUcdvar, (m_dbfile, vname, mname,
-            len(vars_py),
+            py::len(py_vars),
             const_cast<char **>(&varnames_ptrs.front()),
             &vars.front(),
             vlength,
@@ -961,26 +1017,23 @@ namespace
             get_datatype(T()), centering, optlist.get_optlist()));
       }
 
-
-
-
       void put_ucdvar(const char *vname, const char *mname,
-          object varnames_py, object vars_py,
+          py::object py_varnames, py::object py_vars,
           /*float *mixvars[], int mixlen,*/
           int centering, DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(vars_py))
+        switch (get_varlist_dtype(py_vars))
         {
           case NPY_FLOAT:
-            put_ucdvar_backend<float>(vname, mname, varnames_py, vars_py,
+            put_ucdvar_backend<float>(vname, mname, py_varnames, py_vars,
                 centering, optlist);
             break;
           case NPY_DOUBLE:
-            put_ucdvar_backend<double>(vname, mname, varnames_py, vars_py,
+            put_ucdvar_backend<double>(vname, mname, py_varnames, py_vars,
                 centering, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
@@ -988,7 +1041,7 @@ namespace
 
       // {{{ defvars
 
-      void put_defvars(std::string id, object vars_py)
+      void put_defvars(std::string id, py::sequence py_vars)
       {
         ensure_db_open();
 
@@ -999,38 +1052,39 @@ namespace
         std::vector<int> vartypes;
         std::vector<DBoptlist *> varopts;
 
-        PYTHON_FOREACH(entry, vars_py)
+        for(py::object py_entry: py_vars)
         {
-          varnames_container.push_back(extract<std::string>(entry[0]));
-          vardefs_container.push_back(extract<std::string>(entry[1]));
-          if (len(entry) == 2)
+          py::tuple entry = py_entry.cast<py::tuple>();
+          varnames_container.push_back(entry[0].cast<std::string>());
+          vardefs_container.push_back(entry[1].cast<std::string>());
+          if (py::len(entry) == 2)
           {
             vartypes.push_back(DB_VARTYPE_SCALAR);
             varopts.push_back(NULL);
           }
           else
           {
-            vartypes.push_back(extract<int>(entry[2]));
-            if (len(entry) == 4)
-              varopts.push_back(extract<DBoptlistWrapper *>(entry[3])()->get_optlist());
+            vartypes.push_back(entry[2].cast<int>());
+            if (py::len(entry) == 4)
+              varopts.push_back(entry[3].cast<DBoptlistWrapper *>()->get_optlist());
             else
               varopts.push_back(NULL);
           }
         }
 
-        for (int i = 0; i < len(vars_py); i++)
+        for (size_t i = 0; i < py::len(py_vars); i++)
         {
           varnames.push_back(varnames_container[i].data());
           vardefs.push_back(vardefs_container[i].data());
         }
 
-#if PYVISFILE_SILO_VERSION_GE(4,6,1)
-        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py),
+#if PYVISFILE_SILO_VERSION_GE(4, 6, 1)
+        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), py::len(py_vars),
             const_cast<char **>(&varnames.front()),
             &vartypes.front(),
             const_cast<char **>(&vardefs.front()), &varopts.front()));
 #else
-        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), len(vars_py),
+        CALL_GUARDED(DBPutDefvars, (m_dbfile, id.data(), py::len(py_vars),
             &varnames.front(), &vartypes.front(),
             &vardefs.front(), &varopts.front()));
 #endif
@@ -1041,7 +1095,7 @@ namespace
       // {{{ point mesh/var
 
       template <class T>
-      void put_pointmesh(const char *id, const numpy_vector<T> &coords,
+      void put_pointmesh(const char *id, const py::array_t<T> &coords,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1049,38 +1103,33 @@ namespace
         if (coords.ndim() != 2)
           throw std::invalid_argument("need 2d array");
 
-        int ndims = coords.dims()[0];
-        int npoints = coords.dims()[1];
+        int ndims = coords.shape(0);
+        int npoints = coords.shape(1);
 
+        auto coords_unchecked = coords.unchecked();
         std::vector<float *> coord_starts;
         for (int d = 0; d < ndims; d++)
-          coord_starts.push_back((float *) &coords.sub(d,0));
+          coord_starts.push_back((float *) &coords_unchecked(d, 0));
 
         CALL_GUARDED(DBPutPointmesh, (m_dbfile, id,
               ndims, &coord_starts.front(), npoints,
               get_datatype(T()), optlist.get_optlist()));
       }
 
-
-
-
       template <class T>
       void put_pointvar1(const char *vname, const char *mname,
-          const numpy_vector<T> &v, DBoptlistWrapper &optlist)
+          const py::array_t<T> &v, DBoptlistWrapper &optlist)
       {
         ensure_db_open();
 
         CALL_GUARDED(DBPutPointvar1, (m_dbfile, vname, mname,
-              (float *) v.data().data(), v.size(),
+              (float *) v.data(), v.size(),
               get_datatype(T()), optlist.get_optlist()));
       }
 
-
-
-
       template <class T>
       void put_pointvar_backend(const char *vname, const char *mname,
-          object vars_py,
+          py::sequence py_vars,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1089,45 +1138,41 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(var_py, vars_py)
+        for(py::object py_var: py_vars)
         {
-          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
+          py::array_t<T> v = py_var.cast<py::array_t<T>>();
           if (first)
           {
             vlength = v.size();
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError,
-                boost::str(boost::format(
-                    "field components of '%s' need to have matching lengths")
-                  % vname).c_str());
+            PYTHON_ERROR(ValueError, string_format(
+                  "field components of '%s' need to have matching lengths",
+                  vname));
 
-          vars.push_back((float *) v.data().data());
+          vars.push_back((float *) v.data());
         }
 
         CALL_GUARDED(DBPutPointvar, (m_dbfile, vname, mname,
-              len(vars_py), &vars.front(), vlength,
+              py::len(py_vars), &vars.front(), vlength,
               get_datatype(T()),
               optlist.get_optlist()));
       }
 
-
-
-
       void put_pointvar(const char *vname, const char *mname,
-          object vars_py, DBoptlistWrapper &optlist)
+          py::object py_vars, DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(vars_py))
+        switch (get_varlist_dtype(py_vars))
         {
           case NPY_FLOAT:
-            put_pointvar_backend<float>(vname, mname, vars_py, optlist);
+            put_pointvar_backend<float>(vname, mname, py_vars, optlist);
             break;
           case NPY_DOUBLE:
-            put_pointvar_backend<double>(vname, mname, vars_py, optlist);
+            put_pointvar_backend<double>(vname, mname, py_vars, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
@@ -1136,17 +1181,17 @@ namespace
       // {{{ quad mesh/var
 
       template <class T>
-      void put_quadmesh_backend(const char *name, object coords_py,
+      void put_quadmesh_backend(const char *name, py::sequence py_coords,
           int coordtype, DBoptlistWrapper &optlist)
       {
         std::vector<int> dims;
         std::vector<float *> coords;
 
-        PYTHON_FOREACH(coord_dim_py, coords_py)
+        for(py::object py_coord_dim: py_coords)
         {
-          numpy_vector<T> coord_dim = extract<numpy_vector<T> >(coord_dim_py);
+          py::array_t<T> coord_dim = py_coord_dim.cast<py::array_t<T>>();
           dims.push_back(coord_dim.size());
-          coords.push_back((float *) coord_dim.data().data());
+          coords.push_back((float *) coord_dim.data());
         }
 
         CALL_GUARDED(DBPutQuadmesh, (m_dbfile, name,
@@ -1159,38 +1204,31 @@ namespace
               optlist.get_optlist()));
       }
 
-
-
-
-      void put_quadmesh(const char *name, object coords_py,
+      void put_quadmesh(const char *name, py::object py_coords,
           int coordtype, DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(coords_py))
+        switch (get_varlist_dtype(py_coords))
         {
           case NPY_FLOAT:
-            put_quadmesh_backend<float>(name, coords_py, coordtype, optlist);
+            put_quadmesh_backend<float>(name, py_coords, coordtype, optlist);
             break;
           case NPY_DOUBLE:
-            put_quadmesh_backend<double>(name, coords_py, coordtype, optlist);
+            put_quadmesh_backend<double>(name, py_coords, coordtype, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
-
-
-
-
       template <class T>
       void put_quadvar_backend(const char *vname, const char *mname,
-          object varnames_py, object vars_py, object dims_py,
-          /*float *mixvar, int mixlen, */int centering,
+          py::sequence py_varnames, py::sequence py_vars, py::sequence py_dims,
+          /* float *mixvar, int mixlen, */ int centering,
           DBoptlistWrapper &optlist)
       {
         COPY_PY_LIST(int, dims);
 
-        if (len(varnames_py) != len(vars_py))
+        if (py::len(py_varnames) != py::len(py_vars))
           PYTHON_ERROR(ValueError, "varnames and vars must have the same length");
 
         COPY_PY_LIST(std::string, varnames);
@@ -1200,20 +1238,19 @@ namespace
         bool first = true;
         int vlength = 0;
 
-        PYTHON_FOREACH(var_py, vars_py)
+        for(py::object py_var: py_vars)
         {
-          numpy_vector<T> v = extract<numpy_vector<T> >(var_py);
+          py::array_t<T> v = py_var.cast<py::array_t<T>>();
           if (first)
           {
             vlength = v.size();
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError,
-                boost::str(boost::format(
-                    "field components of '%s' need to have matching lengths")
-                  % vname).c_str());
-          vars.push_back((float *) v.data().data());
+            PYTHON_ERROR(ValueError, string_format(
+                  "field components of '%s' need to have matching lengths",
+                  vname));
+          vars.push_back((float *) v.data());
         }
 
         CALL_GUARDED(DBPutQuadvar, (m_dbfile, vname, mname,
@@ -1228,42 +1265,36 @@ namespace
               optlist.get_optlist()));
       }
 
-
-
-
       void put_quadvar(const char *vname, const char *mname,
-          object varnames_py, object vars_py, object dims_py,
+          py::object py_varnames, py::object py_vars, py::object py_dims,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
-        switch (get_varlist_dtype(vars_py))
+        switch (get_varlist_dtype(py_vars))
         {
           case NPY_FLOAT:
-            put_quadvar_backend<float>(vname, mname, varnames_py, vars_py,
-                dims_py, centering, optlist);
+            put_quadvar_backend<float>(vname, mname, py_varnames, py_vars,
+                py_dims, centering, optlist);
             break;
           case NPY_DOUBLE:
-            put_quadvar_backend<double>(vname, mname, varnames_py, vars_py,
-                dims_py, centering, optlist);
+            put_quadvar_backend<double>(vname, mname, py_varnames, py_vars,
+                py_dims, centering, optlist);
             break;
           default:
-            PYUBLAS_PYERROR(TypeError, "unsupported variable type");
+            PYTHON_ERROR(TypeError, "unsupported variable type");
         }
       }
 
-
-
-
       template <class T>
       void put_quadvar1(const char *vname, const char *mname,
-          numpy_vector<T> var, object dims_py,
+          py::array_t<T> var, py::sequence py_dims,
           /*float *mixvar, int mixlen, */int centering,
           DBoptlistWrapper &optlist)
       {
         COPY_PY_LIST(int, dims);
 
         CALL_GUARDED(DBPutQuadvar1, (m_dbfile, vname, mname,
-              (float *) var.data().data(),
+              (float *) var.data(),
               &dims.front(),
               dims.size(),
               /* mix stuff */ NULL, 0,
@@ -1279,7 +1310,7 @@ namespace
 
       // {{{ multi mesh/var
 
-      void put_multimesh(const char *name, object names_and_types,
+      void put_multimesh(const char *name, py::sequence py_names_and_types,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1287,10 +1318,11 @@ namespace
         std::vector<std::string> meshnames;
         std::vector<int> meshtypes;
 
-        PYTHON_FOREACH(name_and_type, names_and_types)
+        for(py::object py_name_and_type: py_names_and_types)
         {
-          meshnames.push_back(extract<std::string>(name_and_type[0]));
-          meshtypes.push_back(extract<int>(name_and_type[1]));
+          py::tuple name_and_type = py_name_and_type.cast<py::tuple>();
+          meshnames.push_back(name_and_type[0].cast<std::string>());
+          meshtypes.push_back(name_and_type[1].cast<int>());
         }
         MAKE_STRING_POINTER_VECTOR(meshnames)
 
@@ -1301,10 +1333,7 @@ namespace
               optlist.get_optlist()));
       }
 
-
-
-
-      void put_multivar(const char *name, object names_and_types,
+      void put_multivar(const char *name, py::sequence py_names_and_types,
           DBoptlistWrapper &optlist)
       {
         ensure_db_open();
@@ -1312,10 +1341,11 @@ namespace
         std::vector<std::string> varnames;
         std::vector<int> vartypes;
 
-        PYTHON_FOREACH(name_and_type, names_and_types)
+        for(py::object py_name_and_type: py_names_and_types)
         {
-          varnames.push_back(extract<std::string>(name_and_type[0]));
-          vartypes.push_back(extract<int>(name_and_type[1]));
+          py::tuple name_and_type = py_name_and_type.cast<py::tuple>();
+          varnames.push_back(name_and_type[0].cast<std::string>());
+          vartypes.push_back(name_and_type[1].cast<int>());
         }
 
         MAKE_STRING_POINTER_VECTOR(varnames)
@@ -1333,22 +1363,20 @@ namespace
 
       template <class T>
       void put_curve(const char *curvename,
-          const numpy_vector<T> &xvals,
-          const numpy_vector<T> &yvals,
+          const py::array_t<T> &xvals,
+          const py::array_t<T> &yvals,
           DBoptlistWrapper &optlist)
       {
         if (xvals.size() != yvals.size())
           PYTHON_ERROR(ValueError, "xvals and yvals must have the same length");
         int npoints = xvals.size();
         CALL_GUARDED(DBPutCurve, (m_dbfile, curvename,
-              const_cast<void *>(reinterpret_cast<const void *>(xvals.data().data())),
-              const_cast<void *>(reinterpret_cast<const void *>(yvals.data().data())),
+              const_cast<void *>(reinterpret_cast<const void *>(xvals.data())),
+              const_cast<void *>(reinterpret_cast<const void *>(yvals.data())),
               get_datatype(T()),
               npoints,
               optlist.get_optlist()));
       }
-
-
 
       PYVISFILE_DBFILE_GET_WRAPPER(curve, Curve);
 
@@ -1359,7 +1387,7 @@ namespace
       DBtocCopy *get_toc()
       {
         DBtoc *toc = DBGetToc(m_dbfile);
-        std::auto_ptr<DBtocCopy> result(new DBtocCopy());
+        std::unique_ptr<DBtocCopy> result(new DBtocCopy());
 
 #define PYVISFILE_COPY_TOC_LIST(NAME, CNT) \
         for (int i = 0; i < toc->CNT; ++i) \
@@ -1407,36 +1435,24 @@ namespace
   };
   // }}}
 
-
-
-
-  tuple get_silo_version()
-  {
-#if PYVISFILE_SILO_VERSION_GE(4,6,1)
-    return make_tuple(SILO_VERS_MAJ, SILO_VERS_MIN, SILO_VERS_PAT);
-#else
-    return make_tuple(4,5,1);
-#endif
-  }
-
-
-
-  int set_dep_warning_dummy(int)
-  {
-    return 0;
-  }
 }
 
+// {{{ main wrapper function
 
-
-
-// {{{ main wrapper function --------------------------------------------------
-
-BOOST_PYTHON_MODULE(_internal)
+static bool import_numpy_helper()
 {
-  DEF_SIMPLE_FUNCTION(symbols);
+  import_array1(false);
+  return true;
+}
 
-  enum_<DBdatatype>("DBdatatype")
+PYBIND11_MODULE(_internal, m)
+{
+  if (!import_numpy_helper())
+    throw py::error_already_set();
+
+  silo_expose_symbols(m);
+
+  py::enum_<DBdatatype>(m, "DBdatatype")
     .ENUM_VALUE(DB_INT)
     .ENUM_VALUE(DB_SHORT)
     .ENUM_VALUE(DB_LONG)
@@ -1444,13 +1460,15 @@ BOOST_PYTHON_MODULE(_internal)
     .ENUM_VALUE(DB_DOUBLE)
     .ENUM_VALUE(DB_CHAR)
     .ENUM_VALUE(DB_NOTYPE)
-#if SILO_VERSION_GE(4,7,2)
+#if SILO_VERSION_GE(4, 7, 2)
     .ENUM_VALUE(DB_LONG_LONG)
 #endif
     ;
 
-  enum_<DBObjectType>("DBObjectType")
+  py::enum_<DBObjectType>(m, "DBObjectType")
     .ENUM_VALUE(DB_INVALID_OBJECT)
+    .ENUM_VALUE(DB_QUADRECT)
+    .ENUM_VALUE(DB_QUADCURV)
     .ENUM_VALUE(DB_QUADMESH)
     .ENUM_VALUE(DB_QUADVAR)
     .ENUM_VALUE(DB_UCDMESH)
@@ -1478,13 +1496,17 @@ BOOST_PYTHON_MODULE(_internal)
     .ENUM_VALUE(DB_ARRAY)
     .ENUM_VALUE(DB_DIR)
     .ENUM_VALUE(DB_VARIABLE)
+    .ENUM_VALUE(DB_MRGTREE)
+    .ENUM_VALUE(DB_GROUPELMAP)
+    .ENUM_VALUE(DB_MRGVAR)
     .ENUM_VALUE(DB_USERDEF)
     ;
 
   {
     typedef DBfileWrapper cl;
-    class_<cl, boost::noncopyable>("DBFile", init<const char *, int, int>())
-      .def(init<const char *, int, int, const char *, int>())
+    py::class_<cl>(m, "DBFile")
+      .def(py::init<const char *, int, int>())
+      .def(py::init<const char *, int, int, const char *, int>())
       .DEF_SIMPLE_METHOD(close)
       .DEF_SIMPLE_METHOD(put_zonelist)
 
@@ -1517,30 +1539,31 @@ BOOST_PYTHON_MODULE(_internal)
       .def("put_curve", &cl::put_curve<float>)
       .def("put_curve", &cl::put_curve<double>)
       .def("get_curve", &cl::get_curve,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
       .def("get_quadmesh", &cl::get_quadmesh,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
       .def("get_quadvar", &cl::get_quadvar,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
 
       .def("get_toc", &cl::get_toc,
-          return_value_policy<manage_new_object>())
+          py::return_value_policy::take_ownership)
       ;
   }
 
   {
     typedef DBoptlistWrapper cl;
-    class_<cl, boost::noncopyable>("DBOptlist", init<unsigned, unsigned>())
+    py::class_<cl>(m, "DBOptlist")
+      .def(py::init<unsigned, unsigned>())
       .def("add_int_option", (void (cl::*)(int, int)) &cl::add_option)
       .def("add_option", (void (cl::*)(int, double)) &cl::add_option)
       .def("add_option", (void (cl::*)(int, const std::string &)) &cl::add_option)
-      .def("add_option", (void (cl::*)(int, tuple)) &cl::add_option)
+      .def("add_option", (void (cl::*)(int, py::tuple)) &cl::add_option)
       ;
   }
 
   {
     typedef DBcurveWrapper cl;
-    class_<cl, boost::noncopyable>("DBCurve", no_init)
+    py::class_<cl>(m, "DBCurve")
       .DEF_SIMPLE_RO_PROPERTY(id)
       .DEF_SIMPLE_RO_PROPERTY(origin)
       .DEF_SIMPLE_RO_PROPERTY(title)
@@ -1551,14 +1574,14 @@ BOOST_PYTHON_MODULE(_internal)
       .DEF_SIMPLE_RO_PROPERTY(xunits)
       .DEF_SIMPLE_RO_PROPERTY(yunits)
       .DEF_SIMPLE_RO_PROPERTY(reference)
-      .add_property("x", make_function(curve_x))
-      .add_property("y", make_function(curve_y))
+      .def_property_readonly("x", &curve_x)
+      .def_property_readonly("y", &curve_y)
       ;
   }
 
   {
     typedef DBquadmeshWrapper cl;
-    class_<cl, boost::noncopyable>("DBQuadMesh", no_init)
+    py::class_<cl>(m, "DBQuadMesh")
       .DEF_SIMPLE_RO_PROPERTY(id)
       .DEF_SIMPLE_RO_PROPERTY(block_no)
       .DEF_SIMPLE_RO_PROPERTY(group_no)
@@ -1587,13 +1610,13 @@ BOOST_PYTHON_MODULE(_internal)
       .DEF_SIMPLE_RO_PROPERTY(size_index)
       .DEF_SIMPLE_RO_PROPERTY(guihide)
       .DEF_SIMPLE_RO_PROPERTY(mrgtree_name)
-      .add_property("coords", make_function(quadmesh_coords))
+      .def_property_readonly("coords", &quadmesh_coords)
       ;
   }
 
   {
     typedef DBquadvarWrapper cl;
-    class_<cl, boost::noncopyable>("DBQuadVar", no_init)
+    py::class_<cl>(m, "DBQuadVar")
       .DEF_SIMPLE_RO_PROPERTY(id)
       .DEF_SIMPLE_RO_PROPERTY(name)
       .DEF_SIMPLE_RO_PROPERTY(units)
@@ -1619,56 +1642,66 @@ BOOST_PYTHON_MODULE(_internal)
       .DEF_SIMPLE_RO_PROPERTY(ascii_labels)
       .DEF_SIMPLE_RO_PROPERTY(meshname)
       .DEF_SIMPLE_RO_PROPERTY(guihide)
-      .add_property("vals", make_function(quadvar_vals))
+      .def_property_readonly("vals", &quadvar_vals)
       ;
   }
 
   {
     typedef DBtocCopy cl;
-    class_<cl, boost::noncopyable>("DBToc", no_init)
-      .DEF_SIMPLE_RO_PROPERTY(curve_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimeshadj_names)
-      .DEF_SIMPLE_RO_PROPERTY(multivar_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimat_names)
-      .DEF_SIMPLE_RO_PROPERTY(multimatspecies_names)
-      .DEF_SIMPLE_RO_PROPERTY(csgmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(csgvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(defvars_names)
-      .DEF_SIMPLE_RO_PROPERTY(qmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(qvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(ucdmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(ucdvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(ptmesh_names)
-      .DEF_SIMPLE_RO_PROPERTY(ptvar_names)
-      .DEF_SIMPLE_RO_PROPERTY(mat_names)
-      .DEF_SIMPLE_RO_PROPERTY(matspecies_names)
-      .DEF_SIMPLE_RO_PROPERTY(var_names)
-      .DEF_SIMPLE_RO_PROPERTY(obj_names)
-      .DEF_SIMPLE_RO_PROPERTY(dir_names)
-      .DEF_SIMPLE_RO_PROPERTY(array_names)
-      .DEF_SIMPLE_RO_PROPERTY(mrgtree_names)
-      .DEF_SIMPLE_RO_PROPERTY(groupelmap_names)
-      .DEF_SIMPLE_RO_PROPERTY(mrgvar_names)
+    py::class_<cl>(m, "DBToc")
+      .DEF_SIMPLE_RO_MEMBER(curve_names)
+      .DEF_SIMPLE_RO_MEMBER(multimesh_names)
+      .DEF_SIMPLE_RO_MEMBER(multimeshadj_names)
+      .DEF_SIMPLE_RO_MEMBER(multivar_names)
+      .DEF_SIMPLE_RO_MEMBER(multimat_names)
+      .DEF_SIMPLE_RO_MEMBER(multimatspecies_names)
+      .DEF_SIMPLE_RO_MEMBER(csgmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(csgvar_names)
+      .DEF_SIMPLE_RO_MEMBER(defvars_names)
+      .DEF_SIMPLE_RO_MEMBER(qmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(qvar_names)
+      .DEF_SIMPLE_RO_MEMBER(ucdmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(ucdvar_names)
+      .DEF_SIMPLE_RO_MEMBER(ptmesh_names)
+      .DEF_SIMPLE_RO_MEMBER(ptvar_names)
+      .DEF_SIMPLE_RO_MEMBER(mat_names)
+      .DEF_SIMPLE_RO_MEMBER(matspecies_names)
+      .DEF_SIMPLE_RO_MEMBER(var_names)
+      .DEF_SIMPLE_RO_MEMBER(obj_names)
+      .DEF_SIMPLE_RO_MEMBER(dir_names)
+      .DEF_SIMPLE_RO_MEMBER(array_names)
+      .DEF_SIMPLE_RO_MEMBER(mrgtree_names)
+      .DEF_SIMPLE_RO_MEMBER(groupelmap_names)
+      .DEF_SIMPLE_RO_MEMBER(mrgvar_names)
       ;
   }
+
   {
     typedef std::vector<int> cl;
-    class_<cl>("IntVector")
-      .def("__init__", make_constructor(construct_vector<int>))
-      .def("reserve", &cl::reserve, arg("advised_size"))
-      .def(vector_indexing_suite<cl> ())
+    py::class_<cl>(m, "IntVector")
+      .def(py::init<>())
+      .def("reserve", &cl::reserve,
+          py::arg("advised_size"))
+      .def("__len__", &cl::size)
+      .def("append", (void (std::vector<int>::*)(const int &)) &cl::push_back,
+          py::arg("value"))
+      .def("extend", [](std::vector<int> &self, const py::iterable &py_other)
+          {
+            for(const py::handle &item: py_other)
+              self.push_back(item.cast<int>());
+          },
+          py::arg("iterable"))
       ;
   }
 
 #if PYVISFILE_SILO_VERSION_GE(4,6,1)
-  def("set_deprecate_warnings", DBSetDeprecateWarnings);
+  m.def("set_deprecate_warnings", DBSetDeprecateWarnings);
 #else
-  def("set_deprecate_warnings", set_dep_warning_dummy);
+  m.def("set_deprecate_warnings", set_dep_warning_dummy);
 #endif
   DEF_SIMPLE_FUNCTION(get_silo_version);
 }
 
 // }}}
 
-// vim: foldmethod=marker
+// vim: ts=2:sw=2:foldmethod=marker

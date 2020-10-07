@@ -32,20 +32,8 @@ ParallelSiloFile to automatically create a master file along with your
 SiloFile.
 """
 
-
-def _ignore_extra_int_vector_warning():
-    from warnings import filterwarnings
-    filterwarnings("ignore", module="pyvisfile.silo",
-            category=RuntimeWarning, lineno=43)
-
-
-_ignore_extra_int_vector_warning()
-
-
-import sys
-import pyublas  # noqa
 try:
-    import pyvisfile.silo._internal  # noqa
+    import pyvisfile.silo._internal as _silo
 except ImportError:
     from warnings import warn
     warn("Importing the native-code parts of PyVisfile's silo component failed. "
@@ -54,50 +42,115 @@ except ImportError:
             "This requires the libsilo library.")
     raise
 
-# hackety hack -- not sure why this is needed
-_intnl = sys.modules["pyvisfile.silo._internal"]
 
+from pyvisfile.silo._internal import (  # noqa: F401
+        get_silo_version, set_deprecate_warnings,
+        # enums
+        DBObjectType, DBdatatype,
+        # classes
+        DBToc, DBCurve, DBQuadMesh, DBQuadVar, IntVector,
+        )
 
-# {{{ handle symbols
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_NETCDF, DB_PDB, DB_TAURUS, DB_UNKNOWN, DB_DEBUG, DB_HDF5X,
+        DB_PDBP, DB_HDF5,
+        )
+from pyvisfile.silo._internal import DB_CLOBBER, DB_NOCLOBBER   # noqa: F401
+from pyvisfile.silo._internal import DB_READ, DB_APPEND         # noqa: F401
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_LOCAL, DB_SUN3, DB_SUN4, DB_SGI, DB_RS6000, DB_CRAY, DB_INTEL,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DBOPT_ALIGN, DBOPT_COORDSYS, DBOPT_CYCLE, DBOPT_FACETYPE, DBOPT_HI_OFFSET,
+        DBOPT_LO_OFFSET, DBOPT_LABEL, DBOPT_XLABEL, DBOPT_YLABEL, DBOPT_ZLABEL,
+        DBOPT_MAJORORDER, DBOPT_NSPACE, DBOPT_ORIGIN, DBOPT_PLANAR, DBOPT_TIME,
+        DBOPT_UNITS, DBOPT_XUNITS, DBOPT_YUNITS, DBOPT_ZUNITS, DBOPT_DTIME,
+        DBOPT_USESPECMF, DBOPT_XVARNAME, DBOPT_YVARNAME, DBOPT_ZVARNAME,
+        DBOPT_ASCII_LABEL, DBOPT_MATNOS, DBOPT_NMATNOS, DBOPT_MATNAME, DBOPT_NMAT,
+        DBOPT_NMATSPEC, DBOPT_BASEINDEX, DBOPT_ZONENUM, DBOPT_NODENUM,
+        DBOPT_BLOCKORIGIN, DBOPT_GROUPNUM, DBOPT_GROUPORIGIN, DBOPT_NGROUPS,
+        DBOPT_MATNAMES, DBOPT_EXTENTS_SIZE, DBOPT_EXTENTS, DBOPT_MATCOUNTS,
+        DBOPT_MATLISTS, DBOPT_MIXLENS, DBOPT_ZONECOUNTS, DBOPT_HAS_EXTERNAL_ZONES,
+        DBOPT_PHZONELIST, DBOPT_MATCOLORS, DBOPT_BNDNAMES, DBOPT_REGNAMES,
+        DBOPT_ZONENAMES, DBOPT_HIDE_FROM_GUI, DBOPT_TOPO_DIM, DBOPT_REFERENCE,
+        DBOPT_GROUPINGS_SIZE, DBOPT_GROUPINGS, DBOPT_GROUPINGNAMES, DBOPT_ALLOWMAT0,
+        DBOPT_MRGTREE_NAME, DBOPT_REGION_PNAMES, DBOPT_TENSOR_RANK, DBOPT_MMESH_NAME,
+        DBOPT_TV_CONNECTIVITY, DBOPT_DISJOINT_MODE, DBOPT_MRGV_ONAMES,
+        DBOPT_MRGV_RNAMES, DBOPT_SPECNAMES, DBOPT_SPECCOLORS, DBOPT_LLONGNZNUM,
+        DBOPT_CONSERVED, DBOPT_EXTENSIVE, DBOPT_MB_FILE_NS, DBOPT_MB_BLOCK_NS,
+        DBOPT_MB_BLOCK_TYPE, DBOPT_MB_EMPTY_LIST, DBOPT_MB_EMPTY_COUNT,
+        DBOPT_MB_REPR_BLOCK_IDX, DBOPT_MISSING_VALUE, DBOPT_ALT_ZONENUM_VARS,
+        DBOPT_ALT_NODENUM_VARS, DBOPT_GHOST_NODE_LABELS, DBOPT_GHOST_ZONE_LABELS,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_TOP, DB_NONE, DB_ALL, DB_ABORT, DB_SUSPEND, DB_RESUME, DB_ALL_AND_DRVR,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        E_NOERROR, E_BADFTYPE, E_NOTIMP, E_NOFILE, E_INTERNAL, E_NOMEM, E_BADARGS,
+        E_CALLFAIL, E_NOTFOUND, E_TAURSTATE, E_MSERVER, E_PROTO, E_NOTDIR,
+        E_MAXOPEN, E_NOTFILTER, E_MAXFILTERS, E_FEXIST, E_FILEISDIR, E_FILENOREAD,
+        E_SYSTEMERR, E_FILENOWRITE, E_INVALIDNAME, E_NOOVERWRITE, E_CHECKSUM,
+        E_COMPRESSION, E_GRABBED, E_NOTREG, E_CONCURRENT, E_DRVRCANTOPEN,
+        E_BADOPTCLASS, E_NOTENABLEDINBUILD, E_MAXFILEOPTSETS, E_NOHDF5,
+        E_EMPTYOBJECT, E_OBJBUFFULL,
+        )
+from pyvisfile.silo._internal import DB_ROWMAJOR, DB_COLMAJOR       # noqa: F401
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_COLLINEAR, DB_NONCOLLINEAR, DB_QUAD_RECT, DB_QUAD_CURV,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_NOTCENT, DB_NODECENT, DB_ZONECENT, DB_FACECENT, DB_BNDCENT,
+        DB_EDGECENT, DB_BLOCKCENT,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_CARTESIAN, DB_CYLINDRICAL, DB_SPHERICAL, DB_NUMERICAL, DB_OTHER,
+        )
+from pyvisfile.silo._internal import DB_RECTILINEAR, DB_CURVILINEAR  # noqa: F401
+from pyvisfile.silo._internal import DB_AREA, DB_VOLUME             # noqa: F401
+from pyvisfile.silo._internal import DB_ON, DB_OFF                  # noqa: F401
+from pyvisfile.silo._internal import DB_ABUTTING, DB_FLOATING       # noqa: F401
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_VARTYPE_SCALAR, DB_VARTYPE_VECTOR, DB_VARTYPE_TENSOR,
+        DB_VARTYPE_SYMTENSOR, DB_VARTYPE_ARRAY, DB_VARTYPE_MATERIAL,
+        DB_VARTYPE_SPECIES, DB_VARTYPE_LABEL,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DB_GHOSTTYPE_NOGHOST, DB_GHOSTTYPE_INTDUP,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DBCSG_QUADRIC_G, DBCSG_SPHERE_PR, DBCSG_ELLIPSOID_PRRR, DBCSG_PLANE_G,
+        DBCSG_PLANE_X, DBCSG_PLANE_Y, DBCSG_PLANE_Z, DBCSG_PLANE_PN,
+        DBCSG_PLANE_PPP, DBCSG_CYLINDER_PNLR, DBCSG_CYLINDER_PPR,
+        DBCSG_BOX_XYZXYZ, DBCSG_CONE_PNLA, DBCSG_CONE_PPA, DBCSG_POLYHEDRON_KF,
+        DBCSG_HEX_6F, DBCSG_TET_4F, DBCSG_PYRAMID_5F, DBCSG_PRISM_5F,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DBCSG_QUADRATIC_G, DBCSG_CIRCLE_PR, DBCSG_ELLIPSE_PRR, DBCSG_LINE_G,
+        DBCSG_LINE_X, DBCSG_LINE_Y, DBCSG_LINE_PN, DBCSG_LINE_PP, DBCSG_BOX_XYXY,
+        DBCSG_ANGLE_PNLA, DBCSG_ANGLE_PPA, DBCSG_POLYGON_KP, DBCSG_TRI_3P,
+        DBCSG_QUAD_4P,
+        )
+from pyvisfile.silo._internal import (  # noqa: F401
+        DBCSG_INNER, DBCSG_OUTER, DBCSG_ON, DBCSG_UNION, DBCSG_INTERSECT,
+        DBCSG_DIFF, DBCSG_COMPLIMENT, DBCSG_XFORM, DBCSG_SWEEP,
+        )
 
-_intnl_symbols = _intnl.symbols()
-
-
-def _export_symbols():
-    for name, value in _intnl_symbols.items():
-        globals()[name] = value
-
-
-_export_symbols()
-
-# These are technically redundant, but they help avoid Flake8 warnings below.
-
-DB_COLLINEAR = _intnl_symbols["DB_COLLINEAR"]
-DB_LOCAL = _intnl_symbols["DB_LOCAL"]
-DB_NOCLOBBER = _intnl_symbols["DB_NOCLOBBER"]
-DB_UNKNOWN = _intnl_symbols["DB_UNKNOWN"]
-DB_PDB = _intnl_symbols["DB_PDB"]
-DB_APPEND = _intnl_symbols["DB_APPEND"]
-
-# }}}
-
-
-DBObjectType = _intnl.DBObjectType
-DBdatatype = _intnl.DBdatatype
-
-DBToc = _intnl.DBToc
-DBCurve = _intnl.DBCurve
-DBQuadMesh = _intnl.DBQuadMesh
-DBQuadVar = _intnl.DBQuadVar
-
-IntVector = _intnl.IntVector
-get_silo_version = _intnl.get_silo_version
-set_deprecate_warnings = _intnl.set_deprecate_warnings
+if get_silo_version() >= (4, 6, 1):
+    from pyvisfile.silo._internal import (  # noqa: F401
+            DB_HDF5_SEC2, DB_HDF5_STDIO, DB_HDF5_CORE, DB_HDF5_LOG,
+            DB_HDF5_SPLIT, DB_HDF5_DIRECT, DB_HDF5_FAMILY, DB_HDF5_MPIO,
+            DB_HDF5_MPIOP, DB_HDF5_MPIP, DB_HDF5_SILO,
+            )
+    from pyvisfile.silo._internal import (  # noqa: F401
+            DB_ZONETYPE_BEAM, DB_ZONETYPE_TRIANGLE, DB_ZONETYPE_QUAD,
+            DB_ZONETYPE_POLYHEDRON, DB_ZONETYPE_TET, DB_ZONETYPE_PYRAMID,
+            DB_ZONETYPE_PRISM, DB_ZONETYPE_HEX,
+            )
 
 
 def _convert_optlist(ol_dict):
     optcount = len(ol_dict) + 1
-    ol = _intnl.DBOptlist(optcount, optcount * 150)
+    ol = _silo.DBOptlist(optcount, optcount * 150)
 
     for key, value in ol_dict.items():
         if isinstance(value, int):
@@ -114,7 +167,7 @@ def _convert_optlist(ol_dict):
     return ol
 
 
-class SiloFile(_intnl.DBFile):
+class SiloFile(_silo.DBFile):
     """This class can be used in a Python 2.5 *with* statement."""
     def __enter__(self):
         return self
@@ -130,34 +183,34 @@ class SiloFile(_intnl.DBFile):
                 mode = DB_NOCLOBBER
             if filetype is None:
                 filetype = DB_PDB
-            _intnl.DBFile.__init__(self, pathname, mode, target,
+            _silo.DBFile.__init__(self, pathname, mode, target,
                     fileinfo, filetype)
         else:
             if mode is None:
                 mode = DB_APPEND
             if filetype is None:
                 filetype = DB_UNKNOWN
-            _intnl.DBFile.__init__(self, pathname, filetype, mode)
+            _silo.DBFile.__init__(self, pathname, filetype, mode)
 
     def put_zonelist_2(self, names, nzones, ndims, nodelist, lo_offset, hi_offset,
             shapetype, shapesize, shapecounts, optlist={}):
-        _intnl.DBFile.put_zonelist_2(self, names, nzones, ndims,
+        _silo.DBFile.put_zonelist_2(self, names, nzones, ndims,
                 nodelist, lo_offset, hi_offset,
                 shapetype, shapesize, shapecounts, _convert_optlist(optlist))
 
     def put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name,
             optlist={}):
-        _intnl.DBFile.put_ucdmesh(self, mname, coordnames, coords,
+        _silo.DBFile.put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
     def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
-        _intnl.DBFile.put_ucdvar1(self, vname, mname, vec, centering,
+        _silo.DBFile.put_ucdvar1(self, vname, mname, vec, centering,
                 _convert_optlist(optlist))
 
     def put_ucdvar(self, vname, mname, varnames, vars,
             centering, optlist={}):
-        _intnl.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering,
+        _silo.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering,
                 _convert_optlist(optlist))
 
     def put_defvars(self, vname, vars):
@@ -172,43 +225,43 @@ class SiloFile(_intnl.DBFile):
         If the type is not specified, scalar is assumed.
         """
 
-        _intnl.DBFile.put_defvars(self, vname, vars)
+        _silo.DBFile.put_defvars(self, vname, vars)
 
     def put_pointmesh(self, mname, coords, optlist={}):
-        _intnl.DBFile.put_pointmesh(self, mname, coords,
+        _silo.DBFile.put_pointmesh(self, mname, coords,
                 _convert_optlist(optlist))
 
     def put_pointvar1(self, vname, mname, var, optlist={}):
-        _intnl.DBFile.put_pointvar1(self, vname, mname, var,
+        _silo.DBFile.put_pointvar1(self, vname, mname, var,
                 _convert_optlist(optlist))
 
     def put_pointvar(self, vname, mname, vars, optlist={}):
-        _intnl.DBFile.put_pointvar(self, vname, mname, vars,
+        _silo.DBFile.put_pointvar(self, vname, mname, vars,
                 _convert_optlist(optlist))
 
     def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist={}):
-        _intnl.DBFile.put_quadmesh(self, mname, coords, coordtype,
+        _silo.DBFile.put_quadmesh(self, mname, coords, coordtype,
                 _convert_optlist(optlist))
 
     def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
-        _intnl.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
+        _silo.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
                 _convert_optlist(optlist))
 
     def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
-        _intnl.DBFile.put_quadvar(self, vname, mname,
+        _silo.DBFile.put_quadvar(self, vname, mname,
                 varnames, vars, dims, centering,
                 _convert_optlist(optlist))
 
     def put_multimesh(self, mname, mnames_and_types, optlist={}):
-        _intnl.DBFile.put_multimesh(self, mname,
+        _silo.DBFile.put_multimesh(self, mname,
                 mnames_and_types, _convert_optlist(optlist))
 
     def put_multivar(self, vname, vnames_and_types, optlist={}):
-        _intnl.DBFile.put_multivar(self, vname,
+        _silo.DBFile.put_multivar(self, vname,
                 vnames_and_types, _convert_optlist(optlist))
 
     def put_curve(self, curvename, xvals, yvals, optlist={}):
-        _intnl.DBFile.put_curve(self, curvename, xvals, yvals,
+        _silo.DBFile.put_curve(self, curvename, xvals, yvals,
                 _convert_optlist(optlist))
 
 
