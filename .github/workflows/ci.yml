@@ -4,8 +4,6 @@ on:
         branches:
         - master
     pull_request:
-        paths-ignore:
-        - 'doc/*.rst'
     schedule:
         - cron:  '17 3 * * 0'
 
@@ -40,6 +38,11 @@ jobs:
             run: |
                 sudo apt update
                 sudo apt install libsilo-dev
+
+                curl -L -O https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/silo-4.10.2/silo-4.10.2-bsd-smalltest.tar.gz
+                tar xvfz silo-4.10.2-bsd-smalltest.tar.gz
+                sudo cp silo-4.10.2-bsd/src/silo/silo_exports.h /usr/include/silo
+
                 EXTRA_INSTALL="numpy pybind11"
                 ./configure.py --use-silo
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
