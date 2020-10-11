@@ -86,13 +86,19 @@ def create_sample_element(cell_type, order=3, visualize=True):
     source = vtk.vtkCellTypeSource()
     source.SetCellType(vtk_cell_type)
     source.SetBlocksDimensions(1, 1, 1)
-    # 0 - single precision; 1 - double precision
-    source.SetOutputPrecision(1)
-
     if "LAGRANGE" in cell_type:
         source.SetCellOrder(order)
+
+    # 0 - single precision; 1 - double precision
+    source.SetOutputPrecision(1)
     source.Update()
+
     grid = source.GetOutput()
+    cell = grid.GetCell(0)
+    points = vtk_to_numpy(cell.GetPoints().GetData()).copy().T
+
+    dim = cell.GetCellDimension()
+    points = points[0:dim]
 
     basename = f"sample_{cell_type.lower()}"
     if visualize:
@@ -107,17 +113,10 @@ def create_sample_element(cell_type, order=3, visualize=True):
         writer.SetInputData(grid)
         writer.Write()
 
-    cell = grid.GetCell(0)
-    points = vtk_to_numpy(cell.GetPoints().GetData()).T
-
-    dim = cell.GetCellDimension()
-    points = points[0:dim]
-
     if cell_type in VTK_LAGRANGE_SIMPLICES:
         from pyvisfile.vtk.vtk_ordering import vtk_lagrange_simplex_node_tuples
         node_tuples = vtk_lagrange_simplex_node_tuples(dim, order,
             is_consistent=is_consistent)
-
         from pyvisfile.vtk.vtk_ordering import \
                 vtk_lagrange_simplex_node_tuples_to_permutation
         vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples)
@@ -135,11 +134,13 @@ def create_sample_element(cell_type, order=3, visualize=True):
 
         nodes = np.array(node_tuples) / order
         error = la.norm(nodes - points.T)
+    else:
+        error = float("nan")
 
     if error < 5.0e-15:
-        print(f"\033[92merror[{order}]: {error:.5e}\033[0m")
+        print(f"\033[92m[PASSED] order {order:2d} error {error:.5e}\033[0m")
     else:
-        print(f"\033[91merror[{order}]: {error:.5e}\033[0m")
+        print(f"\033[91m[FAILED] order {order:2d} error {error:.5e}\033[0m")
 
     if not visualize:
         return
@@ -152,18 +153,18 @@ def create_sample_element(cell_type, order=3, visualize=True):
         plot_node_ordering(filename, nodes.T, show=False)
 
 
-def test_order():
+def test_order(max_order=10):
     for cell_type in VTK_LAGRANGE_SIMPLICES:
         print("cell_type:", cell_type)
-        for order in range(1, 11):
+        for order in range(1, max_order + 1):
             create_sample_element(cell_type, order=order, visualize=False)
 
     for cell_type in VTK_LAGRANGE_QUADS:
         print("cell_type:", cell_type)
-        for order in range(1, 11):
+        for order in range(1, max_order + 1):
             create_sample_element(cell_type, order=order, visualize=False)
 
 
 if __name__ == "__main__":
     test_order()
-    create_sample_element("VTK_LAGRANGE_HEXAHEDRON", order=3)
+    create_sample_element("VTK_LAGRANGE_TETRAHEDRON", order=3)
