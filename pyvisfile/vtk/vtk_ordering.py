@@ -30,8 +30,8 @@ VTK High-Order Lagrange Elements
 --------------------------------
 
 The high-order elements are described in
-`this blog post <https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/>`_. The ordering in the new elements is as
-follows:
+`this blog post <https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/>`_.
+The ordering in the new elements is as follows:
 
     1. vertices of the element (in an order that matches the linear elements,
        e.g. :data:`~pyvisfile.vtk.VTK_TRIANGLE`)
@@ -46,6 +46,9 @@ To a large extent, matches the order used by ``gmsh`` and described
 
 .. autofunction:: vtk_lagrange_simplex_node_tuples
 .. autofunction:: vtk_lagrange_simplex_node_tuples_to_permutation
+
+.. autofunction:: vtk_lagrange_quad_node_tuples
+.. autofunction:: vtk_lagrange_quad_node_tuples_to_permutation
 """     # noqa
 
 
@@ -225,5 +228,176 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):
 
 
 # {{{ VTK_LAGRANGE_${QUAD} (i.e. QUADRILATERAL/HEXAHEDRON)
+
+def vtk_lagrange_quadrilateral_node_tuples(order):
+    nodes = []
+
+    if order < 0:
+        return nodes
+
+    if order == 0:
+        return [(0, 0)]
+
+    #   y
+    #   ^
+    #   |
+    #   3----------2
+    #   |          |
+    #   |          |
+    #   |          |
+    #   |          |
+    #   |          |
+    #   0----------1 --> x
+
+    # add vertices
+    nodes += [(0, 0), (order, 0), (order, order), (0, order)]
+    if order == 1:
+        return nodes
+
+    # add faces
+    face_ids = range(1, order)
+    nodes += (
+            # vertex 0 -> 1
+            [(i, 0) for i in face_ids]
+            # vertex 1 -> 2
+            + [(order, i) for i in face_ids]
+            # vertex 2 -> 3
+            + [(i, order) for i in face_ids]
+            # vertex 3 -> 0
+            + [(0, i) for i in face_ids])
+
+    # add remaining interior nodes
+    from itertools import product
+    nodes += [(i, j) for j, i in product(range(1, order), repeat=2)]
+
+    return nodes
+
+
+def vtk_lagrange_hexahedon_node_tuples(order, is_consistent=False):
+    nodes = []
+
+    if order < 0:
+        return nodes
+
+    if order == 0:
+        return [(0, 0, 0)]
+
+    #   z
+    #   ^
+    #   |
+    #   4----------7
+    #   |\         |\
+    #   | \        | \
+    #   |  \       |  \
+    #   |   5------+---6
+    #   |   |      |   |
+    #   0---+------3---|--> y
+    #    \  |       \  |
+    #     \ |        \ |
+    #      \|         \|
+    #       1----------2
+    #        \
+    #         v x
+
+    # add vertices
+    nodes += [
+            # (0, 1, 2, 3)
+            (0, 0, 0), (order, 0, 0),
+            (order, order, 0), (0, order, 0),
+            # (4, 5, 6, 7)
+            (0, 0, order), (order, 0, order),
+            (order, order, order), (0, order, order),
+            ]
+    if order == 1:
+        return nodes
+
+    # add edges
+    edge_ids = range(1, order)
+    nodes += (
+            # vertex 0 -> 1
+            [(i, 0, 0) for i in edge_ids]
+            # vertex 1 -> 2
+            + [(order, i, 0) for i in edge_ids]
+            # vertex 2 -> 3
+            + [(i, order, 0) for i in edge_ids]
+            # vertex 3 -> 0
+            + [(0, i, 0) for i in edge_ids]
+
+            # vertex 4 -> 5
+            + [(i, 0, order) for i in edge_ids]
+            # vertex 5 -> 6
+            + [(order, i, order) for i in edge_ids]
+            # vertex 6 -> 7
+            + [(i, order, order) for i in edge_ids]
+            # vertex 7 -> 4
+            + [(0, i, order) for i in edge_ids]
+
+            # vertex 0 -> 4
+            + [(0, 0, i) for i in edge_ids]
+            # vertex 1 -> 5
+            + [(order, 0, i) for i in edge_ids]
+            )
+
+    if is_consistent:
+        nodes += (
+            # vertex 2 -> 6
+            [(order, order, i) for i in edge_ids]
+            # vertex 3 -> 7
+            + [(0, order, i) for i in edge_ids]
+            )
+    else:
+        nodes += (
+            # vertex 3 -> 7
+            [(0, order, i) for i in edge_ids]
+            # vertex 2 -> 6
+            + [(order, order, i) for i in edge_ids]
+            )
+
+    # add faces
+    from itertools import product
+    nodes += (
+            # face between (0, 4, 7, 3)
+            [(0, i, j) for j, i in product(range(1, order), repeat=2)]
+            # face between (1, 5, 6, 2)
+            + [(order, i, j) for j, i in product(range(1, order), repeat=2)]
+            # face between (0, 1, 5, 4)
+            + [(i, 0, j) for j, i in product(range(1, order), repeat=2)]
+            # face between (3, 2, 6, 7)
+            + [(i, order, j) for j, i in product(range(1, order), repeat=2)]
+            # face between (0, 1, 2, 3)
+            + [(i, j, 0) for j, i in product(range(1, order), repeat=2)]
+            # face between (4, 5, 6, 7)
+            + [(i, j, order) for j, i in product(range(1, order), repeat=2)]
+            )
+
+    # add interior
+    nodes += [(i, j, k) for k, j, i in product(range(1, order), repeat=3)]
+
+    return nodes
+
+
+def vtk_lagrange_quad_node_tuples(dims, order, is_consistent=False):
+    if dims == 1:
+        return vtk_lagrange_curve_node_tuples(order, is_consistent=is_consistent)
+    elif dims == 2:
+        return vtk_lagrange_quadrilateral_node_tuples(order)
+    elif dims == 3:
+        return vtk_lagrange_hexahedon_node_tuples(order, is_consistent=is_consistent)
+    else:
+        raise ValueError(f"unsupported dimension: {dims}")
+
+
+def vtk_lagrange_quad_node_tuples_to_permutation(node_tuples):
+    order = max([max(i) for i in node_tuples])
+    dims = len(node_tuples[0])
+
+    from itertools import product
+    node_to_index = {
+            node_tuple: i
+            for i, node_tuple in enumerate(product(range(order + 1), repeat=dims))
+            }
+
+    assert len(node_tuples) == len(node_to_index)
+    return [node_to_index[v] for v in node_tuples]
 
 # }}}
