@@ -10,7 +10,6 @@ makes use of the VTK Python bindings.
 import numpy as np
 import numpy.linalg as la
 
-from distutils.version import LooseVersion
 import matplotlib.pyplot as plt
 
 try:
@@ -19,10 +18,6 @@ try:
 except ImportError:
     raise ImportError("python bindings for vtk cannot be found")
 
-if LooseVersion(vtk.VTK_VERSION) <= LooseVersion("8.2.0"):
-    is_consistent = False
-else:
-    is_consistent = True
 
 VTK_LAGRANGE_SIMPLICES = [
         "VTK_LAGRANGE_CURVE",
@@ -78,6 +73,12 @@ def plot_node_ordering(filename, points, show=False):
 
 
 def create_sample_element(cell_type, order=3, visualize=True):
+    from distutils.version import LooseVersion
+    if LooseVersion(vtk.VTK_VERSION) > "8.2.0":
+        vtk_version = (2, 2)
+    else:
+        vtk_version = (2, 1)
+
     cell_type = cell_type.upper()
     vtk_cell_type = getattr(vtk, cell_type, None)
     if vtk_cell_type is None:
@@ -103,6 +104,8 @@ def create_sample_element(cell_type, order=3, visualize=True):
     basename = f"sample_{cell_type.lower()}"
     if visualize:
         filename = f"{basename}.vtu"
+
+        print("vtk xml version:", vtk_version)
         print("cell type: %s" % cell_type)
         print("output: %s" % filename)
 
@@ -116,7 +119,7 @@ def create_sample_element(cell_type, order=3, visualize=True):
     if cell_type in VTK_LAGRANGE_SIMPLICES:
         from pyvisfile.vtk.vtk_ordering import vtk_lagrange_simplex_node_tuples
         node_tuples = vtk_lagrange_simplex_node_tuples(dim, order,
-            is_consistent=is_consistent)
+            vtk_version=vtk_version)
         from pyvisfile.vtk.vtk_ordering import \
                 vtk_lagrange_simplex_node_tuples_to_permutation
         vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples)
@@ -126,7 +129,7 @@ def create_sample_element(cell_type, order=3, visualize=True):
     elif cell_type in VTK_LAGRANGE_QUADS:
         from pyvisfile.vtk.vtk_ordering import vtk_lagrange_quad_node_tuples
         node_tuples = vtk_lagrange_quad_node_tuples(dim, order,
-            is_consistent=is_consistent)
+            vtk_version=vtk_version)
 
         from pyvisfile.vtk.vtk_ordering import \
                 vtk_lagrange_quad_node_tuples_to_permutation

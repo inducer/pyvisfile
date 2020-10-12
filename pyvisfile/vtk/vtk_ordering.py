@@ -62,11 +62,11 @@ def add_tuple_to_list(ary, x):
 
 # {{{ VTK_LAGRANGE_${SIMPLEX} (i.e. CURVE/TRIANGLE/TETRAHEDRON)
 
-def vtk_lagrange_curve_node_tuples(order, is_consistent=False):
-    if is_consistent:
-        node_tuples = [(0,), (order,)] + [(i,) for i in range(1, order)]
-    else:
+def vtk_lagrange_curve_node_tuples(order, vtk_version=(2, 1)):
+    if vtk_version <= (2, 1):
         node_tuples = [(i,) for i in range(order + 1)]
+    else:
+        node_tuples = [(0,), (order,)] + [(i,) for i in range(1, order)]
 
     return node_tuples
 
@@ -185,25 +185,31 @@ def vtk_lagrange_tetrahedron_node_tuples(order):
     return nodes
 
 
-def vtk_lagrange_simplex_node_tuples(dims, order, is_consistent=False):
+def vtk_lagrange_simplex_node_tuples(dims, order, vtk_version=(2, 1),
+        is_consistent=None):
     """
     :arg dims: dimension of the simplex, i.e. 1 corresponds to a curve, 2 to
         a triangle, etc.
     :arg order: order of the polynomial representation, which also defines
         the number of nodes on the simplex.
-    :arg is_consistent: If *True*, 1D curve node ordering will follow the
-        same rules as the higher-dimensional simplices by putting the
-        vertices first. This is not the default in VTK as of version 8.1,
-        when the higher-order elements were introduced.
+    :arg vtk_version: a :class:`tuple` of two elements containing the version
+        of the VTK XML file format in use. The ordering of some of the
+        high-order elements changed between versions `2.1` and `2.2`.
 
     :return: a :class:`list` of ``dims``-dimensional tuples of integers
         up to ``order`` in the ordering expected by VTK. This list can be
         passed to :func:`vtk_lagrange_simplex_node_tuples_to_permutation`
         to obtain a permutation from the order used by :mod:`modepy`.
     """
+    if is_consistent is not None:
+        from warnings import warn
+        warn("'is_consistent' is deprecated, use 'vtk_version' instead")
+
+    if is_consistent:
+        vtk_version = (2, 2)
 
     if dims == 1:
-        return vtk_lagrange_curve_node_tuples(order, is_consistent=is_consistent)
+        return vtk_lagrange_curve_node_tuples(order, vtk_version=vtk_version)
     elif dims == 2:
         return vtk_lagrange_triangle_node_tuples(order)
     elif dims == 3:
@@ -213,7 +219,7 @@ def vtk_lagrange_simplex_node_tuples(dims, order, is_consistent=False):
 
 
 def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):
-    order = max([sum(i) for i in node_tuples])
+    order = max([max(i) for i in node_tuples])
     dims = len(node_tuples[0])
 
     node_to_index = {
@@ -273,7 +279,7 @@ def vtk_lagrange_quadrilateral_node_tuples(order):
     return nodes
 
 
-def vtk_lagrange_hexahedon_node_tuples(order, is_consistent=False):
+def vtk_lagrange_hexahedon_node_tuples(order, vtk_version=(2, 1)):
     nodes = []
 
     if order < 0:
@@ -338,19 +344,19 @@ def vtk_lagrange_hexahedon_node_tuples(order, is_consistent=False):
             + [(order, 0, i) for i in edge_ids]
             )
 
-    if is_consistent:
-        nodes += (
-            # vertex 2 -> 6
-            [(order, order, i) for i in edge_ids]
-            # vertex 3 -> 7
-            + [(0, order, i) for i in edge_ids]
-            )
-    else:
+    if vtk_version <= (2, 1):
         nodes += (
             # vertex 3 -> 7
             [(0, order, i) for i in edge_ids]
             # vertex 2 -> 6
             + [(order, order, i) for i in edge_ids]
+            )
+    else:
+        nodes += (
+            # vertex 2 -> 6
+            [(order, order, i) for i in edge_ids]
+            # vertex 3 -> 7
+            + [(0, order, i) for i in edge_ids]
             )
 
     # add faces
@@ -376,13 +382,27 @@ def vtk_lagrange_hexahedon_node_tuples(order, is_consistent=False):
     return nodes
 
 
-def vtk_lagrange_quad_node_tuples(dims, order, is_consistent=False):
+def vtk_lagrange_quad_node_tuples(dims, order, vtk_version=(2, 1)):
+    """
+    :arg dims: dimension of the box, i.e. 1 corresponds to a curve, 2 to
+        a quadrilateral, etc.
+    :arg order: order of the polynomial representation, which also defines
+        the number of nodes on the box.
+    :arg vtk_version: a :class:`tuple` of two elements containing the version
+        of the VTK XML file format in use. The ordering of some of the
+        high-order elements changed between versions `2.1` and `2.2`.
+
+    :return: a :class:`list` of ``dims``-dimensional tuples of integers
+        up to ``order`` in the ordering expected by VTK. This list can be
+        passed to :func:`vtk_lagrange_quad_node_tuples_to_permutation`
+        to obtain a permutation from the order used by :mod:`modepy`.
+    """
     if dims == 1:
-        return vtk_lagrange_curve_node_tuples(order, is_consistent=is_consistent)
+        return vtk_lagrange_curve_node_tuples(order, vtk_version=vtk_version)
     elif dims == 2:
         return vtk_lagrange_quadrilateral_node_tuples(order)
     elif dims == 3:
-        return vtk_lagrange_hexahedon_node_tuples(order, is_consistent=is_consistent)
+        return vtk_lagrange_hexahedon_node_tuples(order, vtk_version=vtk_version)
     else:
         raise ValueError(f"unsupported dimension: {dims}")
 
