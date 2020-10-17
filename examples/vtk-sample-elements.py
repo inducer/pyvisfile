@@ -139,12 +139,20 @@ def create_sample_element(cell_type, order=3, visualize=True):
         nodes = np.array(node_tuples) / order
         error = la.norm(nodes - points.T)
     else:
-        error = 0.0
+        error = None
 
-    if error < 5.0e-15:
-        print(f"\033[92m[PASSED] order {order:2d} error {error:.5e}\033[0m")
-    else:
-        print(f"\033[91m[FAILED] order {order:2d} error {error:.5e}\033[0m")
+    # NOTE: skipping the curve check because the ordering is off in the
+    # vtkCellTypeSource output
+    #   https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6555
+    if LooseVersion(vtk.VTK_VERSION) <= "8.2.0" \
+            and cell_type == "VTK_LAGRANGE_CURVE":
+        error = None
+
+    if error is not None:
+        if error < 5.0e-15:
+            print(f"\033[92m[PASSED] order {order:2d} error {error:.5e}\033[0m")
+        else:
+            print(f"\033[91m[FAILED] order {order:2d} error {error:.5e}\033[0m")
 
     if not visualize:
         return

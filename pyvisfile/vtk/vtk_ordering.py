@@ -64,13 +64,8 @@ def add_tuple_to_list(ary, x):
 
 # {{{ VTK_LAGRANGE_${SIMPLEX} (i.e. CURVE/TRIANGLE/TETRAHEDRON)
 
-def vtk_lagrange_curve_node_tuples(order, vtk_version=(2, 1)):
-    if vtk_version > (2, 1):
-        node_tuples = [(0,), (order,)] + [(i,) for i in range(1, order)]
-    else:
-        node_tuples = [(i,) for i in range(order + 1)]
-
-    return node_tuples
+def vtk_lagrange_curve_node_tuples(order):
+    return [(0,), (order,)] + [(i,) for i in range(1, order)]
 
 
 def vtk_lagrange_triangle_node_tuples(order):
@@ -203,15 +198,8 @@ def vtk_lagrange_simplex_node_tuples(dims, order, vtk_version=(2, 1),
         passed to :func:`vtk_lagrange_simplex_node_tuples_to_permutation`
         to obtain a permutation from the order used by :mod:`modepy`.
     """
-    if is_consistent is not None:
-        from warnings import warn
-        warn("'is_consistent' is deprecated, use 'vtk_version' instead")
-
-    if is_consistent:
-        vtk_version = (2, 2)
-
     if dims == 1:
-        return vtk_lagrange_curve_node_tuples(order, vtk_version=vtk_version)
+        return vtk_lagrange_curve_node_tuples(order)
     elif dims == 2:
         return vtk_lagrange_triangle_node_tuples(order)
     elif dims == 3:
@@ -400,7 +388,7 @@ def vtk_lagrange_quad_node_tuples(dims, order, vtk_version=(2, 1)):
         to obtain a permutation from the order used by :mod:`modepy`.
     """
     if dims == 1:
-        return vtk_lagrange_curve_node_tuples(order, vtk_version=vtk_version)
+        return vtk_lagrange_curve_node_tuples(order)
     elif dims == 2:
         return vtk_lagrange_quadrilateral_node_tuples(order)
     elif dims == 3:
