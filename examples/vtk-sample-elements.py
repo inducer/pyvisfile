@@ -16,7 +16,7 @@ try:
     import vtk
     from vtkmodules.util.numpy_support import vtk_to_numpy
 except ImportError:
-    raise ImportError("python bindings for vtk cannot be found")
+    raise ImportError("python bindings for VTK cannot be found")
 
 
 VTK_LAGRANGE_SIMPLICES = [
@@ -117,28 +117,29 @@ def create_sample_element(cell_type, order=3, visualize=True):
         writer.Write()
 
     if cell_type in VTK_LAGRANGE_SIMPLICES:
-        from pyvisfile.vtk.vtk_ordering import vtk_lagrange_simplex_node_tuples
+        from pyvisfile.vtk.vtk_ordering import (
+                vtk_lagrange_simplex_node_tuples,
+                vtk_lagrange_simplex_node_tuples_to_permutation)
+
         node_tuples = vtk_lagrange_simplex_node_tuples(dim, order,
             vtk_version=vtk_version)
-        from pyvisfile.vtk.vtk_ordering import \
-                vtk_lagrange_simplex_node_tuples_to_permutation
         vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples)
 
         nodes = np.array(node_tuples) / order
         error = la.norm(nodes - points.T)
     elif cell_type in VTK_LAGRANGE_QUADS:
-        from pyvisfile.vtk.vtk_ordering import vtk_lagrange_quad_node_tuples
+        from pyvisfile.vtk.vtk_ordering import (
+                vtk_lagrange_quad_node_tuples,
+                vtk_lagrange_quad_node_tuples_to_permutation)
+
         node_tuples = vtk_lagrange_quad_node_tuples(dim, order,
             vtk_version=vtk_version)
-
-        from pyvisfile.vtk.vtk_ordering import \
-                vtk_lagrange_quad_node_tuples_to_permutation
         vtk_lagrange_quad_node_tuples_to_permutation(node_tuples)
 
         nodes = np.array(node_tuples) / order
         error = la.norm(nodes - points.T)
     else:
-        error = float("nan")
+        error = 0.0
 
     if error < 5.0e-15:
         print(f"\033[92m[PASSED] order {order:2d} error {error:.5e}\033[0m")

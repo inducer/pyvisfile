@@ -31,18 +31,20 @@ VTK High-Order Lagrange Elements
 
 The high-order elements are described in
 `this blog post <https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/>`_.
-The ordering in the new elements is as follows:
+The ordering of the element nodes is as follows:
 
-    1. vertices of the element (in an order that matches the linear elements,
-       e.g. :data:`~pyvisfile.vtk.VTK_TRIANGLE`)
-    2. Edge (or face in 2D) nodes in sequence.
-    3. Face (3D only) nodes. These are only the nodes interior to the face,
-       i.e. without the edges, and they are reported by the same rules
-       recursively.
-    4. Interior nodes are also defined recursively.
+    1. the vertices (in an order that matches the linear elements,
+       e.g. :data:`~pyvisfile.vtk.VTK_TRIANGLE`).
+    2. the interior edge (or face in 2D) nodes, i.e. without the endpoints
+    3. the interior face (3D only) nodes, i.e. without the edge nodes.
+    4. the remaining interior nodes.
 
-To a large extent, matches the order used by ``gmsh`` and described
-`here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`_.
+For simplices, the interior nodes are defined recursively by using the same
+rules. However, for box elements the interior nodes are just listed in
+order, with the last coordinate moving slowest.
+
+To a large extent, the VTK ordering matches the ordering used by ``gmsh`` and
+described `here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`_.
 
 .. autofunction:: vtk_lagrange_simplex_node_tuples
 .. autofunction:: vtk_lagrange_simplex_node_tuples_to_permutation
@@ -63,10 +65,10 @@ def add_tuple_to_list(ary, x):
 # {{{ VTK_LAGRANGE_${SIMPLEX} (i.e. CURVE/TRIANGLE/TETRAHEDRON)
 
 def vtk_lagrange_curve_node_tuples(order, vtk_version=(2, 1)):
-    if vtk_version <= (2, 1):
-        node_tuples = [(i,) for i in range(order + 1)]
-    else:
+    if vtk_version > (2, 1):
         node_tuples = [(0,), (order,)] + [(i,) for i in range(1, order)]
+    else:
+        node_tuples = [(i,) for i in range(order + 1)]
 
     return node_tuples
 
