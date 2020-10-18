@@ -116,6 +116,18 @@ def create_sample_element(cell_type, order=3, visualize=True):
         writer.SetInputData(grid)
         writer.Write()
 
+    # NOTE: vtkCellTypeSource always tesselates a square and the way it does
+    # that to get tetrahedra changed in
+    #   https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6529
+    if LooseVersion(vtk.VTK_VERSION) > "8.2.0" \
+            and cell_type == "VTK_LAGRANGE_TETRAHEDRON":
+        rot = np.array([
+            [1, -1, 0],
+            [0, 1, -1],
+            [0, 0, 2]
+            ])
+        points = rot @ points
+
     if cell_type in VTK_LAGRANGE_SIMPLICES:
         from pyvisfile.vtk.vtk_ordering import (
                 vtk_lagrange_simplex_node_tuples,
