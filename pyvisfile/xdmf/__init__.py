@@ -21,55 +21,132 @@ THE SOFTWARE.
 """
 
 import enum
+from xml.etree.ElementTree import Element
 
 import numpy as np
 
+# {{{ xdmf tags
 
-# {{{ type enums
+# {{{ attribute
 
-class XdmfNumberType(enum.Enum):
-    Float = enum.auto()
-    Int = enum.auto()
-    UInt = enum.auto()
+class AttributeType(enum.Enum):
+    Scalar = enum.auto()
+    Vector = enum.auto()
+    Tensor = enum.auto()
+    Tensor6 = enum.auto()
+    Matrix = enum.auto()
+
+
+class AttributeCenter(enum.Enum):
+    Node = enum.auto()
+    Cell = enum.auto()
+    Grid = enum.auto()
+    Face = enum.auto()
+    Edge = enum.auto()
+    Other = enum.auto()
+
+
+class Attribute(Element):
+    def __init__(self, parent: Element, name: str,
+            atype: AttributeType,
+            acenter: AttributeCenter):
+        super().__init__("Attribute", {
+            "Name": name,
+            "Center": center.name,
+            "AttributeType": atype.name,
+            })
+
+        parent.append(self)
+
+# }}}
+
+
+# {{{ data item
+
+class DataItemType(enum.Enum):
+    Uniform = enum.auto()
+    HyperSlab = enum.auto()
+    Function = enum.auto()
+
+
+class DataItemNumberType(enum.Enum):
     Char = enum.auto()
     UChar = enum.auto()
+    Int = enum.auto()
+    UInt = enum.auto()
+    Float = enum.auto()
 
 
-class XdmfFormat(enum.Enum):
+class DataItemFormat(enum.Enum):
     XML = enum.auto()
     HDF = enum.auto()
     Binary = enum.auto()
+    TIFF = enum.auto()
 
 
-class XdmfEndian(enum.Enum):
+class DataItemEndian(enum.Enum):
     Native = enum.auto()
     Big = enum.auto()
     Little = enum.auto()
 
 
-class XdmfCompression(enum.Enum):
-    Raw = enum.auto()
-    Zlib = enum.auto()
-    BZip2 = enum.auto()
+class DataItem(Element):
+    def __init__(self, parent: Element, name: str,
+            itype: DataItemType,
+            dimensions: List[int],
+            dtype: DataItemNumberType,
+            ntype: DataItemNumberType,
+            precision: int,
+            reference: str,
+            endian: DataItemEndian,
+            dformat: DataItemFormat):
+        super().__init__("DataItem", {
+            "Name": name,
+            "ItemType": itype.name,
+            "Dimensions": " ".join([str(i) for i in dimensions])
+            "NumberType": ntype.name,
+            "Precision": precision,
+            "Reference": reference,
+            "Endian": endian.name,
+            "Format": dformat.name,
+            })
+
+        parent.append(self)
+
+# }}}
 
 
-class XdmfItemType(enum.Enum):
-    Uniform = enum.auto()
-    Collection = enum.auto()
-    Tree = enum.auto()
-    HyperSlab = enum.auto()
-    Coordinates = enum.auto()
-    Function = enum.auto()
+# {{{ grid
 
-
-class XdmfGridType(enum.Enum):
+class GridType(enum.Enum):
     Uniform = enum.auto()
     Collection = enum.auto()
     Tree = enum.auto()
     SubSet = enum.auto()
 
 
-class XdmfTypologyType(enum.Enum):
+class CollectionType(enum.Enum):
+    Spatial = enum.auto()
+    Temporal = enum.auto()
+
+
+class Grid(Element):
+    def __init__(self, parent: Element, name: str,
+            gtype: GridType
+            ctype: CollectionType):
+        super().__init__("Grid", {
+            "GridType": gtype.name,
+            "CollectionType": ctype.name
+            })
+
+        parent.append(self)
+
+# }}}
+
+
+# {{{ topology
+
+class TypologyType(enum.Enum):
     # linear elements
     Polyvertex = enum.auto()
     Polyline = enum.auto()
@@ -100,20 +177,90 @@ class XdmfTypologyType(enum.Enum):
     3DRectMesh = enum.auto()
     3DCoRectmesh = enum.auto()
 
+    # TODO: add the high-order elements when supported
 
-class XdmfGeometryType(enum.Enum):
-    XYZ = enum.auto()
+
+class Topology(Element):
+    def __init__(self, parent: Element,
+            ttype: TopologyType,
+            dimensons: List[int]):
+        super().__init__("Topology", {
+            "TopologyType": ttype.name,
+            "Dimensions": " ".join([str(i) for i in dimensions]),
+            })
+
+        parent.append(self)
+
+# }}}
+
+
+# {{{ geometry
+
+class GeometryType(enum.Enum):
     XY = enum.auto()
+    XYZ = enum.auto()
+    X_Y = enum.auto()
     X_Y_Z = enum.auto()
-    VxVyVz = enum.auto()
-    Origin_DxDyDz = enum.auto()
-    Origin_DxDy = enum.auto()
+    VXVY = enum.auto()
+    VXVYVZ = enum.auto()
+    ORIGIN_DXDY = enum.auto()
+    ORIGIN_DXDYDZ = enum.auto()
 
 
-class XdmfTimeType(enum.Enum):
+class Geometry(Element):
+    def __init__(self, parent: Element, name: str,
+            gtype: GeometryType):
+        super().__init__("Geometry", {
+            "Name": name,
+            "GeometryType": gtype.name
+            })
+
+        parent.append(self)
+
+# }}}
+
+
+# {{{ time
+
+class TimeType(enum.Enum):
     Single = enum.auto()
     HyperSlab = enum.auto()
     List = enum.auto()
     Range = enum.auto()
+
+# }}}
+
+
+# {{{ domain
+
+class Domain(Element):
+    def __init__(self, parent: Element, name: str):
+        super().__init__("Domain", {
+            "Name": name,
+            })
+
+        parent.append(self)
+
+# }}}
+
+
+# {{{ information
+
+class Information(Element):
+    def __init__(self, parent: Element, name: str, value: str):
+        super().__init__("Information", {
+            "Name": name,
+            "Value": str(value),
+            })
+
+        parent.append(self)
+
+# }}}
+
+# }}}
+
+
+# {{{ xdmf writer
+
 
 # }}}
