@@ -15,7 +15,9 @@ including
   `VisIt <https://wci.llnl.gov/codes/visit/>`_
   large-scale visualization program.
 
-pyvisfiles supports many mesh geometries, such such as unstructured
+* `XDMF <http://www.xdmf.org/index.php/Main_Page>`_ data files.
+
+pyvisfile supports many mesh geometries, such such as unstructured
 and rectangular structured meshes, particle meshes, as well as
 scalar and vector variables on them. In addition, pyvisfile allows the
 semi-automatic writing of parallelization-segmented visualization files
@@ -42,6 +44,7 @@ Table of Contents
     installing
     silo
     vtk
+    xdmf
     faq
     🚀 Github <https://github.com/inducer/pyvisfile>
     💾 Download Releases <https://pypi.org/project/pyvisfile>
