@@ -21,7 +21,7 @@ THE SOFTWARE.
 """
 
 import enum
-from typing import Tuple, Optional, Union
+from typing import Tuple, Optional, Union, Dict
 from xml.etree.ElementTree import Element, ElementTree
 
 import numpy as np
@@ -29,11 +29,15 @@ import numpy as np
 # {{{ xdmf tags
 
 class XdmfElement(Element):
-    def __init__(self, parent, tag, attrib):
-        super().__init__(tag,
-                {k: v for k, v in attrib.items() if v is not None}
-                )
-        parent.append(self)
+    def __init__(self, parent: Element,
+            tag: str,
+            attrib: Dict[str, Optional[str]]):
+        super().__init__(tag, attrib={
+            k: v for k, v in attrib.items() if v is not None
+            })
+
+        if parent is not None:
+            parent.append(self)
 
 
 # {{{ attribute
@@ -368,15 +372,22 @@ class DataItemArray:
         return item
 
 
-class XdmfElementTree(ElementTree):
-    def __init__(self):
+class XdmfGrid:
+    def __init__(self, root):
+        self.root = root
+
+    def getroot(self):
+        return self.root
+
+
+class XdmfWriter(ElementTree):
+    def __init__(self, grid: XdmfGrid):
         root = Element("Xdmf", {
             "Version": "3.0",
             })
-        super().__init__(root)
 
-    def add_attribute(self, attr):
-        pass
+        root.append(grid.getroot())
+        super().__init__(root)
 
     def write_pretty(self, filename):
         from xml.etree.ElementTree import tostring
@@ -398,15 +409,14 @@ class XdmfElementTree(ElementTree):
                 )
 
 
-class XdmfUnstructuredGrid(XdmfElementTree):
+class XdmfUnstructuredGrid(XdmfGrid):
     def __init__(self):
-        super().__init__()
-
-        domain = Domain(self.getroot())
+        domain = Domain(None)
         grid = Grid(domain)
+        super().__init__(domain)
 
 
-class XdmfStructuredGrid(XdmfElementTree):
+class XdmfStructuredGrid(XdmfGrid):
     def __init__(self):
         super().__init__()
 

@@ -2,9 +2,11 @@ import numpy as np
 
 
 def test_unstructed_grid():
-    from pyvisfile.xdmf import XdmfUnstructuredGrid
+    from pyvisfile.xdmf import XdmfUnstructuredGrid, XdmfWriter
     grid = XdmfUnstructuredGrid()
-    grid.write_pretty("test_unstructured_grid.xmf")
+
+    writer = XdmfWriter(grid)
+    writer.write_pretty("test_unstructured_grid.xmf")
 
 
 def test_structured_grid():
