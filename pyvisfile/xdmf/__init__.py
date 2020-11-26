@@ -33,7 +33,7 @@ class XdmfElement(Element):
             tag: str,
             attrib: Dict[str, Optional[str]]):
         super().__init__(tag, attrib={
-            k: v for k, v in attrib.items() if v is not None
+            k: str(v) for k, v in attrib.items() if v is not None
             })
 
         if parent is not None:
@@ -61,9 +61,9 @@ class AttributeCenter(enum.Enum):
 
 class Attribute(XdmfElement):
     def __init__(self, parent: Element, *,
+            name: Optional[str] = None,
             atype: AttributeType = AttributeType.Scalar,
             acenter: AttributeCenter = AttributeCenter.Node,
-            name: Optional[str] = None,
             ):
         super().__init__(parent, "Attribute", {
             "Name": name,
@@ -87,6 +87,19 @@ def _numpy_to_xdmf_number_type(dtype):
         raise ValueError(f"unsupported dtype: '{dtype}'")
 
 
+def _data_item_format_from_str(text):
+    if not isinstance(text, str):
+        return DataItemFormat.XML
+
+    import os
+    filename = text.split(":")[-2]
+    ext = os.path.splitext(filename)[-1]
+    if ext == ".h5":
+        return DataItemFormat.HDF
+    else:
+        return DataItemFormat.Binary
+
+
 class DataItemType(enum.Enum):
     Uniform = enum.auto()
     HyperSlab = enum.auto()
@@ -105,7 +118,6 @@ class DataItemFormat(enum.Enum):
     XML = enum.auto()
     HDF = enum.auto()
     Binary = enum.auto()
-    TIFF = enum.auto()
 
 
 class DataItemEndian(enum.Enum):
@@ -127,7 +139,7 @@ class DataItem(XdmfElement):
         super().__init__(parent, "DataItem", {
             "Name": name,
             "ItemType": itype.name,
-            "Dimensions": " ".join([str(i) for i in dimensions]),
+            "Dimensions": " ".join([str(i) for i in reversed(dimensions)]),
             "NumberType": ntype.name,
             "Precision": precision,
             "Reference": reference,
@@ -156,11 +168,19 @@ class Grid(XdmfElement):
     def __init__(self, parent: Element, *,
             name: Optional[str] = None,
             gtype: GridType = GridType.Uniform,
-            ctype: CollectionType = CollectionType.Spatial):
+            ctype: Optional[CollectionType] = None):
+        if gtype == GridType.Collection:
+            ctype = CollectionType.Spatial
+
+        if ctype is not None:
+            ctype_name = ctype.name
+        else:
+            ctype_name = None
+
         super().__init__(parent, "Grid", {
             "Name": name,
             "GridType": gtype.name,
-            "CollectionType": ctype.name
+            "CollectionType": ctype_name,
             })
 
 # }}}
@@ -208,13 +228,18 @@ class TopologyType(enum.IntEnum):
 class Topology(XdmfElement):
     def __init__(self, parent: Element, *,
             ttype: TopologyType,
-            dimensons: Tuple[int]):
-        super().__init__("Topology", {
-            "TopologyType": _XDMF_TOPOLOGY_TYPE_TO_NAME.get(ttype, ttype.name),
-            "Dimensions": " ".join([str(i) for i in dimensions]),
-            })
+            number_of_elements: Optional[int] = None,
+            dimensions: Optional[Tuple[int]] = None):
+        if dimensions is not None:
+            dimensions_string = " ".join([str(i) for i in dimensions]),
+        else:
+            dimensions_string = None
 
-        parent.append(self)
+        super().__init__(parent, "Topology", {
+            "TopologyType": _XDMF_TOPOLOGY_TYPE_TO_NAME.get(ttype, ttype.name),
+            "Dimensions": dimensions_string,
+            "NumberOfElements": number_of_elements,
+            })
 
 
 _XDMF_ELEMENT_NODE_COUNT = {
@@ -256,6 +281,17 @@ _XDMF_TOPOLOGY_TYPE_TO_NAME = {
 
 # {{{ geometry
 
+def _geometry_type_from_points(points):
+    if not isinstance(points, np.ndarray):
+        return None
+
+    dims = points.shape[0]
+    if points.dtype.char == "O":
+        return GeometryType.VXVY if dims == 2 else GeometryType.VXVYVZ
+    else:
+        return GeometryType.XY if dims == 2 else GeometryType.XYZ
+
+
 class GeometryType(enum.Enum):
     XY = enum.auto()
     XYZ = enum.auto()
@@ -269,8 +305,9 @@ class GeometryType(enum.Enum):
 
 class Geometry(XdmfElement):
     def __init__(self, parent: Element, *,
-            name: Optional[str],
+            name: Optional[str] = None,
             gtype: GeometryType = GeometryType.XYZ):
+
         super().__init__(parent, "Geometry", {
             "Name": name,
             "GeometryType": gtype.name,
@@ -325,10 +362,28 @@ class Information(XdmfElement):
 
 # {{{ xdmf writer
 
+def _ndarray_to_string(ary):
+    if not isinstance(ary, np.ndarray):
+        return ary
+
+    ntype = _numpy_to_xdmf_number_type(ary.dtype)
+    if ntype == DataItemNumberType.Int or ntype == DataItemNumberType.UInt:
+        fmt = "%d"
+    else:
+        fmt = "%.18e"
+
+    import io
+    bio = io.BytesIO()
+    np.savetxt(bio, ary.T, fmt=fmt)
+
+    return "\n" + bio.getvalue().decode()
+
+
 class DataItemArray:
     def __init__(self, name: str, data: Union[str, np.ndarray], *,
             dtype: Optional[np.dtype] = None,
-            shape: Optional[Tuple[int]] = None):
+            shape: Optional[Tuple[int]] = None,
+            dformat: Optional[str] = None):
         if dtype is None:
             if not isinstance(data, np.ndarray):
                 raise ValueError("'dtype' not provided for non-array data")
@@ -341,17 +396,16 @@ class DataItemArray:
 
             shape = data.shape
 
+        if dformat is None:
+            dformat = _data_item_format_from_str(data)
+
         self.name = name
         self.dtype = dtype
         self.shape = shape
         self.data = data
+        self.dformat = dformat
 
-    def as_data_item(self, parent):
-        if isinstance(data, str):
-            dformat = DataItemFormat.HDF
-        else:
-            dformat = DataItemFormat.XML
-
+    def as_data_item(self, parent, name=None):
         import sys
         if sys.byteorder == "little":
             endian = DataItemEndian.Little
@@ -360,15 +414,15 @@ class DataItemArray:
         else:
             endian = DataItemEndian.Native
 
-        item = DataItem(parent, self.name,
-                itype=DataItemType.Uniform,
+        item = DataItem(parent,
                 dimensions=self.shape,
+                itype=DataItemType.Uniform,
                 ntype=_numpy_to_xdmf_number_type(self.dtype),
                 precision=self.dtype.itemsize,
                 endian=endian,
-                dformat=dformat)
+                dformat=self.dformat)
+        item.text = _ndarray_to_string(self.data)
 
-        item.text = self.data
         return item
 
 
@@ -379,14 +433,34 @@ class XdmfGrid:
     def getroot(self):
         return self.root
 
+    def add_attribute(self, data, *, center=AttributeCenter.Node):
+        if len(data.shape) == 1:
+            atype = AttributeType.Scalar
+        elif len(data.shape) == 2:
+            atype = AttributeType.Vector
+        else:
+            raise ValueError(f"unsupported attribute of shape {data.shape}")
+
+        attr = Attribute(parent=self.getroot(),
+                name=data.name,
+                atype=atype,
+                acenter=center,
+                )
+        data.as_data_item(parent=attr)
+
+        return attr
+
 
 class XdmfWriter(ElementTree):
-    def __init__(self, grid: XdmfGrid):
+    def __init__(self, grids: Tuple[XdmfGrid]):
         root = Element("Xdmf", {
             "Version": "3.0",
             })
 
-        root.append(grid.getroot())
+        domain = Domain(parent=root)
+        for grid in grids:
+            domain.append(grid.getroot())
+
         super().__init__(root)
 
     def write_pretty(self, filename):
@@ -410,10 +484,25 @@ class XdmfWriter(ElementTree):
 
 
 class XdmfUnstructuredGrid(XdmfGrid):
-    def __init__(self):
-        domain = Domain(None)
-        grid = Grid(domain)
-        super().__init__(domain)
+    def __init__(self, points, cells, *,
+            geometry_type=None):
+        super().__init__(Grid(None))
+
+        if geometry_type is None:
+            geometry_type = _geometry_type_from_points(points.data)
+
+        grid = self.getroot()
+
+        cell_type, connectivity = cells
+        topology = Topology(parent=grid,
+                ttype=cell_type,
+                number_of_elements=connectivity.shape[0])
+        item = connectivity.as_data_item(parent=topology)
+        item.set("Name", connectivity.name)
+
+        geometry = Geometry(parent=grid, gtype=geometry_type)
+        item = points.as_data_item(parent=geometry)
+        item.set("Name", points.name)
 
 
 class XdmfStructuredGrid(XdmfGrid):
