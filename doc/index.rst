@@ -4,16 +4,16 @@ Welcome to :mod:`pyvisfile`'s documentation!
 Pyvisfile allows you to write a variety of visualization file formats,
 including
 
-* `Kitware's <http://www.kitware.com>`_ 
+* `Kitware's <http://www.kitware.com>`_
   `XML-style <http://www.vtk.org/VTK/help/documentation.html>`_
   `Vtk <http://vtk.org>`_ data files.
 
 * Silo visualization files, as
-  introduced by LLNL's 
+  introduced by LLNL's
   `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
-  more recently used by the 
-  `VisIt <https://wci.llnl.gov/codes/visit/>`_ 
-  large-scale visualization program. 
+  more recently used by the
+  `VisIt <https://wci.llnl.gov/codes/visit/>`_
+  large-scale visualization program.
 
 pyvisfiles supports many mesh geometries, such such as unstructured
 and rectangular structured meshes, particle meshes, as well as
@@ -43,5 +43,7 @@ Table of Contents
     silo
     vtk
     faq
+    🚀 Github <https://github.com/inducer/pyvisfile>
+    💾 Download Releases <https://pypi.org/project/pyvisfile>
 
 * :ref:`genindex`
