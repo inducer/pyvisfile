@@ -31,5 +31,6 @@ Documentation:
     . ./ci-support.sh
     build_py_project_in_venv
     build_docs --no-check
+    maybe_upload_docs
   tags:
   - python3
