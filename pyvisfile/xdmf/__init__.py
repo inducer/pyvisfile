@@ -125,6 +125,11 @@ Information
 .. autoclass:: Information
     :members:
 
+XInclude
+^^^^^^^^
+
+.. autoclass:: XInclude
+    :members:
 
 Writing
 -------
@@ -759,6 +764,33 @@ class Information(XdmfElement):
 
 # }}}
 
+
+# {{{ include
+
+class XInclude(XdmfElement):
+    """
+    .. automethod:: __init__
+    """
+
+    def __init__(self, *,
+            href: Optional[str],
+            xpointer: Optional[str] = None,
+            parent: Optional[Element] = None,
+            ):
+        """
+        :param parent: if provided, *self* is appended to the element.
+        :param xpointer: path inside the file represented by *href*.
+        """
+        if xpointer is not None:
+            xpointer = f"xpointer({xpointer})"
+
+        super().__init__(parent, "xi:include", {
+            "href": href,
+            "xpointer": xpointer,
+            })
+
+# }}}
+
 # }}}
 
 
@@ -856,7 +888,7 @@ class DataArray:
 
     def as_data_item(self, *,
             parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
-        r"""Finalize the :class:`DataArray` and construct :class:`DataItems`\ s
+        r"""Finalize the :class:`DataArray` and construct :class:`DataItem`\ s
         to be written to a file.
         """
 
@@ -989,6 +1021,7 @@ class XdmfWriter(ElementTree):
             top :class:`Domain`, as opposed to as attribute on the grids.
         """
         root = Element("Xdmf", {
+            "xmlns:xi": "http://www.w3.org/2001/XInclude",
             "Version": "3.0",
             })
 
