@@ -1,4 +1,4 @@
-__copyright__ = "Copyright (C) 2020 Andreas Kloeckner"
+__copyright__ = "Copyright (C) 2020 Alexandru Fikl"
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person obtaining a copy
