@@ -11,38 +11,45 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
     points and connectivity.
     """
 
-    cargs = {"dtype": np.dtype(np.uint32), "shape": (npoints,)}
-    pargs = {"dtype": np.dtype(np.float), "shape": (ambient_dim, npoints)}
+    from pyvisfile.xdmf import NumpyDataArray, DataArray, DataItem
+    connectivity = np.arange(npoints, dtype=np.uint32)
+    points = np.random.rand(ambient_dim, npoints)
 
     if dformat == "xml":
-        cargs = {}
-        pargs = {}
-        connectivity = np.arange(npoints, dtype=np.uint32)
-        points = np.random.rand(ambient_dim, npoints)
-    elif dformat == "hdf":
-        connectivity = "geometry.h5:/Grid/Connectivity"
-        points = "geometry.h5:/Grid/Points"
-    elif dformat == "binary":
-        connectivity = "connectivity.out"
-        points = "points.out"
+        connectivity = NumpyDataArray(connectivity, name="connectivity")
+        points = NumpyDataArray(points, name="points")
+    elif dformat in ["hdf", "binary"]:
+        if dformat == "hdf":
+            cdata = "geometry.h5:/Grid/Connectivity"
+            pdata = "geometry.h5:/Grid/Points"
+        else:
+            cdata = "connectivity.out"
+            pdata = "points.out"
+
+        connectivity = DataArray((
+            DataItem.from_numpy(connectivity,
+                name="connectivity",
+                data=cdata),
+            ))
+        points = DataArray((
+            DataItem.from_numpy(points,
+                name="points",
+                data=pdata),
+            ))
     else:
         raise ValueError(f"unknown format: '{dformat}'")
-
-    from pyvisfile.xdmf import DataItemArray
-    connectivity = DataItemArray("connectivity", connectivity, **cargs)
-    points = DataItemArray("points", points, **pargs)
 
     from pyvisfile.xdmf import TopologyType
     from pyvisfile.xdmf import XdmfUnstructuredGrid
     grid = XdmfUnstructuredGrid(
-            points,
-            (TopologyType.Polyvertex, connectivity),
+            points, connectivity,
+            topology_type=TopologyType.Polyvertex,
             name="polyvertex")
 
     from pyvisfile.xdmf import XdmfWriter
     writer = XdmfWriter((grid,))
 
-    filename = f"test_unstructured_vertex_{ambient_dim}d.xmf"
+    filename = f"test_unstructured_vertex_{dformat}_{ambient_dim}d.xmf"
     writer.write_pretty(filename)
 
 
