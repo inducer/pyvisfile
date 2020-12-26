@@ -924,8 +924,11 @@ class XdmfGrid:
                 parent=self.getroot(),
                 )
 
-        items = ary.as_data_item()
-        join_data_items(items, parent=attr)
+        if join:
+            items = ary.as_data_item()
+            join_data_items(items, parent=attr)
+        else:
+            items = ary.as_data_item(parent=attr)
 
         return attr
 
