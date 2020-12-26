@@ -214,6 +214,7 @@ def _attribute_type_from_shape(shape):
 
 class AttributeType(enum.Enum):
     """Rank of the attribute stored on the mesh."""
+    # NOTE: integer ids taken from ``XdmfAttributeType.hpp``
     Scalar = 200
     Vector = 201
     Tensor = 202
@@ -224,12 +225,13 @@ class AttributeType(enum.Enum):
 
 class AttributeCenter(enum.Enum):
     """Center of the attribute stored on the mesh."""
+    # NOTE: integer ids taken from ``XdmfAttributeCenter.hpp``
     Grid = 100
     Cell = 101
     Face = 102
     Edge = 103
     Node = 104
-    # NOTE: only for FiniteElementFunction attributes, which are not supported
+    # NOTE: only for `FiniteElementFunction` attributes, which are not supported
     Other = 105
 
 
@@ -642,7 +644,6 @@ _XDMF_TOPOLOGY_TYPE_TO_NAME = {
         TopologyType.CoRectMesh3D: "3DCoRectMesh",
         }
 
-
 # }}}
 
 
@@ -653,8 +654,8 @@ class GeometryType(enum.Enum):
     """Data layout of the node coordinates."""
     XY = enum.auto()
     XYZ = enum.auto()
-    X_Y = enum.auto()
-    X_Y_Z = enum.auto()
+    # NOTE: all of these don't seem to be supported in VTK/Paraview with
+    # XDMF3 for some reason, but are still mentioned in the XDMF source
     VXVY = enum.auto()
     VXVYVZ = enum.auto()
     ORIGIN_DXDY = enum.auto()
@@ -802,7 +803,7 @@ def _geometry_type_from_points(points):
 
 
 class DataArray:
-    """A combination of an :class:`DataItem` and :class:`Attribute`.
+    r"""An array represented as a list of :class:`DataItem`\ s.
 
     .. automethod:: __init__
     .. automethod:: as_data_item
@@ -855,6 +856,10 @@ class DataArray:
 
     def as_data_item(self, *,
             parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
+        r"""Finalize the :class:`DataArray` and construct :class:`DataItems`\ s
+        to be written to a file.
+        """
+
         items = self.components[:]
         if parent is not None:
             for item in items:
@@ -932,7 +937,7 @@ class XdmfGrid:
             items = ary.as_data_item()
             join_data_items(items, parent=attr)
         else:
-            items = ary.as_data_item(parent=attr)
+            ary.as_data_item(parent=attr)
 
         return attr
 
@@ -951,16 +956,16 @@ class XdmfUnstructuredGrid(XdmfGrid):
             # NOTE: Paraview 5.8 seems confused when using VXVY geometry types
             raise ValueError(f"unsupported geometry type: '{geometry_type}'")
 
-        super().__init__(Grid(parent=None, name=name))
-        grid = self.getroot()
+        root = Grid(parent=None, name=name)
+        super().__init__(root)
 
         topology = Topology(
-                parent=grid,
+                parent=root,
                 ttype=topology_type,
                 number_of_elements=np.prod(connectivity.shape[1:]))
         connectivity.as_data_item(parent=topology)
 
-        geometry = Geometry(parent=grid, gtype=geometry_type)
+        geometry = Geometry(parent=root, gtype=geometry_type)
         points.as_data_item(parent=geometry)
 
 
