@@ -23,7 +23,7 @@ THE SOFTWARE.
 import os
 import enum
 
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 from xml.etree.ElementTree import Element, ElementTree
 
 import numpy as np
@@ -847,7 +847,7 @@ class DataArray:
         if len(self.components) == 1:
             return self.components[0].dimensions
         else:
-            return (len(components),)
+            return (len(self.components),)
 
     def as_data_item(self, *,
             parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
@@ -973,7 +973,7 @@ class XdmfWriter(ElementTree):
     def __init__(self,
             grids: Tuple[XdmfGrid, ...], *,
             items: Optional[Tuple[DataArray, ...]] = None):
-        """
+        r"""
         :param grids: a :class:`tuple` of grids to be added to the
             top :class:`Domain`.
         :param items: additional :class:`DataItem`\ s to be added to the
