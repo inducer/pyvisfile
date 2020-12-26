@@ -11,7 +11,9 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
     points and connectivity.
     """
 
-    from pyvisfile.xdmf import NumpyDataArray, DataArray, DataItem
+    # {{{ set up connectivity
+
+    from pyvisfile.xdmf import NumpyDataArray, DataArray, data_item_from_numpy
     connectivity = np.arange(npoints, dtype=np.uint32)
     points = np.random.rand(ambient_dim, npoints)
 
@@ -27,17 +29,21 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
             pdata = "points.out"
 
         connectivity = DataArray((
-            DataItem.from_numpy(connectivity,
+            data_item_from_numpy(connectivity,
                 name="connectivity",
                 data=cdata),
             ))
         points = DataArray((
-            DataItem.from_numpy(points,
+            data_item_from_numpy(points,
                 name="points",
                 data=pdata),
             ))
     else:
         raise ValueError(f"unknown format: '{dformat}'")
+
+    # }}}
+
+    # {{{ set up grids
 
     from pyvisfile.xdmf import TopologyType
     from pyvisfile.xdmf import XdmfUnstructuredGrid
@@ -45,6 +51,8 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
             points, connectivity,
             topology_type=TopologyType.Polyvertex,
             name="polyvertex")
+
+    # }}}
 
     from pyvisfile.xdmf import XdmfWriter
     writer = XdmfWriter((grid,))
@@ -54,16 +62,19 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
 
 
 @pytest.mark.parametrize("ambient_dim", [2, 3])
-def test_unstructured_simplex_grid(ambient_dim, nelements=2):
+def test_unstructured_simplex_grid(ambient_dim, nelements=8):
     """Test constructing a grid with a more complicated topology."""
 
     from pyvisfile.xdmf import TopologyType
     if ambient_dim == 1:
         topology_type = TopologyType.Polyline
+        simplices_per_quad = 1
     if ambient_dim == 2:
         topology_type = TopologyType.Triangle
+        simplices_per_quad = 2
     elif ambient_dim == 3:
         topology_type = TopologyType.Tetrahedron
+        simplices_per_quad = 6
     else:
         raise ValueError("unsupported dimension")
 
@@ -76,15 +87,17 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=2):
     for idim in range(ambient_dim):
         points[idim] = x.reshape((npoints,) + (1,) * (ambient_dim - 1 - idim))
 
-    from pyvisfile.xdmf import DataItemArray
-    points = DataItemArray("points", points.reshape(ambient_dim, -1))
+    from pyvisfile.xdmf import NumpyDataArray
+    points = NumpyDataArray(points.reshape(ambient_dim, -1), name="points")
 
     # }}}
 
     # {{{ connectivity
 
+    # NOTE: largely copied from meshmode/mesh/generation.py::
+
     from pyvisfile.xdmf import _XDMF_ELEMENT_NODE_COUNT
-    nelements = 2 * nelements**ambient_dim
+    nelements = simplices_per_quad * nelements**ambient_dim
     nnodes = _XDMF_ELEMENT_NODE_COUNT[topology_type]
 
     point_indices = np.arange(points.shape[1]).reshape((npoints,) * ambient_dim)
@@ -104,26 +117,66 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=2):
             connectivity[ielement + 0, :] = (a, b, c)
             connectivity[ielement + 1, :] = (d, c, b)
             ielement += 2
+    elif ambient_dim == 3:
+        for i, j, k in product(range(npoints - 1), repeat=ambient_dim):
+            a000 = point_indices[i, j, k]
+            a001 = point_indices[i, j, k+1]
+            a010 = point_indices[i, j+1, k]
+            a011 = point_indices[i, j+1, k+1]
+
+            a100 = point_indices[i+1, j, k]
+            a101 = point_indices[i+1, j, k+1]
+            a110 = point_indices[i+1, j+1, k]
+            a111 = point_indices[i+1, j+1, k+1]
+
+            connectivity[ielement + 0, :] = (a000, a100, a010, a001)
+            connectivity[ielement + 1, :] = (a101, a100, a001, a010)
+            connectivity[ielement + 2, :] = (a101, a011, a010, a001)
+
+            connectivity[ielement + 3, :] = (a100, a010, a101, a110)
+            connectivity[ielement + 4, :] = (a011, a010, a110, a101)
+            connectivity[ielement + 5, :] = (a011, a111, a101, a110)
+            ielement += 6
     else:
         raise NotImplementedError
 
     assert ielement == nelements
 
-    connectivity = DataItemArray("connectivity", connectivity.T)
+    connectivity = NumpyDataArray(connectivity.T, name="connectivity")
 
     # }}}
 
+    # {{{ attributes
+
+    temperature = np.sin(2.0 * np.pi * points.ary[0]) \
+            + np.cos(2.0 * np.pi * points.ary[1])
+    temperature = NumpyDataArray(temperature, name="temperature")
+
+    velocity = points.ary + np.array([0, 1, 2][:ambient_dim]).reshape(-1, 1)
+    velocity = NumpyDataArray(velocity, name="velocity")
+    vorticity = NumpyDataArray(make_obj_array(velocity.ary), name="vorticity")
+
+    # }}}
+
+    # {{{ write grids
+
     from pyvisfile.xdmf import XdmfUnstructuredGrid
     grid = XdmfUnstructuredGrid(
-            points,
-            (topology_type, connectivity),
+            points, connectivity,
+            topology_type=topology_type,
             name="simplex")
+
+    grid.add_attribute(temperature)
+    grid.add_attribute(velocity)
+    grid.add_attribute(vorticity)
 
     from pyvisfile.xdmf import XdmfWriter
     writer = XdmfWriter((grid,))
 
     filename = f"test_unstructured_simplex_{ambient_dim}d.xmf"
     writer.write_pretty(filename)
+
+    # }}}
 
 
 def test_structured_grid():

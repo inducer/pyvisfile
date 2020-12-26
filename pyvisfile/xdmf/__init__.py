@@ -54,6 +54,8 @@ DataItem
     :undoc-members:
 
 .. autoclass:: DataItem
+.. autofunction:: data_item_from_numpy
+.. autofunction:: join_data_items
 
 Domain
 ^^^^^^
@@ -248,7 +250,7 @@ class Attribute(XdmfElement):
 
         super().__init__(parent, "Attribute", {
             "Name": name,
-            "Center": center.name,
+            "Center": acenter.name,
             "AttributeType": atype.name,
             })
 
@@ -341,7 +343,6 @@ class DataItem(XdmfElement):
     .. attribute:: dimensions
 
     .. automethod:: __init__
-    .. automethod:: from_numpy
     """
 
     def __init__(self, *,
@@ -351,6 +352,7 @@ class DataItem(XdmfElement):
             ntype: Optional[DataItemNumberType] = DataItemNumberType.Float,
             precision: Optional[int] = 4,
             reference: Optional[str] = None,
+            function: Optional[str] = None,
             endian: Optional[DataItemEndian] = DataItemEndian.Native,
             dformat: Optional[DataItemFormat] = DataItemFormat.XML,
             parent: Optional[Element] = None,
@@ -365,10 +367,11 @@ class DataItem(XdmfElement):
         super().__init__(parent, "DataItem", {
             "Name": name,
             "ItemType": itype.name if itype is not None else itype,
-            "Dimensions": dimensions[::-1],
+            "Dimensions": dimensions[::-1] if dimensions is not None else dimensions,
             "NumberType": ntype.name if ntype is not None else ntype,
             "Precision": precision,
             "Reference": reference,
+            "Function": function,
             "Endian": endian.name if endian is not None else endian,
             "Format": dformat.name if dformat is not None else dformat,
             })
@@ -381,29 +384,62 @@ class DataItem(XdmfElement):
         dims = self.attrib["Dimensions"].split(" ")
         return tuple([int(d) for d in dims[::-1]])
 
-    @classmethod
-    def from_numpy(cls,
-            ary: np.ndarray, *,
-            name: Optional[str] = None,
-            parent: Optional[Element] = None,
-            data: Optional[str] = None) -> 'DataItem':
-        """Create a :class:`DataItem` from a given :class:`~numpy.ndarray`."""
-        if data is None:
-            dformat = DataItemFormat.XML
-        else:
-            dformat = _data_item_format_from_str(data)
 
-        return DataItem(
-                name=name,
-                dimensions=ary.shape,
-                itype=DataItemType.Uniform,
-                ntype=_numpy_to_xdmf_number_type(ary.dtype),
-                precision=ary.dtype.itemsize,
-                endian=_system_to_xdmf_endian(),
-                dformat=dformat,
-                parent=parent,
-                data=data,
+def data_item_from_numpy(
+        ary: np.ndarray, *,
+        name: Optional[str] = None,
+        parent: Optional[Element] = None,
+        data: Optional[str] = None) -> DataItem:
+    """Create a :class:`DataItem` from a given :class:`~numpy.ndarray`."""
+
+    if data is None:
+        dformat = DataItemFormat.XML
+    else:
+        dformat = _data_item_format_from_str(data)
+
+    return DataItem(
+            name=name,
+            dimensions=ary.shape,
+            itype=DataItemType.Uniform,
+            ntype=_numpy_to_xdmf_number_type(ary.dtype),
+            precision=ary.dtype.itemsize,
+            endian=_system_to_xdmf_endian(),
+            dformat=dformat,
+            parent=parent,
+            data=data,
+            )
+
+
+def join_data_items(
+        items: Tuple[DataItem, ...], *,
+        parent: Optional[Element] = None) -> DataItem:
+    if len(items) == 1:
+        item = items[0]
+    else:
+        from pytools import is_single_valued
+        if not is_single_valued(item.dimensions for item in items):
+            raise ValueError("items must have the same dimension")
+
+        dimensions = (len(items),) + items[0].dimensions
+        ids = ", ".join(f"${i}" for i in range(dimensions[0]))
+
+        item = DataItem(
+                dimensions=dimensions,
+                itype=DataItemType.Function,
+                ntype=None,
+                precision=None,
+                function=f"JOIN({ids})",
+                endian=None,
+                dformat=None,
                 )
+
+        for subitem in items:
+            item.append(subitem)
+
+    if parent is not None:
+        parent.append(item)
+
+    return item
 
 # }}}
 
@@ -776,13 +812,17 @@ class DataArray:
             ):
         r"""
         :param components: a description of each component of an array.
+        :param name: name of the array. This name will be used if the array
+            is added as an attribute, otherwise the names of the *components*
+            are used.
         """
 
         if atype is None:
-            if len(components) == 1:
-                atype = _attribute_type_from_shape(components[0].dimensions)
-            else:
-                atype = AttributeType.Scalar
+            shape = components[0].dimensions
+            if len(components) > 1:
+                shape = (len(components),) + shape
+
+            atype = _attribute_type_from_shape(shape)
 
         if name is None:
             if len(components) == 1:
@@ -811,9 +851,7 @@ class DataArray:
 
     def as_data_item(self, *,
             parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
-        from copy import deepcopy
-        items = [deepcopy(item) for item in self.components]
-
+        items = self.components[:]
         if parent is not None:
             for item in items:
                 parent.append(item)
@@ -832,25 +870,24 @@ class NumpyDataArray(DataArray):
             name: Optional[str] = None,
             ):
         """
-        :arg name: name of the data array.
         :arg ary: if this is an :class:`object` array, each entry is considered
             a different component and will consist of a separate
             :class:`DataItem`.
         """
 
         if ary.dtype.char == "O":
+            from pytools import is_single_valued
+            if not is_single_valued(iary.shape for iary in ary):
+                raise ValueError("'ary' components must have the same size")
+
             items = tuple([
-                    DataItem.from_numpy(iary, name=f"{name}_{i}")
+                    data_item_from_numpy(iary, name=f"{name}_{i}")
                     for i, iary in enumerate(ary)
                     ])
         else:
-            items = (DataItem.from_numpy(ary, name=name),)
+            items = (data_item_from_numpy(ary, name=name),)
 
-        super().__init__(items,
-                name=name,
-                acenter=acenter,
-                atype=_attribute_type_from_shape(ary.shape))
-
+        super().__init__(items, name=name, acenter=acenter)
         self.ary = ary
 
     def as_data_item(self, *,
@@ -879,16 +916,18 @@ class XdmfGrid:
     def getroot(self):
         return self.root
 
-    def add_attribute(self, ary: DataArray):
+    def add_attribute(self, ary: DataArray, *, join=True) -> Attribute:
         attr = Attribute(
-                parent=self.getroot(),
                 name=ary.name,
                 atype=ary.atype,
-                acenter=ary.center,
+                acenter=ary.acenter,
+                parent=self.getroot(),
                 )
-        items = data.as_data_item(parent=attr)
 
-        return attr, items
+        items = ary.as_data_item()
+        join_data_items(items, parent=attr)
+
+        return attr
 
 
 class XdmfUnstructuredGrid(XdmfGrid):
@@ -911,7 +950,7 @@ class XdmfUnstructuredGrid(XdmfGrid):
         topology = Topology(
                 parent=grid,
                 ttype=topology_type,
-                number_of_elements=connectivity.shape[0])
+                number_of_elements=np.prod(connectivity.shape[1:]))
         connectivity.as_data_item(parent=topology)
 
         geometry = Geometry(parent=grid, gtype=geometry_type)
