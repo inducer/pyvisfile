@@ -360,9 +360,13 @@ class DataItem(XdmfElement):
             ):
         """
         :param parent: if provided, *self* is appended to the element.
+        :param reference: name of another :class:`DataItem`.
         :param data: data contained inside the :class:`DataItem`. This is
             usually a path to a binary file.
         """
+
+        if reference is not None:
+            reference = f"/Xdmf/DataItem[@Name='{reference}']"
 
         super().__init__(parent, "DataItem", {
             "Name": name,
