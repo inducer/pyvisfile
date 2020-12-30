@@ -1056,12 +1056,12 @@ class XdmfStructuredGrid(XdmfGrid):
 class XdmfWriter(ElementTree):
     def __init__(self,
             grids: Tuple[XdmfGrid, ...], *,
-            items: Optional[Tuple[DataArray, ...]] = None,
+            arrays: Optional[Tuple[DataArray, ...]] = None,
             tags: Optional[Tuple[XdmfElement, ...]] = None):
         r"""
         :param grids: a :class:`tuple` of grids to be added to the
             top :class:`Domain`.
-        :param items: additional :class:`DataItem`\ s to be added to the
+        :param arrays: additional :class:`DataArray`\ s to be added to the
             top :class:`Domain`, as opposed to as attribute on the grids.
         """
         root = Element("Xdmf", {
@@ -1070,16 +1070,16 @@ class XdmfWriter(ElementTree):
             })
 
         domain = Domain(parent=root)
-        for grid in grids:
-            domain.append(grid.getroot())
-
-        if items is not None:
-            for item in items:
-                item.as_data_item(parent=domain)
+        if arrays is not None:
+            for ary in arrays:
+                ary.as_data_item(parent=domain)
 
         if tags is not None:
             for tag in tags:
                 domain.append(tag)
+
+        for grid in grids:
+            domain.append(grid.getroot())
 
         super().__init__(root)
 
