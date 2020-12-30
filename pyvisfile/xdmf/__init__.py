@@ -853,7 +853,7 @@ class DataArray:
     def __init__(self,
             components: Tuple[DataItem, ...], *,
             name: Optional[str] = None,
-            acenter: AttributeCenter = AttributeCenter.Node,
+            acenter: Optional[AttributeCenter] = None,
             atype: Optional[AttributeType] = None,
             ):
         r"""
@@ -862,13 +862,8 @@ class DataArray:
             is added as an attribute, otherwise the names of the *components*
             are used.
         """
-
-        if atype is None:
-            shape = components[0].dimensions
-            if len(components) > 1:
-                shape = (len(components),) + shape
-
-            atype = _attribute_type_from_shape(shape)
+        if not isinstance(components, tuple):
+            raise TypeError("'components' should be a tuple")
 
         if name is None:
             if len(components) == 1:
@@ -885,15 +880,12 @@ class DataArray:
         self.acenter = acenter
         self.atype = atype
 
-    def __len__(self):
-        return len(self.components)
-
     @property
     def shape(self):
         if len(self.components) == 1:
             return self.components[0].dimensions
         else:
-            return (len(self.components),)
+            return (len(self.components),) + self.components[0].dimensions
 
     def as_data_item(self, *,
             parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
@@ -904,6 +896,9 @@ class DataArray:
         items = self.components[:]
         if parent is not None:
             for item in items:
+                if parent.tag != "Attribute":
+                    item.set("Name", self.name)
+
                 parent.append(item)
 
         return items
@@ -930,7 +925,7 @@ class NumpyDataArray(DataArray):
 
     def __init__(self,
             ary: np.ndarray, *,
-            acenter: AttributeCenter = AttributeCenter.Node,
+            acenter: Optional[AttributeCenter] = None,
             name: Optional[str] = None,
             ):
         """
@@ -981,10 +976,18 @@ class XdmfGrid:
         return self.root
 
     def add_attribute(self, ary: DataArray, *, join=True) -> Attribute:
+        acenter = ary.acenter
+        if acenter is None:
+            acenter = AttributeCenter.Node
+
+        atype = ary.atype
+        if atype is None:
+            atype = _attribute_type_from_shape(ary.shape)
+
         attr = Attribute(
                 name=ary.name,
-                atype=ary.atype,
-                acenter=ary.acenter,
+                atype=atype,
+                acenter=acenter,
                 parent=self.getroot(),
                 )
 
