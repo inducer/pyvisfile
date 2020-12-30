@@ -899,6 +899,20 @@ class DataArray:
 
         return items
 
+    @classmethod
+    def from_dataset(cls, dset,
+            acenter: AttributeCenter = AttributeCenter.Node,
+            atype: Optional[AttributeType] = None) -> "DataArray":
+        filename = dset.file.filename
+        data = f"{filename}:{dset.name}"
+        name = dset.name.split("/")[-1]
+
+        return cls(
+                (data_item_from_numpy(dset, data=data),),
+                name=name,
+                acenter=acenter,
+                atype=atype)
+
 
 class NumpyDataArray(DataArray):
     """
