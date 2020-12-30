@@ -1010,22 +1010,27 @@ class XdmfUnstructuredGrid(XdmfGrid):
         if geometry_type is None:
             geometry_type = _geometry_type_from_points(points)
 
-        if geometry_type not in [GeometryType.XY, GeometryType.XYZ]:
+        if geometry_type not in (GeometryType.XY, GeometryType.XYZ):
             # NOTE: Paraview 5.8 seems confused when using VXVY geometry types
             raise ValueError(f"unsupported geometry type: '{geometry_type}'")
 
-        root = Grid(parent=None, name=name)
-        super().__init__(root)
+        grid = Grid(parent=None, name=name)
 
         nelements = np.prod(connectivity.shape[:-1])
         if isinstance(topology_type, TopologyType):
+            if topology_type == TopologyType.Polyline:
+                nodes_per_element = 2
+            else:
+                nodes_per_element = None
+
             topology = Topology(
-                    parent=root,
+                    parent=grid,
                     ttype=topology_type,
+                    nodes_per_element=nodes_per_element,
                     number_of_elements=nelements)
         elif isinstance(topology, Topology):
             topology = topology_type.replace({
-                "parent": root,
+                "parent": grid,
                 "number_of_elements": nelements
                 })
         else:
@@ -1033,8 +1038,10 @@ class XdmfUnstructuredGrid(XdmfGrid):
 
         connectivity.as_data_item(parent=topology)
 
-        geometry = Geometry(parent=root, gtype=geometry_type)
+        geometry = Geometry(parent=grid, gtype=geometry_type)
         points.as_data_item(parent=geometry)
+
+        super().__init__(grid)
 
 
 class XdmfStructuredGrid(XdmfGrid):
