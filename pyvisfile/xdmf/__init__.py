@@ -381,9 +381,7 @@ class DataItem(XdmfElement):
             usually a path to a binary file.
         """
 
-        self.dimensions = dimensions
-        # if dimensions is not None:
-        #     dimensions = dimensions[::-1]
+        self._dimensions = dimensions
 
         super().__init__(parent, "DataItem", {
             "Name": name,
@@ -399,6 +397,13 @@ class DataItem(XdmfElement):
 
         if data is not None:
             self.text = data
+
+    @property
+    def dimensions(self):
+        if self._dimensions is None:
+            raise AttributeError
+
+        return self._dimensions
 
     @classmethod
     def as_reference(cls, reference: str, *,
