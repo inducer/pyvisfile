@@ -381,13 +381,14 @@ class DataItem(XdmfElement):
             usually a path to a binary file.
         """
 
-        if reference is not None:
-            reference = f"/Xdmf/DataItem[@Name='{reference}']"
+        self.dimensions = dimensions
+        # if dimensions is not None:
+        #     dimensions = dimensions[::-1]
 
         super().__init__(parent, "DataItem", {
             "Name": name,
             "ItemType": itype.name if itype is not None else itype,
-            "Dimensions": dimensions[::-1] if dimensions is not None else dimensions,
+            "Dimensions": dimensions,
             "NumberType": ntype.name if ntype is not None else ntype,
             "Precision": precision,
             "Reference": reference,
@@ -399,10 +400,18 @@ class DataItem(XdmfElement):
         if data is not None:
             self.text = data
 
-    @property
-    def dimensions(self):
-        dims = self.attrib["Dimensions"].split(" ")
-        return tuple([int(d) for d in dims[::-1]])
+    @classmethod
+    def as_reference(cls, reference: str, *,
+            parent: Optional[Element] = None) -> "DataItem":
+        if not reference.startswith("/"):
+            reference = f"/Xdmf/Domain/DataItem[@Name='{reference}']"
+
+        return cls(
+                reference="XML",
+                data=reference,
+                itype=None, ntype=None, precision=None,
+                endian=None, dformat=None,
+                parent=parent)
 
 
 def data_item_from_numpy(
@@ -825,7 +834,7 @@ def _ndarray_to_string(ary):
 
 
 def _geometry_type_from_points(points):
-    dims = points.shape[0]
+    dims = points.shape[-1]
 
     if len(points) == 1:
         if dims == 2:
