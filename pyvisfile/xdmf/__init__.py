@@ -23,7 +23,7 @@ THE SOFTWARE.
 import os
 import enum
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 from xml.etree.ElementTree import Element, ElementTree
 
 import numpy as np
@@ -165,7 +165,16 @@ class XdmfElement(Element):
 
     @property
     def name(self):
-        return self.attrib["Name"]
+        return self.get("Name")
+
+    def replace(self, **kwargs):
+        parent = kwargs.pop("parent", self.parent)
+        tag = kwargs.pop("tag", self.tag)
+
+        attrib = self.attrib.copy()
+        attrib.update(kwargs)
+
+        return XdmfElement.__init__(self, parent, tag, attrib=attrib)
 
 # }}}
 
@@ -992,7 +1001,7 @@ class XdmfUnstructuredGrid(XdmfGrid):
     def __init__(self,
             points: DataArray,
             connectivity: DataArray, *,
-            topology_type: TopologyType,
+            topology_type: Union[Topology, TopologyType],
             name: Optional[str] = None,
             geometry_type: Optional[GeometryType] = None):
         if geometry_type is None:
@@ -1005,10 +1014,20 @@ class XdmfUnstructuredGrid(XdmfGrid):
         root = Grid(parent=None, name=name)
         super().__init__(root)
 
-        topology = Topology(
-                parent=root,
-                ttype=topology_type,
-                number_of_elements=np.prod(connectivity.shape[1:]))
+        nelements = np.prod(connectivity.shape[:-1])
+        if isinstance(topology_type, TopologyType):
+            topology = Topology(
+                    parent=root,
+                    ttype=topology_type,
+                    number_of_elements=nelements)
+        elif isinstance(topology, Topology):
+            topology = topology_type.replace({
+                "parent": root,
+                "number_of_elements": nelements
+                })
+        else:
+            raise TypeError(f"unsupported type: {type(topology_type).__name__}")
+
         connectivity.as_data_item(parent=topology)
 
         geometry = Geometry(parent=root, gtype=geometry_type)
