@@ -833,7 +833,7 @@ def _ndarray_to_string(ary):
 
     import io
     bio = io.BytesIO()
-    np.savetxt(bio, ary.T, fmt=fmt)
+    np.savetxt(bio, ary, fmt=fmt)
 
     return "\n" + bio.getvalue().decode()
 
@@ -841,7 +841,7 @@ def _ndarray_to_string(ary):
 def _geometry_type_from_points(points):
     dims = points.shape[-1]
 
-    if len(points) == 1:
+    if len(points.components) == 1:
         if dims == 2:
             return GeometryType.XY
         elif dims == 3:
@@ -996,7 +996,7 @@ class XdmfGrid:
 
         atype = ary.atype
         if atype is None:
-            atype = _attribute_type_from_shape(ary.shape)
+            atype = _attribute_type_from_shape(ary.shape[::-1])
 
         attr = Attribute(
                 name=ary.name,

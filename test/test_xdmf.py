@@ -19,7 +19,7 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
 
     if dformat == "xml":
         connectivity = NumpyDataArray(connectivity, name="connectivity")
-        points = NumpyDataArray(points, name="points")
+        points = NumpyDataArray(points.T, name="points")
     elif dformat in ["hdf", "binary"]:
         if dformat == "hdf":
             cdata = "geometry.h5:/Grid/Connectivity"
@@ -34,7 +34,7 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
                 data=cdata),
             ))
         points = DataArray((
-            data_item_from_numpy(points,
+            data_item_from_numpy(points.T,
                 name="points",
                 data=pdata),
             ))
@@ -62,7 +62,7 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
 
 
 @pytest.mark.parametrize("ambient_dim", [2, 3])
-def test_unstructured_simplex_grid(ambient_dim, nelements=8):
+def test_unstructured_simplex_grid(ambient_dim, nelements=16):
     """Test constructing a grid with a more complicated topology."""
 
     from pyvisfile.xdmf import TopologyType
@@ -88,19 +88,19 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=8):
         points[idim] = x.reshape((npoints,) + (1,) * (ambient_dim - 1 - idim))
 
     from pyvisfile.xdmf import NumpyDataArray
-    points = NumpyDataArray(points.reshape(ambient_dim, -1), name="points")
+    points = NumpyDataArray(points.reshape(ambient_dim, -1).T, name="points")
 
     # }}}
 
     # {{{ connectivity
 
-    # NOTE: largely copied from meshmode/mesh/generation.py::
+    # NOTE: largely copied from meshmode/mesh/generation.py::generate_box_mesh
 
     from pyvisfile.xdmf import _XDMF_ELEMENT_NODE_COUNT
     nelements = simplices_per_quad * nelements**ambient_dim
     nnodes = _XDMF_ELEMENT_NODE_COUNT[topology_type]
 
-    point_indices = np.arange(points.shape[1]).reshape((npoints,) * ambient_dim)
+    point_indices = np.arange(points.shape[0]).reshape((npoints,) * ambient_dim)
     connectivity = np.empty((nelements, nnodes), dtype=np.uint32)
 
     ielement = 0
@@ -142,17 +142,17 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=8):
 
     assert ielement == nelements
 
-    connectivity = NumpyDataArray(connectivity.T, name="connectivity")
+    connectivity = NumpyDataArray(connectivity, name="connectivity")
 
     # }}}
 
     # {{{ attributes
 
-    temperature = np.sin(2.0 * np.pi * points.ary[0]) \
-            + np.cos(2.0 * np.pi * points.ary[1])
+    temperature = np.sin(2.0 * np.pi * points.ary[:, 0]) \
+            + np.cos(2.0 * np.pi * points.ary[:, 1])
     temperature = NumpyDataArray(temperature, name="temperature")
 
-    velocity = points.ary + np.array([0, 1, 2][:ambient_dim]).reshape(-1, 1)
+    velocity = points.ary + np.array([0, 1, 2][:ambient_dim]).reshape(1, -1)
     velocity = NumpyDataArray(velocity, name="velocity")
     vorticity = NumpyDataArray(make_obj_array(velocity.ary), name="vorticity")
 
