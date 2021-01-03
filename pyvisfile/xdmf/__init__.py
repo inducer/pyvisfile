@@ -334,7 +334,8 @@ class DataItem(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             dimensions: Optional[Tuple[int, ...]] = None,
             name: Optional[str] = None,
             itype: Optional[DataItemType] = DataItemType.Uniform,
@@ -529,7 +530,8 @@ class Grid(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             name: Optional[str] = None,
             gtype: GridType = GridType.Uniform,
             ctype: Optional[CollectionType] = None,
@@ -615,7 +617,8 @@ class Topology(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             ttype: TopologyType,
             nodes_per_element: Optional[int] = None,
             number_of_elements: Optional[int] = None,
@@ -726,7 +729,8 @@ class Geometry(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             name: Optional[str] = None,
             gtype: GeometryType = GeometryType.XYZ,
             parent: Optional[Element] = None,
@@ -758,7 +762,8 @@ class Time(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             value: str,
             parent: Optional[Element] = None,
             ):
@@ -780,7 +785,8 @@ class Domain(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             name: Optional[str] = None,
             parent: Optional[Element] = None,
             ):
@@ -802,7 +808,8 @@ class Information(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             name: str,
             value: str,
             parent: Optional[Element] = None,
@@ -826,7 +833,8 @@ class XInclude(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             href: Optional[str],
             xpointer: Optional[str] = None,
             parent: Optional[Element] = None,
@@ -895,7 +903,8 @@ class DataArray:
     .. automethod:: as_data_item
     """
 
-    def __init__(self,
+    def __init__(
+            self,
             components: Tuple[DataItem, ...], *,
             name: Optional[str] = None,
             acenter: Optional[AttributeCenter] = None,
@@ -972,7 +981,8 @@ class NumpyDataArray(DataArray):
     .. automethod:: __init__
     """
 
-    def __init__(self,
+    def __init__(
+            self,
             ary: np.ndarray, *,
             acenter: Optional[AttributeCenter] = None,
             name: Optional[str] = None,
@@ -1148,7 +1158,8 @@ class XdmfWriter(ElementTree):
 
     def write(self, filename):
         """Write the the XDMF file."""
-        super().write(filename,
+        super().write(
+                filename,
                 encoding="utf-8",
                 xml_declaration=True,
                 short_empty_elements=False,
