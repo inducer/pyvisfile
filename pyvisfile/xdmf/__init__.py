@@ -151,6 +151,16 @@ def _stringify(obj):
 
 
 class XdmfElement(Element):
+    """Base class for all the XDMF tags.
+
+    .. attribute:: name
+
+        The ``Name`` attribute the tags. This attribute is optional, so
+        it can return *None* if not set.
+
+    .. automethod:: replace
+    """
+
     def __init__(self,
             parent: Optional[Element],
             tag: str,
@@ -168,6 +178,7 @@ class XdmfElement(Element):
         return self.get("Name")
 
     def replace(self, **kwargs):
+        """Duplicate the current tag with updated attributes from *kwargs*."""
         parent = kwargs.pop("parent", self.parent)
         tag = kwargs.pop("tag", self.tag)
 
@@ -254,7 +265,8 @@ class Attribute(XdmfElement):
     .. automethod:: __init__
     """
 
-    def __init__(self, *,
+    def __init__(
+            self, *,
             name: Optional[str] = None,
             atype: AttributeType = AttributeType.Scalar,
             acenter: AttributeCenter = AttributeCenter.Node,
