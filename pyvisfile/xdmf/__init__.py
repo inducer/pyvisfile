@@ -186,7 +186,7 @@ class XdmfElement(Element):
 # {{{ unsupported
 
 # NOTE: these are taken from VTK source in `IO/Xdmf3/vtkXdmf3DataSet.cxx`
-# and are currently unsupported (someone needs to figure out how to write them)
+# and are currently unsupported here (someone needs to figure out how to write them)
 #
 #   https://gitlab.kitware.com/xdmf/xdmf/-/merge_requests/41
 #   https://gitlab.kitware.com/vtk/vtk/-/merge_requests/3194
