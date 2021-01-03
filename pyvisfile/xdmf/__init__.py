@@ -1091,6 +1091,11 @@ class XdmfStructuredGrid(XdmfGrid):
 # {{{ writer
 
 class XdmfWriter(ElementTree):
+    """
+    .. automethod:: __init__
+    .. automethod:: write
+    .. automethod:: write_pretty
+    """
     def __init__(self,
             grids: Tuple[XdmfGrid, ...], *,
             arrays: Optional[Tuple[DataArray, ...]] = None,
@@ -1121,6 +1126,8 @@ class XdmfWriter(ElementTree):
         super().__init__(root)
 
     def write_pretty(self, filename):
+        """Produces a nicer-looking XML file with clean indentation."""
+        # https://stackoverflow.com/a/1206856
         from xml.etree.ElementTree import tostring
         from xml.dom import minidom
         dom = minidom.parseString(tostring(
@@ -1133,6 +1140,7 @@ class XdmfWriter(ElementTree):
             fd.write(dom.toprettyxml(indent="  ", encoding="utf-8"))
 
     def write(self, filename):
+        """Write the the XDMF file."""
         super().write(filename,
                 encoding="utf-8",
                 xml_declaration=True,
