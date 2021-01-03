@@ -196,8 +196,12 @@ class XdmfElement(Element):
 
 # {{{ unsupported
 
-# NOTE: these are taken from VTK source in `IO/Xdmf3/vtkXdmf3DataSet.cxx`
-# and are currently unsupported here (someone needs to figure out how to write them)
+# NOTE: these are taken from VTK source in
+#
+#   https://gitlab.kitware.com/vtk/vtk/-/blob/c138bfae93f570b467e7f4fdc0c42d974cd684f4/IO/Xdmf3/vtkXdmf3DataSet.cxx#L2278
+#
+# and are currently unsupported here (someone needs to figure out how to write
+# them). They were introduced in
 #
 #   https://gitlab.kitware.com/xdmf/xdmf/-/merge_requests/41
 #   https://gitlab.kitware.com/vtk/vtk/-/merge_requests/3194
@@ -239,7 +243,8 @@ def _attribute_type_from_shape(shape):
 
 class AttributeType(enum.Enum):
     """Rank of the attribute stored on the mesh."""
-    # NOTE: integer ids taken from ``XdmfAttributeType.hpp``
+    # NOTE: integer ids taken from
+    # https://gitlab.kitware.com/xdmf/xdmf/-/blob/04a84bab0eb1568e0f1a27c8fb60c6931efda003/XdmfAttributeType.hpp#L129
     Scalar = 200
     Vector = 201
     Tensor = 202
@@ -250,7 +255,8 @@ class AttributeType(enum.Enum):
 
 class AttributeCenter(enum.Enum):
     """Center of the attribute stored on the mesh."""
-    # NOTE: integer ids taken from ``XdmfAttributeCenter.hpp``
+    # NOTE: integer ids taken from
+    # https://gitlab.kitware.com/xdmf/xdmf/-/blob/04a84bab0eb1568e0f1a27c8fb60c6931efda003/XdmfAttributeCenter.hpp#L126
     Grid = 100
     Cell = 101
     Face = 102
