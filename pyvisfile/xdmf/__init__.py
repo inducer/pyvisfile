@@ -290,53 +290,6 @@ class Attribute(XdmfElement):
 
 # {{{ data item
 
-def _numpy_to_xdmf_number_type(dtype):
-    if dtype.type in (np.int8, np.int16, np.int32, np.int64, np.int):
-        return DataItemNumberType.Int
-    elif dtype.type in (np.uint8, np.uint16, np.uint32, np.uint64, np.uint):
-        return DataItemNumberType.UInt
-    elif dtype.type in (np.float16, np.float32, np.float64, np.float128):
-        return DataItemNumberType.Float
-    else:
-        raise ValueError(f"unsupported dtype: '{dtype}'")
-
-
-def _data_item_format_from_str(text):
-    if not isinstance(text, str):
-        return DataItemFormat.XML
-
-    # NOTE: this handles two cases (not meant to be too smart about it)
-    # 1. if the text is just `some_file.bin` or `some_file.out`, we assume it's
-    #    a custom binary file.
-    # 2. if the text is `some_file.h5:/group/dataset`, we assume it's an HDF5
-    #    file.
-
-    if ":" not in text:
-        return DataItemFormat.Binary
-
-    try:
-        filename, _ = text.split(":")
-    except ValueError as exc:
-        raise ValueError("cannot determine format from text") from exc
-
-    if filename.endswith(".h5"):
-        return DataItemFormat.HDF
-    else:
-        raise ValueError("cannot determine format from text")
-
-
-def _system_to_xdmf_endian():
-    import sys
-    if sys.byteorder == "little":
-        endian = DataItemEndian.Little
-    elif sys.byteorder == "big":
-        endian = DataItemEndian.Big
-    else:
-        endian = DataItemEndian.Native
-
-    return endian
-
-
 class DataItemType(enum.Enum):
     """Data layout of an item."""
     Uniform = enum.auto()
@@ -439,11 +392,55 @@ class DataItem(XdmfElement):
                 parent=parent)
 
 
+def _numpy_to_xdmf_number_type(dtype):
+    if dtype.type in (np.int8, np.int16, np.int32, np.int64, np.int):
+        return DataItemNumberType.Int
+    elif dtype.type in (np.uint8, np.uint16, np.uint32, np.uint64, np.uint):
+        return DataItemNumberType.UInt
+    elif dtype.type in (np.float16, np.float32, np.float64, np.float128):
+        return DataItemNumberType.Float
+    else:
+        raise ValueError(f"unsupported dtype: '{dtype}'")
+
+
+def _data_item_format_from_str(text: str) -> DataItemFormat:
+    # NOTE: this handles two cases (not meant to be too smart about it)
+    # 1. if the text is just `some_file.bin` or `some_file.out`, we assume it's
+    #    a custom binary file.
+    # 2. if the text is `some_file.h5:/group/dataset`, we assume it's an HDF5
+    #    file.
+    if ":" not in text:
+        return DataItemFormat.Binary
+
+    try:
+        filename, _ = text.split(":")
+    except ValueError as exc:
+        raise ValueError("cannot determine format from text") from exc
+
+    if filename.endswith(".h5"):
+        return DataItemFormat.HDF
+    else:
+        raise ValueError("cannot determine format from text")
+
+
+def _system_to_xdmf_endian():
+    import sys
+    if sys.byteorder == "little":
+        endian = DataItemEndian.Little
+    elif sys.byteorder == "big":
+        endian = DataItemEndian.Big
+    else:
+        endian = DataItemEndian.Native
+
+    return endian
+
+
 def _data_item_from_numpy(
         ary: np.ndarray, *,
         name: Optional[str] = None,
         parent: Optional[Element] = None,
-        data: Optional[str] = None) -> DataItem:
+        data: Optional[str] = None,
+        dformat: Optional[DataItemFormat] = None) -> DataItem:
     """Create a :class:`DataItem` from a given :class:`~numpy.ndarray`.
 
     .. note::
@@ -451,10 +448,11 @@ def _data_item_from_numpy(
         This is meant for internal use only. Use :class:`NumpyDataArray` instead.
     """
 
-    if data is None:
-        dformat = DataItemFormat.XML
-    else:
-        dformat = _data_item_format_from_str(data)
+    if dformat is None:
+        if data is None:
+            dformat = DataItemFormat.XML
+        else:
+            dformat = _data_item_format_from_str(data)
 
     return DataItem(
             name=name,
@@ -958,8 +956,12 @@ class DataArray:
         data = f"{filename}:{dset.name}"
         name = dset.name.split("/")[-1]
 
+        item = _data_item_from_numpy(dset,
+                data=data,
+                dformat=DataItemFormat.HDF)
+
         return cls(
-                (_data_item_from_numpy(dset, data=data),),
+                components=(item,),
                 name=name,
                 acenter=acenter,
                 atype=atype)
