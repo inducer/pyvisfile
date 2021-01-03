@@ -13,7 +13,7 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
 
     # {{{ set up connectivity
 
-    from pyvisfile.xdmf import NumpyDataArray, DataArray, data_item_from_numpy
+    from pyvisfile.xdmf import NumpyDataArray, DataArray, _data_item_from_numpy
     connectivity = np.arange(npoints, dtype=np.uint32)
     points = np.random.rand(ambient_dim, npoints)
 
@@ -29,12 +29,12 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
             pdata = "points.out"
 
         connectivity = DataArray((
-            data_item_from_numpy(connectivity,
+            _data_item_from_numpy(connectivity,
                 name="connectivity",
                 data=cdata),
             ))
         points = DataArray((
-            data_item_from_numpy(points.T,
+            _data_item_from_numpy(points.T,
                 name="points",
                 data=pdata),
             ))

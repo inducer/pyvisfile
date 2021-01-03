@@ -54,8 +54,6 @@ DataItem
     :undoc-members:
 
 .. autoclass:: DataItem
-.. autofunction:: data_item_from_numpy
-.. autofunction:: join_data_items
 
 Domain
 ^^^^^^
@@ -441,12 +439,17 @@ class DataItem(XdmfElement):
                 parent=parent)
 
 
-def data_item_from_numpy(
+def _data_item_from_numpy(
         ary: np.ndarray, *,
         name: Optional[str] = None,
         parent: Optional[Element] = None,
         data: Optional[str] = None) -> DataItem:
-    """Create a :class:`DataItem` from a given :class:`~numpy.ndarray`."""
+    """Create a :class:`DataItem` from a given :class:`~numpy.ndarray`.
+
+    .. note::
+
+        This is meant for internal use only. Use :class:`NumpyDataArray` instead.
+    """
 
     if data is None:
         dformat = DataItemFormat.XML
@@ -466,9 +469,17 @@ def data_item_from_numpy(
             )
 
 
-def join_data_items(
+def _join_data_items(
         items: Tuple[DataItem, ...], *,
         parent: Optional[Element] = None) -> DataItem:
+    r"""Joins several :class:`DataItem`\ s using a :attr:`DataItemType.Function`
+    as::
+
+        JOIN($0, $1, ...)
+
+    :returns: the newly created :class:`DataItem` that joins the input items.
+    """
+
     if len(items) == 1:
         item = items[0]
     else:
@@ -948,7 +959,7 @@ class DataArray:
         name = dset.name.split("/")[-1]
 
         return cls(
-                (data_item_from_numpy(dset, data=data),),
+                (_data_item_from_numpy(dset, data=data),),
                 name=name,
                 acenter=acenter,
                 atype=atype)
@@ -976,11 +987,11 @@ class NumpyDataArray(DataArray):
                 raise ValueError("'ary' components must have the same size")
 
             items = tuple([
-                    data_item_from_numpy(iary, name=f"{name}_{i}")
+                    _data_item_from_numpy(iary, name=f"{name}_{i}")
                     for i, iary in enumerate(ary)
                     ])
         else:
-            items = (data_item_from_numpy(ary, name=name),)
+            items = (_data_item_from_numpy(ary, name=name),)
 
         super().__init__(items, name=name, acenter=acenter)
         self.ary = ary
@@ -1029,7 +1040,7 @@ class XdmfGrid:
 
         if join:
             items = ary.as_data_item()
-            join_data_items(items, parent=attr)
+            _join_data_items(items, parent=attr)
         else:
             ary.as_data_item(parent=attr)
 
