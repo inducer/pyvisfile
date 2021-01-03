@@ -367,9 +367,11 @@ class DataItemFormat(enum.Enum):
 
 class DataItemEndian(enum.Enum):
     """Endianess of the data stored in the item."""
-    Native = enum.auto()
-    Big = enum.auto()
-    Little = enum.auto()
+    # NOTE: integer ids taken from
+    # https://gitlab.kitware.com/xdmf/xdmf/-/blob/04a84bab0eb1568e0f1a27c8fb60c6931efda003/core/XdmfBinaryController.hpp#L211
+    Big = 50
+    Little = 51
+    Native = 52
 
 
 class DataItem(XdmfElement):
