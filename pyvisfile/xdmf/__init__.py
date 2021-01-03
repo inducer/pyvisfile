@@ -236,6 +236,7 @@ class AttributeType(enum.Enum):
 
     @staticmethod
     def from_shape(shape: Tuple[int, ...]) -> "AttributeType":
+        # https://github.com/nschloe/meshio/blob/37673c8fb938ad73d92fb3171dee3eb193b5e7ac/meshio/xdmf/common.py#L162
         if len(shape) == 1 or (len(shape) == 2 and shape[1] == 1):
             return AttributeType.Scalar
         elif len(shape) == 2 and shape[0] in [2, 3]:
