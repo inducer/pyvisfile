@@ -4,6 +4,8 @@ import pytest
 from pytools.obj_array import make_obj_array
 
 
+# {{{ test_unstructured_vertex_grid
+
 @pytest.mark.parametrize("ambient_dim", [2, 3])
 @pytest.mark.parametrize("dformat", ["xml", "hdf", "binary"])
 def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
@@ -60,55 +62,24 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
     filename = f"test_unstructured_vertex_{dformat}_{ambient_dim}d.xmf"
     writer.write_pretty(filename)
 
+# }}}
 
-@pytest.mark.parametrize("ambient_dim", [2, 3])
-def test_unstructured_simplex_grid(ambient_dim, nelements=16):
-    """Test constructing a grid with a more complicated topology."""
 
-    from pyvisfile.xdmf import TopologyType
-    if ambient_dim == 1:
-        topology_type = TopologyType.Polyline
-        simplices_per_quad = 1
-    if ambient_dim == 2:
-        topology_type = TopologyType.Triangle
-        simplices_per_quad = 2
-    elif ambient_dim == 3:
-        topology_type = TopologyType.Tetrahedron
-        simplices_per_quad = 6
-    else:
-        raise ValueError("unsupported dimension")
+# {{{ test_unstructured_simplex_grid
 
-    # {{{ points
-
-    x = np.linspace(-1.0, 1.0, nelements + 1)
-
-    npoints = len(x)
-    points = np.empty((ambient_dim,) + (npoints,) * ambient_dim)
-    for idim in range(ambient_dim):
-        points[idim] = x.reshape((npoints,) + (1,) * (ambient_dim - 1 - idim))
-
-    from pyvisfile.xdmf import NumpyDataArray
-    points = NumpyDataArray(points.reshape(ambient_dim, -1).T, name="points")
-
-    # }}}
-
-    # {{{ connectivity
-
+def _simplex_box_connectivity(*, npoints, nelements, nvertices):
     # NOTE: largely copied from meshmode/mesh/generation.py::generate_box_mesh
+    ambient_dim = len(npoints)
 
-    from pyvisfile.xdmf import _XDMF_ELEMENT_NODE_COUNT
-    nelements = simplices_per_quad * nelements**ambient_dim
-    nnodes = _XDMF_ELEMENT_NODE_COUNT[topology_type]
-
-    point_indices = np.arange(points.shape[0]).reshape((npoints,) * ambient_dim)
-    connectivity = np.empty((nelements, nnodes), dtype=np.uint32)
+    point_indices = np.arange(np.prod(npoints)).reshape(npoints)
+    connectivity = np.empty((nelements, nvertices), dtype=np.uint32)
 
     ielement = 0
     from itertools import product
     if ambient_dim == 1:
         raise NotImplementedError
     elif ambient_dim == 2:
-        for i, j in product(range(npoints - 1), repeat=ambient_dim):
+        for i, j in product(range(npoints[0] - 1), repeat=ambient_dim):
             a = point_indices[i + 0, j + 0]
             b = point_indices[i + 1, j + 0]
             c = point_indices[i + 0, j + 1]
@@ -118,7 +89,7 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=16):
             connectivity[ielement + 1, :] = (d, c, b)
             ielement += 2
     elif ambient_dim == 3:
-        for i, j, k in product(range(npoints - 1), repeat=ambient_dim):
+        for i, j, k in product(range(npoints[0] - 1), repeat=ambient_dim):
             a000 = point_indices[i, j, k]
             a001 = point_indices[i, j, k+1]
             a010 = point_indices[i, j+1, k]
@@ -142,7 +113,45 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=16):
 
     assert ielement == nelements
 
-    connectivity = NumpyDataArray(connectivity, name="connectivity")
+    from pyvisfile.xdmf import NumpyDataArray
+    return NumpyDataArray(connectivity, name="connectivity")
+
+
+@pytest.mark.parametrize("ambient_dim", [2, 3])
+def test_unstructured_simplex_grid(ambient_dim, nelements=16):
+    """Test constructing a grid with a more complicated topology."""
+
+    from pyvisfile.xdmf import TopologyType
+    if ambient_dim == 1:
+        topology_type = TopologyType.Polyline
+        simplices_per_quad = 1
+    if ambient_dim == 2:
+        topology_type = TopologyType.Triangle
+        simplices_per_quad = 2
+    elif ambient_dim == 3:
+        topology_type = TopologyType.Tetrahedron
+        simplices_per_quad = 6
+    else:
+        raise ValueError("unsupported dimension")
+
+    # {{{ points and connectivity
+
+    x = np.linspace(-1.0, 1.0, nelements + 1)
+
+    npoints = len(x)
+    points = np.empty((ambient_dim,) + (npoints,) * ambient_dim)
+    for idim in range(ambient_dim):
+        points[idim] = x.reshape((npoints,) + (1,) * (ambient_dim - 1 - idim))
+
+    from pyvisfile.xdmf import NumpyDataArray
+    points = NumpyDataArray(points.reshape(ambient_dim, -1).T, name="points")
+
+    from pyvisfile.xdmf import _XDMF_ELEMENT_NODE_COUNT
+    connectivity = _simplex_box_connectivity(
+            npoints=(npoints,) * ambient_dim,
+            nelements=simplices_per_quad * nelements**ambient_dim,
+            nvertices=_XDMF_ELEMENT_NODE_COUNT[topology_type]
+            )
 
     # }}}
 
