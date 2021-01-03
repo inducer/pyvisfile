@@ -208,11 +208,11 @@ class XdmfElement(Element):
 
 class AttributeElementFamily(enum.Enum):
     """High-order element families for ``FiniteElementFunction``."""
-    DG = enum.auto()    # Discontinuous Galerkin elements for simplices
-    CG = enum.auto()    # Continuous Galerkin elements for simplices
-    Q = enum.auto()     # Continuous Galerkin elements for quadrilaterals
-    DQ = enum.auto()    # Discontinuous Galerkin elements for quadrilaterals
-    RT = enum.auto()    # Raviart-Thomas elements on triangles
+    DG = enum.auto()    #: Discontinuous Galerkin elements for simplices.
+    CG = enum.auto()    #: Continuous Galerkin elements for simplices.
+    Q = enum.auto()     #: Continuous Galerkin elements for quadrilaterals.
+    DQ = enum.auto()    #: Discontinuous Galerkin elements for quadrilaterals.
+    RT = enum.auto()    #: Raviart-Thomas elements on triangles.
 
 
 class AttributeElementCell(enum.Enum):
