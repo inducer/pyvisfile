@@ -223,21 +223,6 @@ class AttributeElementCell(enum.Enum):
 # }}}
 
 
-def _attribute_type_from_shape(shape):
-    if len(shape) == 1 or (len(shape) == 2 and shape[1] == 1):
-        return AttributeType.Scalar
-    elif len(shape) == 2 and shape[0] in [2, 3]:
-        return AttributeType.Vector
-    elif len(shape) == 2 and shape[0] in [4, 9]:
-        return AttributeType.Tensor
-    elif len(shape) == 2 and shape[0] == 6:
-        return AttributeType.Tensor6
-    elif len(shape) == 3:
-        return AttributeType.Matrix
-    else:
-        raise ValueError(f"cannot determine attribute type from shape '{shape}'")
-
-
 class AttributeType(enum.Enum):
     """Rank of the attribute stored on the mesh."""
     # NOTE: integer ids taken from
@@ -248,6 +233,21 @@ class AttributeType(enum.Enum):
     Matrix = 203
     Tensor6 = 204
     GlobalId = 205
+
+    @staticmethod
+    def from_shape(shape: Tuple[int, ...]) -> "AttributeType":
+        if len(shape) == 1 or (len(shape) == 2 and shape[1] == 1):
+            return AttributeType.Scalar
+        elif len(shape) == 2 and shape[0] in [2, 3]:
+            return AttributeType.Vector
+        elif len(shape) == 2 and shape[0] in [4, 9]:
+            return AttributeType.Tensor
+        elif len(shape) == 2 and shape[0] == 6:
+            return AttributeType.Tensor6
+        elif len(shape) == 3:
+            return AttributeType.Matrix
+        else:
+            raise ValueError(f"cannot determine attribute type from shape '{shape}'")
 
 
 class AttributeCenter(enum.Enum):
@@ -1029,7 +1029,7 @@ class XdmfGrid:
 
         atype = ary.atype
         if atype is None:
-            atype = _attribute_type_from_shape(ary.shape[::-1])
+            atype = AttributeType.from_shape(ary.shape[::-1])
 
         attr = Attribute(
                 name=ary.name,
