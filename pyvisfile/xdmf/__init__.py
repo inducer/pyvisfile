@@ -375,7 +375,10 @@ class DataItemEndian(enum.Enum):
 
 
 class DataItem(XdmfElement):
-    """
+    """A :class:`DataItem` describes the storage of actual values in an
+    XDMF file. This can be inline ASCII data, the path to a binary file
+    or a reference to another :class:`DataItem`.
+
     .. attribute:: dimensions
 
     .. automethod:: __init__
