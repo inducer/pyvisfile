@@ -138,7 +138,6 @@ Writing
 .. autoclass:: NumpyDataArray
 
 .. autoclass:: XdmfUnstructuredGrid
-.. autoclass:: XdmfStructuredGrid
 """
 
 
@@ -1079,11 +1078,6 @@ class XdmfUnstructuredGrid(XdmfGrid):
         points.as_data_item(parent=geometry)
 
         super().__init__(grid)
-
-
-class XdmfStructuredGrid(XdmfGrid):
-    def __init__(self):
-        super().__init__()
 
 # }}}
 

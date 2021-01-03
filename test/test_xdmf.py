@@ -179,10 +179,6 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=16):
     # }}}
 
 
-def test_structured_grid():
-    pass
-
-
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
