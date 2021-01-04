@@ -331,8 +331,10 @@ class DataItem(XdmfElement):
     or a reference to another :class:`DataItem`.
 
     .. attribute:: dimensions
+        Analogous to :attr:`numpy.ndarray.shape`.
 
     .. automethod:: __init__
+    .. automethod:: as_reference
     """
 
     def __init__(
@@ -352,6 +354,7 @@ class DataItem(XdmfElement):
         """
         :param parent: if provided, *self* is appended to the element.
         :param reference: name of another :class:`DataItem`.
+            Use :meth:`as_reference` to populate.
         :param data: data contained inside the :class:`DataItem`. This is
             usually a path to a binary file.
         """
@@ -477,6 +480,10 @@ def _join_data_items(
 
         JOIN($0, $1, ...)
 
+    (Used for describing vectors from scalar data.)
+    See the `Xdmf Function docs <https://www.xdmf.org/index.php/XDMF_Model_and_Format#Function>`__
+    for more information.
+    
     :returns: the newly created :class:`DataItem` that joins the input items.
     """
 
