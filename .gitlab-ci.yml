@@ -11,11 +11,14 @@ Python 3:
   script: |
     sudo apt update
     sudo apt install libsilo-dev
-    py_version=3
+
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+    . ./ci-support.sh
     ./configure.py --use-silo
+
     EXTRA_INSTALL="numpy pybind11"
-    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-    . ./build-and-test-py-project.sh
+    build_py_project_in_venv
+    test_py_project
   tags:
   - docker-runner
   except:
@@ -24,13 +27,38 @@ Python 3:
     reports:
       junit: test/pytest.xml
 
-Documentation:
+Examples:
   script: |
-    EXTRA_INSTALL="numpy"
+    sudo apt update
+    sudo apt install libsilo-dev
+
+    # not expected to run without matplotlib and vtk
+    rm examples/vtk-sample-elements.py
+
     curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
     . ./ci-support.sh
+    ./configure.py --use-silo
+
+    EXTRA_INSTALL="numpy pybind11"
     build_py_project_in_venv
-    build_docs --no-check
+    run_examples
+  tags:
+  - docker-runner
+  except:
+  - tags
+
+Documentation:
+  script: |
+    sudo apt update
+    sudo apt install libsilo-dev
+
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+    . ./ci-support.sh
+    ./configure.py --use-silo
+
+    EXTRA_INSTALL="numpy pybind11"
+    build_py_project_in_venv
+    build_docs
     maybe_upload_docs
   tags:
-  - python3
+  - docker-runner
