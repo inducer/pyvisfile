@@ -24,6 +24,21 @@ Python 3:
     reports:
       junit: test/pytest.xml
 
+Examples:
+  script: |
+    sudo apt update
+    sudo apt install libsilo-dev
+    ./configure.py --use-silo
+    EXTRA_INSTALL="numpy pybind11"
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+    . ./ci-support.sh
+    build_py_project_in_venv
+    run_examples
+  tags:
+  - docker-runner
+  except:
+  - tags
+
 Documentation:
   script: |
     EXTRA_INSTALL="numpy"
