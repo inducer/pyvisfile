@@ -61,4 +61,4 @@ Documentation:
     build_docs
     maybe_upload_docs
   tags:
-  - python3
+  - docker-runner
