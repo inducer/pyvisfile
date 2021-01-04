@@ -27,7 +27,8 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: [3.6, 3.x]
+                # For some reason, the Silo build doesn't succeed on 3.6?
+                python-version: [3.7, 3.x]
         steps:
         -   uses: actions/checkout@v2
         -
