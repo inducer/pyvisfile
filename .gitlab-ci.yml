@@ -11,7 +11,6 @@ Python 3:
   script: |
     sudo apt update
     sudo apt install libsilo-dev
-    py_version=3
     ./configure.py --use-silo
     EXTRA_INSTALL="numpy pybind11"
     curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
