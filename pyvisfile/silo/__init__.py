@@ -217,11 +217,9 @@ class SiloFile(_silo.DBFile):
         """Add an defined variable ("expression") to this database.
 
         The *vars* argument consists of a list of tuples of type
-          *(name, definition)*
-        or
-          *(name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR)*
-        or even
-          *(name, definition, DB_VARTYPE_XXX, {options})*.
+        ``(name, definition)`` or
+        ``(name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR)`` or even
+        ``(name, definition, DB_VARTYPE_XXX, {options})``
         If the type is not specified, scalar is assumed.
         """
 
@@ -340,11 +338,11 @@ class ParallelSiloFile:
         """Add an defined variable ("expression") to this database.
 
         The *vars* argument consists of a list of tuples of type
-          *(name, definition)*
+        ``(name, definition)``
         or
-          *(name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR)*.
+        ``(name, definition, DB_VARTYPE_SCALAR | DB_VARTYPE_VECTOR)``.
         or even
-          *(name, definition, DB_VARTYPE_XXX, {options})*.
+        ``(name, definition, DB_VARTYPE_XXX, {options})``.
         If the type is not specified, scalar is assumed.
         """
         if self.master_file is not None:
