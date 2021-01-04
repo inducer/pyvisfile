@@ -331,6 +331,7 @@ class DataItem(XdmfElement):
     or a reference to another :class:`DataItem`.
 
     .. attribute:: dimensions
+
         Analogous to :attr:`numpy.ndarray.shape`.
 
     .. automethod:: __init__
@@ -353,7 +354,7 @@ class DataItem(XdmfElement):
             ):
         """
         :param parent: if provided, *self* is appended to the element.
-        :param reference: name of another :class:`DataItem`.
+        :param reference: path to another :class:`DataItem`.
             Use :meth:`as_reference` to populate.
         :param data: data contained inside the :class:`DataItem`. This is
             usually a path to a binary file.
@@ -384,10 +385,21 @@ class DataItem(XdmfElement):
         return self._dimensions
 
     @classmethod
-    def as_reference(cls, reference: str, *,
+    def as_reference(cls, reference_name: str, *,
             parent: Optional[Element] = None) -> "DataItem":
-        if not reference.startswith("/"):
-            reference = f"/Xdmf/Domain/DataItem[@Name='{reference}']"
+        """
+        :arg reference_name: a name or an absolute reference to another
+            :class:`DataItem`. The name is just the ``Name`` attribute of
+            the item, which is assumed to be in the top :class:`Domain`. If
+            another :class:`DataItem` needs to be references, or there are
+            multiple domains, use an absolute reference path, as defined
+            in the `XDMF docs <https://www.xdmf.org/index.php/XDMF_Model_and_Format>`__.
+        """     # noqa: E501
+
+        if not reference_name.startswith("/"):
+            reference = f"/Xdmf/Domain/DataItem[@Name='{reference_name}']"
+        else:
+            reference = reference_name
 
         return cls(
                 reference="XML",
@@ -483,9 +495,9 @@ def _join_data_items(
     (Used for describing vectors from scalar data.)
     See the `Xdmf Function docs <https://www.xdmf.org/index.php/XDMF_Model_and_Format#Function>`__
     for more information.
-    
+
     :returns: the newly created :class:`DataItem` that joins the input items.
-    """
+    """     # noqa: E501
 
     if len(items) == 1:
         item = items[0]
