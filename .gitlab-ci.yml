@@ -27,6 +27,10 @@ Examples:
   script: |
     sudo apt update
     sudo apt install libsilo-dev
+
+    # not expected to run without matplotlib and vtk
+    rm examples/vtk-sample-elements.py
+
     ./configure.py --use-silo
     EXTRA_INSTALL="numpy pybind11"
     curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
