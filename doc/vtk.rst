@@ -11,10 +11,10 @@ Examples
 Writing a structured mesh
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. literalinclude:: ../examples/vtk-structured.py
+.. literalinclude:: ../examples/vtk-structured-2d-plain.py
 
 (You can find this example as
-:download:`examples/vtk-structured.py <../examples/vtk-structured.py>` in the PyVisfile
+:download:`examples/vtk-structured-2d-plain.py <../examples/vtk-structured-2d-plain.py>` in the PyVisfile
 source distribution.)
 
 Writing an unstructured mesh

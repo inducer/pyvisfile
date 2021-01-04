@@ -44,7 +44,7 @@ Documentation:
     curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
     . ./ci-support.sh
     build_py_project_in_venv
-    build_docs --no-check
+    build_docs
     maybe_upload_docs
   tags:
   - python3
