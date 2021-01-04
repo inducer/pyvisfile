@@ -15,7 +15,7 @@ including
   `VisIt <https://wci.llnl.gov/codes/visit/>`__
   large-scale visualization program.
 
-* `XDMF <http://www.xdmf.org/index.php/Main_Page>`_ data files.
+* `XDMF <http://www.xdmf.org/index.php/Main_Page>`__ data files.
 
 pyvisfile supports many mesh geometries, such such as unstructured
 and rectangular structured meshes, particle meshes, as well as
@@ -27,7 +27,7 @@ supports the writing of expressions as visualization variables.
 pyvisfile can write Vtk files without any extra software installed.
 
 PyVisfile allows you to write `Silo <https://wci.llnl.gov/codes/silo/>`__
-and `Vtk <http://www.vtk.org/>`_ (`XML-style <http://www.vtk.org/VTK/help/documentation.html>`__)
+and `VTK <http://www.vtk.org/>`__ (`XML-style <http://www.vtk.org/VTK/help/documentation.html>`__)
 visualization files from the `Python <http://www.python.org>`__
 programming language, more specifically from data contained in :mod:`numpy`
 arrays.
