@@ -886,7 +886,12 @@ def _ndarray_to_string(ary):
     if ntype == DataItemNumberType.Int or ntype == DataItemNumberType.UInt:
         fmt = "%d"
     elif ntype == DataItemNumberType.Float:
-        fmt = "%.16e" if ary.dtype.itemsize == 8 else "%.8e"
+        if ary.dtype.itemsize == 8:
+            fmt = "%.16e"
+        elif ary.dtype.itemsize == 4:
+            fmt = "%.8e"
+        else:
+            raise ValueError(f"unsupported dtype item size: {ary.dtype.itemsize}")
     else:
         raise ValueError(f"unsupported dtype: '{ary.dtype}'")
 
