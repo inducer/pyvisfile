@@ -4,15 +4,15 @@ Welcome to :mod:`pyvisfile`'s documentation!
 Pyvisfile allows you to write a variety of visualization file formats,
 including
 
-* `Kitware's <http://www.kitware.com>`_
-  `XML-style <http://www.vtk.org/VTK/help/documentation.html>`_
-  `Vtk <http://vtk.org>`_ data files.
+* `Kitware's <http://www.kitware.com>`__
+  `XML-style <http://www.vtk.org/VTK/help/documentation.html>`__
+  `Vtk <http://vtk.org>`__ data files.
 
 * Silo visualization files, as
   introduced by LLNL's
-  `MeshTV <https://wci.llnl.gov/codes/meshtv/>`_ and
+  `MeshTV <https://wci.llnl.gov/codes/meshtv/>`__ and
   more recently used by the
-  `VisIt <https://wci.llnl.gov/codes/visit/>`_
+  `VisIt <https://wci.llnl.gov/codes/visit/>`__
   large-scale visualization program.
 
 * `XDMF <http://www.xdmf.org/index.php/Main_Page>`_ data files.
@@ -26,14 +26,16 @@ supports the writing of expressions as visualization variables.
 
 pyvisfile can write Vtk files without any extra software installed.
 
-PyVisfile allows you to write `Silo <https://wci.llnl.gov/codes/silo/>`_
-and `Vtk <http://www.vtk.org/>`_ (`XML-style <http://www.vtk.org/VTK/help/documentation.html>`_)
-visualization files from the `Python <http://www.python.org>`_
-programming language, more specifically from data contained in `numpy
-<http://www.numpy.org>`_ arrays.
+PyVisfile allows you to write `Silo <https://wci.llnl.gov/codes/silo/>`__
+and `Vtk <http://www.vtk.org/>`_ (`XML-style <http://www.vtk.org/VTK/help/documentation.html>`__)
+visualization files from the `Python <http://www.python.org>`__
+programming language, more specifically from data contained in :mod:`numpy`
+arrays.
 
 For updates, downloads and support, please visit the `PyVisfile web page
-<http://mathema.tician.de/software/pyvisfile>`_.
+<http://github.com/inducer/pyvisfile>`__.
+
+.. module:: pyvisfile
 
 Table of Contents
 -----------------

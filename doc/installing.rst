@@ -22,7 +22,7 @@ To follow, you need basic things:
 You may adapt the file and directory names in this tutorial to suit
 your liking, just be sure to be consistent in your changes.
 
-.. note:: 
+.. note::
 
     Whenever you see the "`$`" dollar sign in this tutorial, this
     means you should enter the subsequent text at your shell prompt.
@@ -33,19 +33,7 @@ your liking, just be sure to be consistent in your changes.
 With Silo capability
 --------------------
 
-Step 1: Install :mod:`pyublas`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. note::
-
-    If you have already installed :mod:`hedge`, then you automatically
-    also already have :mod:`pyublas`, and you can skip this step.
-
-The first step in this installation is to install PyUblas. To achieve
-this, please follow `PyUblas's installation instructions
-<http://documen.tician.de/pyublas/installing.html>`_.
-
-Step 2: Download and build libsilo
+Step 1: Download and build libsilo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Download the `Silo source code
@@ -57,22 +45,22 @@ newer. Then unpack, build and install it::
     $ ./configure --prefix=$HOME/pool --enable-shared=yes --enable-static=no
     $ make install
 
-Step 3: Update your build configuration file
+Step 2: Update your build configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 During prior steps of this installation, you will have created
-a file called :file:`.aksetup-defaults.py`  in your home directory. 
+a file called :file:`.aksetup-defaults.py`  in your home directory.
 Now add the following lines to this file::
 
     SILO_INC_DIR = ['${HOME}/pool/include']
     SILO_LIB_DIR = ['${HOME}/pool/lib']
 
-You will need to adapt the above path names to the location where you installed 
+You will need to adapt the above path names to the location where you installed
 the Silo software, of course.
 
 .. note::
 
-    Make sure not to miss the initial dot in the configuration file name, 
+    Make sure not to miss the initial dot in the configuration file name,
     it's important.
 
 .. note::
