@@ -25,6 +25,7 @@ distribute-*.tar.gz
 distribute-*.egg
 *.vtu
 *.vts
+*.xmf
 .eggs
 
 .cache

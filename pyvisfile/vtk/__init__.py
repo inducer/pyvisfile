@@ -473,8 +473,7 @@ class UnstructuredGrid:
         assert self.points.name == "points"
 
         try:
-            self.cell_count, self.cell_connectivity, \
-                    self.cell_offsets = cells
+            self.cell_count, self.cell_connectivity, self.cell_offsets = cells
         except Exception:
             self.cell_count = len(cell_types)
 

@@ -24,6 +24,13 @@ extensions = [
         "sphinx_copybutton",
         ]
 
+autodoc_typehints = "description"
+
+# https://github.com/sphinx-doc/sphinx/issues/8127
+nitpick_ignore = [
+    ("py:class", "..")
+]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 

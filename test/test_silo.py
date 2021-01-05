@@ -407,4 +407,12 @@ def test_silo_unstructured():
     silo.close()
 
 
-# vim: foldmethod=marker
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        exec(sys.argv[1])
+    else:
+        from pytest import main
+        main([__file__])
+
+# vim: fdm=marker
