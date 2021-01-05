@@ -2,7 +2,8 @@
 sudo apt update
 sudo apt install libsilo-dev
 
-curl -L -O https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/silo-4.10.2/silo-4.10.2-bsd-smalltest.tar.gz
-tar xfz silo-4.10.2-bsd-smalltest.tar.gz
-sudo cp silo-4.10.2-bsd/src/silo/silo_exports.h /usr/include
+# As of 2021-01-04, the download links at https://wci.llnl.gov/simulation/computer-codes/silo are dead.
+curl -L -O https://deb.debian.org/debian/pool/main/s/silo-llnl/silo-llnl_4.10.2.real.orig.tar.xz
+tar xfa silo-llnl_4.10.2.real.orig.tar.xz
+sudo cp silo-llnl-4.10.2.real/src/silo/silo_exports.h /usr/include
 sudo chmod a+rX /usr/include/silo_exports.h
