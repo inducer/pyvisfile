@@ -105,17 +105,11 @@ Attribute
     :undoc-members:
 .. autoclass:: Attribute
 
-
 Time
 ^^^^
 
-.. autoclass:: TimeType
-    :show-inheritance:
-    :members:
-    :undoc-members:
 .. autoclass:: Time
     :members:
-
 
 Information
 ^^^^^^^^^^^
@@ -766,14 +760,6 @@ class Geometry(XdmfElement):
 
 
 # {{{ time
-
-class TimeType(enum.Enum):
-    """Temporal information of the current grid."""
-    Single = enum.auto()
-    HyperSlab = enum.auto()
-    List = enum.auto()
-    Range = enum.auto()
-
 
 class Time(XdmfElement):
     """
