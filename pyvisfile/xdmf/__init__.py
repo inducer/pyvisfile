@@ -129,7 +129,11 @@ Writing
 .. autoclass:: DataArray
 .. autoclass:: NumpyDataArray
 
+.. autoclass:: XdmfGrid
 .. autoclass:: XdmfUnstructuredGrid
+    :show-inheritance:
+
+.. autoclass:: XdmfWriter
 """
 
 
@@ -1037,13 +1041,24 @@ class NumpyDataArray(DataArray):
 # {{{ grids
 
 class XdmfGrid:
-    def __init__(self, root):
+    """
+    .. automethod:: __init__
+    .. automethod:: add_attribute
+    """
+
+    def __init__(self, root: Grid):
         self.root = root
 
     def getroot(self):
         return self.root
 
-    def add_attribute(self, ary: DataArray, *, join=True) -> Attribute:
+    def add_attribute(self, ary: DataArray, *, join: bool = True) -> Attribute:
+        """
+        :param ary:
+        :param join: If *True* and *ary* has multiple components, they are
+            joined using an XDMF Function.
+        """
+
         acenter = ary.acenter
         if acenter is None:
             acenter = AttributeCenter.Node
@@ -1069,6 +1084,10 @@ class XdmfGrid:
 
 
 class XdmfUnstructuredGrid(XdmfGrid):
+    """
+    .. automethod:: __init__
+    """
+
     def __init__(self,
             points: DataArray,
             connectivity: DataArray, *,
@@ -1122,13 +1141,14 @@ class XdmfWriter(ElementTree):
     .. automethod:: write
     .. automethod:: write_pretty
     """
+
     def __init__(self,
             grids: Tuple[XdmfGrid, ...], *,
             arrays: Optional[Tuple[DataArray, ...]] = None,
-            tags: Optional[Tuple[XdmfElement, ...]] = None):
+            tags: Optional[Tuple[Element, ...]] = None):
         r"""
         :param grids: a :class:`tuple` of grids to be added to the
-            top :class:`Domain`.
+            top :class:`Domain`. Currently only a single domain is supported.
         :param arrays: additional :class:`DataArray`\ s to be added to the
             top :class:`Domain`, as opposed to as attribute on the grids.
         """
