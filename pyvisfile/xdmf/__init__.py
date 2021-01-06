@@ -105,17 +105,11 @@ Attribute
     :undoc-members:
 .. autoclass:: Attribute
 
-
 Time
 ^^^^
 
-.. autoclass:: TimeType
-    :show-inheritance:
-    :members:
-    :undoc-members:
 .. autoclass:: Time
     :members:
-
 
 Information
 ^^^^^^^^^^^
@@ -135,7 +129,11 @@ Writing
 .. autoclass:: DataArray
 .. autoclass:: NumpyDataArray
 
+.. autoclass:: XdmfGrid
 .. autoclass:: XdmfUnstructuredGrid
+    :show-inheritance:
+
+.. autoclass:: XdmfWriter
 """
 
 
@@ -306,6 +304,17 @@ class DataItemNumberType(enum.Enum):
     UInt = enum.auto()
     Float = enum.auto()
 
+    @staticmethod
+    def from_dtype(dtype: np.dtype) -> "DataItemNumberType":
+        if dtype.type in (np.int8, np.int16, np.int32, np.int64, np.int):
+            return DataItemNumberType.Int
+        elif dtype.type in (np.uint8, np.uint16, np.uint32, np.uint64, np.uint):
+            return DataItemNumberType.UInt
+        elif dtype.type in (np.float16, np.float32, np.float64, np.float128):
+            return DataItemNumberType.Float
+        else:
+            raise ValueError(f"unsupported dtype: '{dtype}'")
+
 
 class DataItemFormat(enum.Enum):
     """Format in which the item is stored."""
@@ -323,6 +332,16 @@ class DataItemEndian(enum.Enum):
     Big = 50
     Little = 51
     Native = 52
+
+    @staticmethod
+    def from_system() -> "DataItemEndian":
+        import sys
+        if sys.byteorder == "little":
+            return DataItemEndian.Little
+        elif sys.byteorder == "big":
+            return DataItemEndian.Big
+        else:
+            return DataItemEndian.Native
 
 
 class DataItem(XdmfElement):
@@ -388,7 +407,7 @@ class DataItem(XdmfElement):
     def as_reference(cls, reference_name: str, *,
             parent: Optional[Element] = None) -> "DataItem":
         """
-        :arg reference_name: a name or an absolute reference to another
+        :param reference_name: a name or an absolute reference to another
             :class:`DataItem`. The name is just the ``Name`` attribute of
             the item, which is assumed to be in the top :class:`Domain`. If
             another :class:`DataItem` needs to be references, or there are
@@ -409,17 +428,6 @@ class DataItem(XdmfElement):
                 parent=parent)
 
 
-def _numpy_to_xdmf_number_type(dtype):
-    if dtype.type in (np.int8, np.int16, np.int32, np.int64, np.int):
-        return DataItemNumberType.Int
-    elif dtype.type in (np.uint8, np.uint16, np.uint32, np.uint64, np.uint):
-        return DataItemNumberType.UInt
-    elif dtype.type in (np.float16, np.float32, np.float64, np.float128):
-        return DataItemNumberType.Float
-    else:
-        raise ValueError(f"unsupported dtype: '{dtype}'")
-
-
 def _data_item_format_from_str(text: str) -> DataItemFormat:
     # NOTE: this handles two cases (not meant to be too smart about it)
     # 1. if the text is just `some_file.bin` or `some_file.out`, we assume it's
@@ -438,18 +446,6 @@ def _data_item_format_from_str(text: str) -> DataItemFormat:
         return DataItemFormat.HDF
     else:
         raise ValueError("cannot determine format from text")
-
-
-def _system_to_xdmf_endian():
-    import sys
-    if sys.byteorder == "little":
-        endian = DataItemEndian.Little
-    elif sys.byteorder == "big":
-        endian = DataItemEndian.Big
-    else:
-        endian = DataItemEndian.Native
-
-    return endian
 
 
 def _data_item_from_numpy(
@@ -475,9 +471,9 @@ def _data_item_from_numpy(
             name=name,
             dimensions=ary.shape,
             itype=DataItemType.Uniform,
-            ntype=_numpy_to_xdmf_number_type(ary.dtype),
+            ntype=DataItemNumberType.from_dtype(ary.dtype),
             precision=ary.dtype.itemsize,
-            endian=_system_to_xdmf_endian(),
+            endian=DataItemEndian.from_system(),
             dformat=dformat,
             parent=parent,
             data=data,
@@ -769,14 +765,6 @@ class Geometry(XdmfElement):
 
 # {{{ time
 
-class TimeType(enum.Enum):
-    """Temporal information of the current grid."""
-    Single = enum.auto()
-    HyperSlab = enum.auto()
-    List = enum.auto()
-    Range = enum.auto()
-
-
 class Time(XdmfElement):
     """
     .. automethod:: __init__
@@ -882,7 +870,7 @@ def _ndarray_to_string(ary):
     if not isinstance(ary, np.ndarray):
         raise TypeError(f"expected an 'ndarray', got '{type(ary).__name__}'")
 
-    ntype = _numpy_to_xdmf_number_type(ary.dtype)
+    ntype = DataItemNumberType.from_dtype(ary.dtype)
     if ntype == DataItemNumberType.Int or ntype == DataItemNumberType.UInt:
         fmt = "%d"
     elif ntype == DataItemNumberType.Float:
@@ -1013,7 +1001,7 @@ class NumpyDataArray(DataArray):
             name: Optional[str] = None,
             ):
         """
-        :arg ary: if this is an :class:`object` array, each entry is considered
+        :param ary: if this is an :class:`object` array, each entry is considered
             a different component and will consist of a separate
             :class:`DataItem`.
         """
@@ -1053,13 +1041,24 @@ class NumpyDataArray(DataArray):
 # {{{ grids
 
 class XdmfGrid:
-    def __init__(self, root):
+    """
+    .. automethod:: __init__
+    .. automethod:: add_attribute
+    """
+
+    def __init__(self, root: Grid):
         self.root = root
 
     def getroot(self):
         return self.root
 
-    def add_attribute(self, ary: DataArray, *, join=True) -> Attribute:
+    def add_attribute(self, ary: DataArray, *, join: bool = True) -> Attribute:
+        """
+        :param ary:
+        :param join: If *True* and *ary* has multiple components, they are
+            joined using an XDMF Function.
+        """
+
         acenter = ary.acenter
         if acenter is None:
             acenter = AttributeCenter.Node
@@ -1085,6 +1084,10 @@ class XdmfGrid:
 
 
 class XdmfUnstructuredGrid(XdmfGrid):
+    """
+    .. automethod:: __init__
+    """
+
     def __init__(self,
             points: DataArray,
             connectivity: DataArray, *,
@@ -1138,13 +1141,14 @@ class XdmfWriter(ElementTree):
     .. automethod:: write
     .. automethod:: write_pretty
     """
+
     def __init__(self,
             grids: Tuple[XdmfGrid, ...], *,
             arrays: Optional[Tuple[DataArray, ...]] = None,
-            tags: Optional[Tuple[XdmfElement, ...]] = None):
+            tags: Optional[Tuple[Element, ...]] = None):
         r"""
         :param grids: a :class:`tuple` of grids to be added to the
-            top :class:`Domain`.
+            top :class:`Domain`. Currently only a single domain is supported.
         :param arrays: additional :class:`DataArray`\ s to be added to the
             top :class:`Domain`, as opposed to as attribute on the grids.
         """
