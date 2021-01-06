@@ -301,7 +301,7 @@ class DataItemNumberType(enum.Enum):
     Float = enum.auto()
 
     @staticmethod
-    def from_dtype(dtype) -> "DataItemNumberType":
+    def from_dtype(dtype: np.dtype) -> "DataItemNumberType":
         if dtype.type in (np.int8, np.int16, np.int32, np.int64, np.int):
             return DataItemNumberType.Int
         elif dtype.type in (np.uint8, np.uint16, np.uint32, np.uint64, np.uint):
@@ -403,7 +403,7 @@ class DataItem(XdmfElement):
     def as_reference(cls, reference_name: str, *,
             parent: Optional[Element] = None) -> "DataItem":
         """
-        :arg reference_name: a name or an absolute reference to another
+        :param reference_name: a name or an absolute reference to another
             :class:`DataItem`. The name is just the ``Name`` attribute of
             the item, which is assumed to be in the top :class:`Domain`. If
             another :class:`DataItem` needs to be references, or there are
@@ -997,7 +997,7 @@ class NumpyDataArray(DataArray):
             name: Optional[str] = None,
             ):
         """
-        :arg ary: if this is an :class:`object` array, each entry is considered
+        :param ary: if this is an :class:`object` array, each entry is considered
             a different component and will consist of a separate
             :class:`DataItem`.
         """
