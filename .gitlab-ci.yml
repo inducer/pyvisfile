@@ -1,6 +1,6 @@
 Flake8:
   script:
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
   - . ./prepare-and-run-flake8.sh "$CI_PROJECT_NAME" test examples
   tags:
   - python3
@@ -12,7 +12,7 @@ Python 3:
     sudo apt update
     sudo apt install libsilo-dev
 
-    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
     . ./ci-support.sh
     ./configure.py --use-silo
 
@@ -35,7 +35,7 @@ Examples:
     # not expected to run without matplotlib and vtk
     rm examples/vtk-sample-elements.py
 
-    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
     . ./ci-support.sh
     ./configure.py --use-silo
 
@@ -52,7 +52,7 @@ Documentation:
     sudo apt update
     sudo apt install libsilo-dev
 
-    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
     . ./ci-support.sh
     ./configure.py --use-silo
 
