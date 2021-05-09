@@ -26,11 +26,6 @@ extensions = [
 
 autodoc_typehints = "description"
 
-# https://github.com/sphinx-doc/sphinx/issues/8127
-nitpick_ignore = [
-    ("py:class", "..")
-]
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -62,20 +57,6 @@ release = version
 # today = ""
 # Else, today_fmt is used as the format for a strftime call.
 today_fmt = "%B %d, %Y"
-
-# List of documents that shouldn't be included in the build.
-# unused_docs = []
-
-# If true, "()" will be appended to :func: etc. cross-reference text.
-# add_function_parentheses = True
-
-# If true, the current module name will be prepended to all description
-# unit titles (such as .. function::).
-# add_module_names = True
-
-# If true, sectionauthor and moduleauthor directives will be shown in the
-# output. They are ignored by default.
-# show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -155,3 +136,6 @@ intersphinx_mapping = {
     "https://numpy.org/doc/stable/": None,
     "https://documen.tician.de/modepy": None,
 }
+
+autoclass_content = "class"
+autodoc_typehints = "description"

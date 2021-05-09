@@ -50,8 +50,6 @@ Support for Parallel Computation
 --------------------------------
 
 .. autoclass:: ParallelSiloFile
-    :members:
-    :undoc-members:
 
 Supporting Objects
 ------------------
@@ -66,20 +64,105 @@ Data objects
 ------------
 
 .. autoclass:: DBToc
-    :members:
-    :undoc-members:
+
+    .. attribute:: array_names
+    .. attribute:: csgmesh_names
+    .. attribute:: csgvar_names
+    .. attribute:: curve_names
+    .. attribute:: defvars_names
+    .. attribute:: dir_names
+    .. attribute:: groupelmap_names
+    .. attribute:: mat_names
+    .. attribute:: matspecies_names
+    .. attribute:: mrgtree_names
+    .. attribute:: mrgvar_names
+    .. attribute:: multimat_names
+    .. attribute:: multimatspecies_names
+    .. attribute:: multimesh_names
+    .. attribute:: multimeshadj_names
+    .. attribute:: multivar_names
+    .. attribute:: obj_names
+    .. attribute:: ptmesh_names
+    .. attribute:: ptvar_names
+    .. attribute:: qmesh_names
+    .. attribute:: qvar_names
+    .. attribute:: ucdmesh_names
+    .. attribute:: ucdvar_names
+    .. attribute:: var_names
+
 
 .. autoclass:: DBCurve
-    :members:
-    :undoc-members:
+
+    .. attribute:: id
+    .. attribute:: origin
+    .. attribute:: reference
+    .. attribute:: title
+    .. attribute:: x
+    .. attribute:: xlabel
+    .. attribute:: xunits
+    .. attribute:: xvarname
+    .. attribute:: y
+    .. attribute:: ylabel
+    .. attribute:: yunits
+    .. attribute:: yvarname
 
 .. autoclass:: DBQuadMesh
-    :members:
-    :undoc-members:
+
+    .. attribute:: base_index
+    .. attribute:: block_no
+    .. attribute:: coord_sys
+    .. attribute:: coords
+    .. attribute:: coordtype
+    .. attribute:: cycle
+    .. attribute:: dtime
+    .. attribute:: facetype
+    .. attribute:: group_no
+    .. attribute:: guihide
+    .. attribute:: id
+    .. attribute:: labels
+    .. attribute:: major_order
+    .. attribute:: max_extents
+    .. attribute:: max_index
+    .. attribute:: min_extents
+    .. attribute:: min_index
+    .. attribute:: mrgtree_name
+    .. attribute:: name
+    .. attribute:: ndims
+    .. attribute:: nnodes
+    .. attribute:: nspace
+    .. attribute:: origin
+    .. attribute:: planar
+    .. attribute:: size_index
+    .. attribute:: start_index
+    .. attribute:: stride
+    .. attribute:: time
+    .. attribute:: units
 
 .. autoclass:: DBQuadVar
-    :members:
-    :undoc-members:
+
+    .. attribute:: align
+    .. attribute:: ascii_labels
+    .. attribute:: cycle
+    .. attribute:: dtime
+    .. attribute:: guihide
+    .. attribute:: id
+    .. attribute:: label
+    .. attribute:: major_order
+    .. attribute:: max_index
+    .. attribute:: meshid
+    .. attribute:: meshname
+    .. attribute:: min_index
+    .. attribute:: mixlen
+    .. attribute:: name
+    .. attribute:: ndims
+    .. attribute:: nels
+    .. attribute:: nvals
+    .. attribute:: origin
+    .. attribute:: stride
+    .. attribute:: time
+    .. attribute:: units
+    .. attribute:: use_specmf
+    .. attribute:: vals
 
 Constants
 ---------
@@ -202,7 +285,7 @@ Errors
 .. data:: E_NOTFOUND
 .. data:: E_TAURSTATE
 .. data:: E_MSERVER
-.. data:: E_PROTO     
+.. data:: E_PROTO
 .. data:: E_NOTDIR
 .. data:: E_MAXOPEN
 .. data:: E_NOTFILTER
