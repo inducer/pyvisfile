@@ -277,7 +277,22 @@ class ParallelSiloFile:
     for the master file, as are rank numbers and the extension
     for each individual rank.
 
-    This class can be used in a Python 2.5 *with* statement.
+    This class can be used as a context manager in ``with`` statement.
+
+    .. automethod:: __init__
+    .. automethod:: close
+    .. automethod:: put_zonelist
+    .. automethod:: put_zonelist_2
+    .. automethod:: put_ucdmesh
+    .. automethod:: put_ucdvar1
+    .. automethod:: put_ucdvar
+    .. automethod:: put_defvars
+    .. automethod:: put_pointmesh
+    .. automethod:: put_pointvar1
+    .. automethod:: put_pointvar
+    .. automethod:: put_quadmesh
+    .. automethod:: put_quadvar1
+    .. automethod:: put_quadvar
     """
 
     def __init__(self, pathname, rank, ranks, *args, **kwargs):
