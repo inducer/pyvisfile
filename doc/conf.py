@@ -24,8 +24,6 @@ extensions = [
         "sphinx_copybutton",
         ]
 
-autodoc_typehints = "description"
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -66,9 +64,6 @@ pygments_style = "sphinx"
 # -----------------------
 
 html_theme = "furo"
-
-html_theme_options = {
-        }
 
 # The style sheet to use for HTML and HTML Help pages. A file of that name
 # must exist either in Sphinx' static/ path, or in one of the custom paths
@@ -138,4 +133,3 @@ intersphinx_mapping = {
 }
 
 autoclass_content = "class"
-autodoc_typehints = "description"
