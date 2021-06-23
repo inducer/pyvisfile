@@ -310,7 +310,7 @@ class DataItemNumberType(enum.Enum):
             return DataItemNumberType.Int
         elif dtype.type in (np.uint8, np.uint16, np.uint32, np.uint64, np.uint):
             return DataItemNumberType.UInt
-        elif dtype.type in (np.float16, np.float32, np.float64, np.float128):
+        elif dtype.type in (np.float16, np.float32, np.float64, np.longdouble):
             return DataItemNumberType.Float
         else:
             raise ValueError(f"unsupported dtype: '{dtype}'")
