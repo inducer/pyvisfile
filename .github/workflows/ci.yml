@@ -42,6 +42,8 @@ jobs:
                 if [[ $(uname) == "Linux" ]]; then
                     ./.ci/install-silo-on-github.sh
                     USE_SILO="--use-silo"
+                else
+                    rm test/test_silo.py
                 fi
                 EXTRA_INSTALL="numpy pybind11"
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
