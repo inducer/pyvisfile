@@ -39,11 +39,14 @@ jobs:
                 python-version: ${{ matrix.python-version }}
         -   name: "Main Script"
             run: |
-                ./.ci/install-silo-on-github.sh
+                if [[ $(uname) == "Linux" ]]; then
+                    ./.ci/install-silo-on-github.sh
+                    USE_SILO="--use-silo"
+                fi
                 EXTRA_INSTALL="numpy pybind11"
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
                 . ./ci-support.sh
-                ./configure.py --use-silo
+                ./configure.py $USE_SILO
                 build_py_project_in_venv
                 test_py_project
 
@@ -65,11 +68,14 @@ jobs:
                 # not expected to run without matplotlib and vtk
                 rm examples/vtk-sample-elements.py
 
-                ./.ci/install-silo-on-github.sh
+                if [[ $(uname) == "Linux" ]]; then
+                    ./.ci/install-silo-on-github.sh
+                    USE_SILO="--use-silo"
+                fi
                 EXTRA_INSTALL="numpy pybind11"
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
                 . ./ci-support.sh
-                ./configure.py --use-silo
+                ./configure.py $USE_SILO
                 build_py_project_in_venv
                 run_examples
 
