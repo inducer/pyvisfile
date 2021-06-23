@@ -24,8 +24,8 @@ jobs:
                 . ./prepare-and-run-flake8.sh  "$(basename $GITHUB_REPOSITORY)" test examples
 
     pytest:
-        name: Pytest on Py${{ matrix.python-version }} {{ matrix.os }}
-        runs-on: {{ matrix.os }}
+        name: Pytest on Py${{ matrix.python-version }} ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
         strategy:
             matrix:
                 # For some reason, the Silo build doesn't succeed on 3.6?
@@ -48,8 +48,8 @@ jobs:
                 test_py_project
 
     examples:
-        name: Examples on Py${{ matrix.python-version }} {{ matrix.os }}
-        runs-on: {{ matrix.os }}
+        name: Examples on Py${{ matrix.python-version }} ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
         strategy:
             matrix:
                 python-version: [3.6, 3.x]
