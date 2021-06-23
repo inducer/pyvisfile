@@ -306,11 +306,11 @@ class DataItemNumberType(enum.Enum):
 
     @staticmethod
     def from_dtype(dtype: np.dtype) -> "DataItemNumberType":
-        if dtype.type in (np.int8, np.int16, np.int32, np.int64, np.int):
+        if dtype.kind == "i":
             return DataItemNumberType.Int
-        elif dtype.type in (np.uint8, np.uint16, np.uint32, np.uint64, np.uint):
+        elif dtype.kind == "u":
             return DataItemNumberType.UInt
-        elif dtype.type in (np.float16, np.float32, np.float64, np.float128):
+        elif dtype.kind == "f":
             return DataItemNumberType.Float
         else:
             raise ValueError(f"unsupported dtype: '{dtype}'")
