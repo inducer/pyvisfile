@@ -24,12 +24,13 @@ jobs:
                 . ./prepare-and-run-flake8.sh  "$(basename $GITHUB_REPOSITORY)" test examples
 
     pytest:
-        name: Pytest on Py${{ matrix.python-version }}
-        runs-on: ubuntu-latest
+        name: Pytest on Py${{ matrix.python-version }} ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
         strategy:
             matrix:
                 # For some reason, the Silo build doesn't succeed on 3.6?
                 python-version: [3.7, 3.x]
+                os: [ubuntu-latest, macos-latest]
         steps:
         -   uses: actions/checkout@v2
         -
@@ -38,20 +39,26 @@ jobs:
                 python-version: ${{ matrix.python-version }}
         -   name: "Main Script"
             run: |
-                ./.ci/install-silo-on-github.sh
+                if [[ $(uname) == "Linux" ]]; then
+                    ./.ci/install-silo-on-github.sh
+                    USE_SILO="--use-silo"
+                else
+                    rm test/test_silo.py
+                fi
                 EXTRA_INSTALL="numpy pybind11"
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
                 . ./ci-support.sh
-                ./configure.py --use-silo
+                ./configure.py $USE_SILO
                 build_py_project_in_venv
                 test_py_project
 
     examples:
-        name: Examples on Py${{ matrix.python-version }}
-        runs-on: ubuntu-latest
+        name: Examples on Py${{ matrix.python-version }} ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
         strategy:
             matrix:
                 python-version: [3.6, 3.x]
+                os: [ubuntu-latest, macos-latest]
         steps:
         -   uses: actions/checkout@v2
         -
@@ -63,11 +70,14 @@ jobs:
                 # not expected to run without matplotlib and vtk
                 rm examples/vtk-sample-elements.py
 
-                ./.ci/install-silo-on-github.sh
+                if [[ $(uname) == "Linux" ]]; then
+                    ./.ci/install-silo-on-github.sh
+                    USE_SILO="--use-silo"
+                fi
                 EXTRA_INSTALL="numpy pybind11"
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
                 . ./ci-support.sh
-                ./configure.py --use-silo
+                ./configure.py $USE_SILO
                 build_py_project_in_venv
                 run_examples
 
