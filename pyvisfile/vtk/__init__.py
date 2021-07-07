@@ -761,7 +761,13 @@ class ParallelXMLGenerator(XMLGenerator):
         return el
 
 
-def write_structured_grid(file_name, mesh, cell_data=[], point_data=[]):
+def write_structured_grid(file_name, mesh, cell_data=None, point_data=None):
+    if cell_data is None:
+        cell_data = []
+
+    if point_data is None:
+        point_data = []
+
     grid = StructuredGrid(mesh)
 
     from pytools.obj_array import obj_array_vectorize

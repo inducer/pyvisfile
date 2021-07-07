@@ -338,9 +338,9 @@ class Mesh:
 def add_to_silo_file(
     silo,
     mesh,
-    cell_data=[],
-    point_data=[],
-    line_integral_rules=[],
+    cell_data=None,
+    point_data=None,
+    line_integral_rules=None,
     mesh_name="mesh",
     real_only=False,
 ):
