@@ -193,23 +193,35 @@ class SiloFile(_silo.DBFile):
             _silo.DBFile.__init__(self, pathname, filetype, mode)
 
     def put_zonelist_2(self, names, nzones, ndims, nodelist, lo_offset, hi_offset,
-            shapetype, shapesize, shapecounts, optlist={}):
+            shapetype, shapesize, shapecounts, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_zonelist_2(self, names, nzones, ndims,
                 nodelist, lo_offset, hi_offset,
                 shapetype, shapesize, shapecounts, _convert_optlist(optlist))
 
     def put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name,
-            optlist={}):
+            optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_ucdmesh(self, mname, coordnames, coords,
             nzones, zonel_name, facel_name, _convert_optlist(optlist))
 
-    def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
+    def put_ucdvar1(self, vname, mname, vec, centering, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_ucdvar1(self, vname, mname, vec, centering,
                 _convert_optlist(optlist))
 
     def put_ucdvar(self, vname, mname, varnames, vars,
-            centering, optlist={}):
+            centering, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_ucdvar(self, vname, mname, varnames, vars, centering,
                 _convert_optlist(optlist))
 
@@ -225,40 +237,68 @@ class SiloFile(_silo.DBFile):
 
         _silo.DBFile.put_defvars(self, vname, vars)
 
-    def put_pointmesh(self, mname, coords, optlist={}):
+    def put_pointmesh(self, mname, coords, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_pointmesh(self, mname, coords,
                 _convert_optlist(optlist))
 
-    def put_pointvar1(self, vname, mname, var, optlist={}):
+    def put_pointvar1(self, vname, mname, var, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_pointvar1(self, vname, mname, var,
                 _convert_optlist(optlist))
 
-    def put_pointvar(self, vname, mname, vars, optlist={}):
+    def put_pointvar(self, vname, mname, vars, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_pointvar(self, vname, mname, vars,
                 _convert_optlist(optlist))
 
-    def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist={}):
+    def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_quadmesh(self, mname, coords, coordtype,
                 _convert_optlist(optlist))
 
-    def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
+    def put_quadvar1(self, vname, mname, var, dims, centering, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_quadvar1(self, vname, mname, var, dims, centering,
                 _convert_optlist(optlist))
 
-    def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
+    def put_quadvar(self, vname, mname, varnames, vars, dims, centering,
+            optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_quadvar(self, vname, mname,
                 varnames, vars, dims, centering,
                 _convert_optlist(optlist))
 
-    def put_multimesh(self, mname, mnames_and_types, optlist={}):
+    def put_multimesh(self, mname, mnames_and_types, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_multimesh(self, mname,
                 mnames_and_types, _convert_optlist(optlist))
 
-    def put_multivar(self, vname, vnames_and_types, optlist={}):
+    def put_multivar(self, vname, vnames_and_types, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_multivar(self, vname,
                 vnames_and_types, _convert_optlist(optlist))
 
-    def put_curve(self, curvename, xvals, yvals, optlist={}):
+    def put_curve(self, curvename, xvals, yvals, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         _silo.DBFile.put_curve(self, curvename, xvals, yvals,
                 _convert_optlist(optlist))
 
@@ -339,14 +379,19 @@ class ParallelSiloFile:
 
         self._added_mesh(mname, DBObjectType.DB_UCDMESH, optlist)
 
-    def put_ucdvar1(self, vname, mname, vec, centering, optlist={}):
+    def put_ucdvar1(self, vname, mname, vec, centering, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         self.data_file.put_ucdvar1(vname, mname, vec, centering, optlist)
         self._added_variable(vname, DBObjectType.DB_UCDVAR, optlist)
 
     def put_ucdvar(self, vname, mname, varnames, vars,
-            centering, optlist={}):
-        self.data_file.put_ucdvar(vname, mname, varnames, vars,
-            centering, optlist={})
+            centering, optlist=None):
+        if optlist is None:
+            optlist = {}
+
+        self.data_file.put_ucdvar(vname, mname, varnames, vars, centering)
         self._added_variable(vname, DBObjectType.DB_UCDVAR, optlist)
 
     def put_defvars(self, vname, vars):
@@ -363,32 +408,50 @@ class ParallelSiloFile:
         if self.master_file is not None:
             self.master_file.put_defvars(vname, vars)
 
-    def put_pointmesh(self, mname, coords, optlist={}):
+    def put_pointmesh(self, mname, coords, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         self.data_file.put_pointmesh(mname, coords, optlist)
         self._added_mesh(mname, DBObjectType.DB_POINTMESH, optlist)
 
-    def put_pointvar1(self, vname, mname, var, optlist={}):
+    def put_pointvar1(self, vname, mname, var, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         self.data_file.put_pointvar1(vname, mname, var, optlist)
         self._added_variable(vname, DBObjectType.DB_POINTVAR, optlist)
 
-    def put_pointvar(self, vname, mname, vars, optlist={}):
+    def put_pointvar(self, vname, mname, vars, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         self.data_file.put_pointvar(vname, mname, vars, optlist)
         self._added_variable(vname, DBObjectType.DB_POINTVAR, optlist)
 
-    def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist={}):
+    def put_quadmesh(self, mname, coords, coordtype=DB_COLLINEAR, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         self.data_file.put_quadmesh(mname, coords, coordtype, optlist)
         self._added_mesh(mname, DBObjectType.DB_QUADMESH, optlist)
 
-    def put_quadvar1(self, vname, mname, var, dims, centering, optlist={}):
+    def put_quadvar1(self, vname, mname, var, dims, centering, optlist=None):
+        if optlist is None:
+            optlist = {}
+
         self.data_file.put_quadvar1(vname, mname, var, dims, centering, optlist)
         self._added_variable(vname, DBObjectType.DB_QUADVAR, optlist)
 
-    def put_quadvar(self, vname, mname, varnames, vars, dims, centering, optlist={}):
+    def put_quadvar(self, vname, mname, varnames, vars, dims, centering,
+            optlist=None):
+        if optlist is None:
+            optlist = {}
+
         self.data_file.put_quadvar(vname, mname, varnames, vars,
                 dims, centering, optlist)
         self._added_variable(vname, DBObjectType.DB_QUADVAR, optlist)
 
-    # -------------------------------------------------------------------------
     def _added_mesh(self, mname, type, optlist):
         if self.master_file:
             self.master_file.put_multimesh(mname,
