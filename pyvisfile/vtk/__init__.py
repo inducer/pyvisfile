@@ -761,7 +761,10 @@ class ParallelXMLGenerator(XMLGenerator):
         return el
 
 
-def write_structured_grid(file_name, mesh, cell_data=None, point_data=None):
+def write_structured_grid(
+        file_name, mesh,
+        cell_data=None, point_data=None,
+        overwrite=False):
     if cell_data is None:
         cell_data = []
 
@@ -783,10 +786,13 @@ def write_structured_grid(file_name, mesh, cell_data=None, point_data=None):
         reshaped_fld = obj_array_vectorize(do_reshape, field)
         grid.add_pointdata(DataArray(name, reshaped_fld))
 
-    from os.path import exists
-    if exists(file_name):
-        raise RuntimeError(f"output file '{file_name}' already exists")
+    import os.path
+    if os.path.exists(file_name):
+        if overwrite:
+            # nothing to do, just overwrite below
+            pass
+        else:
+            raise FileExistsError(f"output file '{file_name}' already exists")
 
-    outf = open(file_name, "w")
-    AppendedDataXMLGenerator()(grid).write(outf)
-    outf.close()
+    with open(file_name, "w") as outf:
+        AppendedDataXMLGenerator()(grid).write(outf)
