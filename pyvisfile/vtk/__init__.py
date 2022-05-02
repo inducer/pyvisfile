@@ -477,9 +477,12 @@ class UnstructuredGrid:
         except Exception:
             self.cell_count = len(cell_types)
 
-            offsets = np.cumsum(
-                    np.vectorize(CELL_NODE_COUNT.get)(cell_types),
-                    dtype=cells.dtype)
+            if self.cell_count > 0:
+                offsets = np.cumsum(
+                        np.vectorize(CELL_NODE_COUNT.get)(cell_types),
+                        dtype=cells.dtype)
+            else:
+                offsets = np.empty((0,), dtype=cells.dtype)
 
             self.cell_connectivity = DataArray("connectivity", cells)
             self.cell_offsets = DataArray("offsets", offsets)

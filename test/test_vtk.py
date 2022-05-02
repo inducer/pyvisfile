@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from pyvisfile.vtk import (
     UnstructuredGrid, DataArray,
     AppendedDataXMLGenerator,
@@ -7,15 +8,15 @@ from pyvisfile.vtk import (
 from pyvisfile.vtk import write_structured_grid
 
 
-def test_vtk_unstructured_points():
-    n = 5000
+@pytest.mark.parametrize("n", [5000, 0])
+def test_vtk_unstructured_points(n):
     points = np.random.randn(n, 3)
 
     data = [
             ("p", np.random.randn(n)),
             ("vel", np.random.randn(3, n)),
     ]
-    file_name = "points.vtu"
+    file_name = f"points_{n}.vtu"
     compressor = None
 
     grid = UnstructuredGrid(
