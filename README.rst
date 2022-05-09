@@ -10,6 +10,9 @@ PyVisfile: Write VTK/Silo Visualization Files Efficiently
 .. image:: https://badge.fury.io/py/pyvisfile.png
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyvisfile/
+.. image:: https://zenodo.org/badge/1575355.svg
+    :alt: Zenodo DOI for latest release
+    :target: https://zenodo.org/badge/latestdoi/1575355
 
 Pyvisfile allows you to write a variety of visualization file formats,
 including
