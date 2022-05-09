@@ -4,6 +4,16 @@ authors:
 - family-names: "Kloeckner"
   given-names: "Andreas"
   orcid: "https://orcid.org/0000-0003-1228-519X"
+- family-names: Fikl
+  given-names: Alex
+- family-names: Statz
+  given-names: Christoph
+- family-names: Diener
+  given-names: Matthias
+- family-names: Smith
+  given-names: Matt
+- family-names: Wala
+  given-names: Matt
 title: "pyvisfile"
 version: 2022.1.1
 doi: 10.5281/zenodo.6533976
