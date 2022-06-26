@@ -394,10 +394,10 @@ class DataArray:
             if vector_format == VF_LIST_OF_COMPONENTS:
                 container = container.T.copy()
 
-            assert len(container.shape) == 2, \
-                    "numpy vectors of rank >2 are not supported"
-            assert container.strides[1] == container.itemsize, \
-                    "2D numpy arrays must be row-major"
+            if len(container.shape) != 2:
+                raise ValueError("numpy vectors of rank>2 are not supported")
+            if container.size and container.strides[1] != container.itemsize:
+                raise ValueError("2D numpy arrays must be row-major")
 
             if vector_padding > container.shape[1]:
                 container = np.asarray(np.hstack((
