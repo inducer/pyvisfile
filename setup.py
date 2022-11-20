@@ -101,7 +101,7 @@ def main():
 
             # dependencies
             setup_requires=requirements,
-            python_requires="~=3.6",
+            python_requires="~=3.8",
             install_requires=[
                     "pytools>=2013.2",
                     ] + requirements,
