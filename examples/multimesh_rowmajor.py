@@ -47,34 +47,37 @@ for i in range(4):
     # Copy necessary due to slicing!
     data = data_global[y_from[i]:y_to[i], x_from[i]:x_to[i]].copy()
 
-    options = dict()
-    options[DBOPT_CYCLE] = 99
-    options[DBOPT_DTIME] = 0.99
-    options[DBOPT_XLABEL] = "X"
-    options[DBOPT_YLABEL] = "Y"
-    options[DBOPT_XUNITS] = "a"
-    options[DBOPT_YUNITS] = "b"
-    options[DBOPT_HI_OFFSET] = hi_offset[i]
+    options = {
+            DBOPT_CYCLE: 99,
+            DBOPT_DTIME: 0.99,
+            DBOPT_XLABEL: "X",
+            DBOPT_YLABEL: "Y",
+            DBOPT_XUNITS: "a",
+            DBOPT_YUNITS: "b",
+            DBOPT_HI_OFFSET: hi_offset[i],
+            }
 
     mesh_name = "mesh"
     s.put_quadmesh(mesh_name, axes, coordtype=DB_COLLINEAR, optlist=options)
     mesh_names.append((f"{file_name}:{mesh_name}", DB_COLLINEAR))
 
-    options = dict()
-    options[DBOPT_UNITS] = "unit"
+    options = {
+            DBOPT_UNITS: "unit",
+            }
 
     var_name = "variable"
     s.put_quadvar1(var_name, mesh_name, data, data.shape,
             centering=DB_NODECENT, optlist=options)
     var_names.append((f"{file_name}:{mesh_name}", DBObjectType.DB_QUADVAR))
 
-options = dict()
-options[DBOPT_CYCLE] = 99
-options[DBOPT_DTIME] = 0.99
-options[DBOPT_XLABEL] = "xx"
-options[DBOPT_YLABEL] = "yy"
-options[DBOPT_XUNITS] = "a"
-options[DBOPT_YUNITS] = "b"
+options = {
+    DBOPT_CYCLE: 99,
+    DBOPT_DTIME: 0.99,
+    DBOPT_XLABEL: "xx",
+    DBOPT_YLABEL: "yy",
+    DBOPT_XUNITS: "a",
+    DBOPT_YUNITS: "b",
+    }
 
 s = SiloFile("example.silo",
         mode=DB_CLOBBER,
