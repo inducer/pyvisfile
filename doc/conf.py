@@ -17,7 +17,7 @@ version = ".".join(str(x) for x in ver_dic["VERSION"])
 release = version
 
 intersphinx_mapping = {
-    "https://docs.python.org/3/": None,
-    "https://numpy.org/doc/stable/": None,
-    "https://documen.tician.de/modepy": None,
+        "python": ("https://docs.python.org/3/", None),
+        "numpy": ("https://numpy.org/doc/stable/", None),
+        "modepy": ("https://documen.tician.de/modepy", None),
 }
