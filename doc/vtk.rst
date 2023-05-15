@@ -17,8 +17,14 @@ Writing a structured mesh
 :download:`examples/vtk-structured-2d-plain.py <../examples/vtk-structured-2d-plain.py>` in the PyVisfile
 source distribution.)
 
-Writing an unstructured mesh
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Writing a collection of points
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note::
+
+   Observe that this is written as a 'unstructured grid', even though there
+   is not much grid here. However, by supplying connectivity data, it is
+   possible to generalize from this to actual unstructured meshes.
 
 .. literalinclude:: ../examples/vtk-unstructured-points.py
 
