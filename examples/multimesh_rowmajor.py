@@ -2,11 +2,10 @@ __author__ = "Christoph Statz, christoph.statz <at> tu-dresden.de"
 
 import numpy as np
 
-from pyvisfile.silo import SiloFile, \
-        DB_HDF5, DB_CLOBBER, DBOPT_CYCLE, DBOPT_DTIME, DB_COLLINEAR, \
-        DBOPT_XUNITS, DBOPT_YUNITS, DBOPT_XLABEL, DBOPT_YLABEL, \
-        DBOPT_UNITS, DB_NODECENT, DBObjectType, DB_LOCAL, \
-        DBOPT_HI_OFFSET
+from pyvisfile.silo import (
+    DB_CLOBBER, DB_COLLINEAR, DB_HDF5, DB_LOCAL, DB_NODECENT, DBOPT_CYCLE,
+    DBOPT_DTIME, DBOPT_HI_OFFSET, DBOPT_UNITS, DBOPT_XLABEL, DBOPT_XUNITS,
+    DBOPT_YLABEL, DBOPT_YUNITS, DBObjectType, SiloFile)
 
 
 x_len = 50

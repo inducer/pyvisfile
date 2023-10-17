@@ -20,13 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import os
 import enum
-
+import os
 from typing import Any, Dict, Optional, Tuple, Union
 from xml.etree.ElementTree import Element, ElementTree
 
 import numpy as np
+
 
 __doc__ = """
 Xdmf Tags
@@ -1174,8 +1174,8 @@ class XdmfWriter(ElementTree):
     def write_pretty(self, filename):
         """Produces a nicer-looking XML file with clean indentation."""
         # https://stackoverflow.com/a/1206856
-        from xml.etree.ElementTree import tostring
         from xml.dom import minidom
+        from xml.etree.ElementTree import tostring
         dom = minidom.parseString(tostring(
             self.getroot(),
             encoding="utf-8",

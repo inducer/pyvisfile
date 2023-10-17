@@ -1,6 +1,7 @@
+import numpy as np
+
 from pyvisfile.vtk import write_structured_grid
 
-import numpy as np
 
 angle_mesh = np.mgrid[1:2:10j, 0:2*np.pi:20j]
 
@@ -12,6 +13,8 @@ mesh = np.vstack((
     ))
 
 from pytools.obj_array import make_obj_array
+
+
 vec = make_obj_array([
     np.cos(phi),
     np.sin(phi),

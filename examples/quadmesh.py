@@ -1,7 +1,9 @@
 # modified from original code by Matthieu Haefele (IPP, Max-Planck-Gesellschaft)
 
 import numpy
+
 import pyvisfile.silo as silo
+
 
 f = silo.SiloFile("qmesh.silo", mode=silo.DB_CLOBBER)
 coord = [

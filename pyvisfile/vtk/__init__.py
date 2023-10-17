@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 import numpy as np
 
+
 __doc__ = """
 
 Constants
@@ -303,8 +304,8 @@ class BinaryEncodedBuffer:
 
 class Base64EncodedBuffer:
     def __init__(self, buffer):
-        from struct import pack
         from base64 import b64encode
+        from struct import pack
         length = buffer.nbytes
         self.b64header = b64encode(
                 pack(_U32CHAR, length)).decode()
@@ -332,8 +333,8 @@ class Base64EncodedBuffer:
 
 class Base64ZLibEncodedBuffer:
     def __init__(self, buffer):
-        from struct import pack
         from base64 import b64encode
+        from struct import pack
         from zlib import compress
         comp_buffer = compress(buffer)
         comp_header = [1, len(buffer), len(buffer), len(comp_buffer)]

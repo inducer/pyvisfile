@@ -15,7 +15,7 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
 
     # {{{ set up connectivity
 
-    from pyvisfile.xdmf import NumpyDataArray, DataArray, _data_item_from_numpy
+    from pyvisfile.xdmf import DataArray, NumpyDataArray, _data_item_from_numpy
     connectivity = np.arange(npoints, dtype=np.uint32)
     points = np.random.rand(ambient_dim, npoints)
 
@@ -47,8 +47,7 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
 
     # {{{ set up grids
 
-    from pyvisfile.xdmf import TopologyType
-    from pyvisfile.xdmf import XdmfUnstructuredGrid
+    from pyvisfile.xdmf import TopologyType, XdmfUnstructuredGrid
     grid = XdmfUnstructuredGrid(
             points, connectivity,
             topology_type=TopologyType.Polyvertex,
