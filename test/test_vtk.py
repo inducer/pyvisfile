@@ -1,11 +1,9 @@
 import numpy as np
 import pytest
-from pyvisfile.vtk import (
-    UnstructuredGrid, DataArray,
-    AppendedDataXMLGenerator,
-    VTK_VERTEX, VF_LIST_OF_VECTORS, VF_LIST_OF_COMPONENTS)
 
-from pyvisfile.vtk import write_structured_grid
+from pyvisfile.vtk import (
+    VF_LIST_OF_COMPONENTS, VF_LIST_OF_VECTORS, VTK_VERTEX, AppendedDataXMLGenerator,
+    DataArray, UnstructuredGrid, write_structured_grid)
 
 
 @pytest.mark.parametrize("n", [5000, 0])

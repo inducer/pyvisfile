@@ -7,10 +7,10 @@ To facilitate this comparison, and unlike the rest of the package, this example
 makes use of the VTK Python bindings.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.linalg as la
 
-import matplotlib.pyplot as plt
 
 try:
     import vtk
@@ -45,7 +45,7 @@ def plot_node_ordering(filename, points, show=False):
         ax.set_ylim([-0.1, 1.1])
         ax.set_ylabel("$y$")
     elif points.shape[0] == 3:
-        from mpl_toolkits.mplot3d import art3d      # noqa: F401
+        from mpl_toolkits.mplot3d import art3d  # noqa: F401
 
         fig = plt.figure(figsize=(8, 8), dpi=300)
         ax = fig.gca(projection="3d")
@@ -130,8 +130,8 @@ def create_sample_element(cell_type, order=3, visualize=True):
 
     if cell_type in VTK_LAGRANGE_SIMPLICES:
         from pyvisfile.vtk.vtk_ordering import (
-                vtk_lagrange_simplex_node_tuples,
-                vtk_lagrange_simplex_node_tuples_to_permutation)
+            vtk_lagrange_simplex_node_tuples,
+            vtk_lagrange_simplex_node_tuples_to_permutation)
 
         node_tuples = vtk_lagrange_simplex_node_tuples(dim, order,
             vtk_version=vtk_version)
@@ -141,8 +141,8 @@ def create_sample_element(cell_type, order=3, visualize=True):
         error = la.norm(nodes - points.T)
     elif cell_type in VTK_LAGRANGE_QUADS:
         from pyvisfile.vtk.vtk_ordering import (
-                vtk_lagrange_quad_node_tuples,
-                vtk_lagrange_quad_node_tuples_to_permutation)
+            vtk_lagrange_quad_node_tuples,
+            vtk_lagrange_quad_node_tuples_to_permutation)
 
         node_tuples = vtk_lagrange_quad_node_tuples(dim, order,
             vtk_version=vtk_version)

@@ -1,8 +1,9 @@
 import numpy as np
+
 from pyvisfile.vtk import (
-    UnstructuredGrid, DataArray,
-    AppendedDataXMLGenerator,
-    VTK_VERTEX, VF_LIST_OF_VECTORS, VF_LIST_OF_COMPONENTS)
+    VF_LIST_OF_COMPONENTS, VF_LIST_OF_VECTORS, VTK_VERTEX, AppendedDataXMLGenerator,
+    DataArray, UnstructuredGrid)
+
 
 n = 5000
 points = np.random.randn(n, 3)
@@ -24,6 +25,8 @@ for name, field in data:
         vector_format=VF_LIST_OF_COMPONENTS))
 
 from os.path import exists
+
+
 if exists(file_name):
     raise RuntimeError("output file '%s' already exists"
         % file_name)

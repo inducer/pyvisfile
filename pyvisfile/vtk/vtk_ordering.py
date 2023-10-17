@@ -21,8 +21,7 @@ THE SOFTWARE.
 """
 
 from pytools import (
-        add_tuples,
-        generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam)
+    add_tuples, generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam)
 
 
 __doc__ = """
