@@ -12,7 +12,7 @@ jobs:
         name: Flake8
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
             uses: actions/setup-python@v4
             with:
@@ -31,7 +31,7 @@ jobs:
                 python-version: ['3.8', '3.10', '3.x']
                 os: [ubuntu-latest, macos-latest]
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
             uses: actions/setup-python@v4
             with:
@@ -51,6 +51,23 @@ jobs:
                 build_py_project_in_venv
                 test_py_project
 
+    mypy:
+        name: Mypy
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v4
+        -
+            uses: actions/setup-python@v4
+            with:
+                python-version: '3.x'
+        -   name: "Main Script"
+            run: |
+                EXTRA_INSTALL="numpy mypy pytest"
+                curl -L -O https://tiker.net/ci-support-v0
+                . ./ci-support-v0
+                build_py_project_in_venv
+                python -m mypy "$(basename $GITHUB_REPOSITORY)" test
+
     examples:
         name: Examples on Py${{ matrix.python-version }} ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
@@ -59,7 +76,7 @@ jobs:
                 python-version: ['3.8', '3.x']
                 os: [ubuntu-latest, macos-latest]
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
             uses: actions/setup-python@v4
             with:
@@ -84,7 +101,7 @@ jobs:
         name: Documentation
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
             uses: actions/setup-python@v4
             with:
