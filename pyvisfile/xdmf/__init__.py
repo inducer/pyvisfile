@@ -139,7 +139,7 @@ Writing
 
 # {{{ utils
 
-def _stringify(obj):
+def _stringify(obj: Any) -> str:
     if isinstance(obj, (list, tuple)):
         return " ".join(str(c) for c in obj)
     return str(obj)
@@ -156,10 +156,11 @@ class XdmfElement(Element):
     .. automethod:: replace
     """
 
-    def __init__(self,
+    def __init__(
+            self,
             parent: Optional[Element],
             tag: str,
-            attrib: Dict[str, Optional[Any]]):
+            attrib: Dict[str, Any]) -> None:
         super().__init__(tag, attrib={
             k: _stringify(v) for k, v in attrib.items() if v is not None
             })
@@ -169,10 +170,14 @@ class XdmfElement(Element):
             parent.append(self)
 
     @property
-    def name(self):
-        return self.get("Name")
+    def name(self) -> str:
+        name = self.get("Name")
+        if name is None:
+            raise AttributeError(name)
 
-    def replace(self, **kwargs):
+        return name
+
+    def replace(self, **kwargs: Any) -> "XdmfElement":
         """Duplicate the current tag with updated attributes from *kwargs*."""
         parent = kwargs.pop("parent", self.parent)
         tag = kwargs.pop("tag", self.tag)
@@ -180,7 +185,7 @@ class XdmfElement(Element):
         attrib = self.attrib.copy()
         attrib.update(kwargs)
 
-        return XdmfElement.__init__(self, parent, tag, attrib=attrib)
+        return XdmfElement(parent, tag, attrib=attrib)
 
 # }}}
 
@@ -273,7 +278,7 @@ class Attribute(XdmfElement):
             atype: AttributeType = AttributeType.Scalar,
             acenter: AttributeCenter = AttributeCenter.Node,
             parent: Optional[Element] = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         """
@@ -305,7 +310,7 @@ class DataItemNumberType(enum.Enum):
     Float = enum.auto()
 
     @staticmethod
-    def from_dtype(dtype: np.dtype) -> "DataItemNumberType":
+    def from_dtype(dtype: "np.dtype[Any]") -> "DataItemNumberType":
         if dtype.kind == "i":
             return DataItemNumberType.Int
         elif dtype.kind == "u":
@@ -370,7 +375,7 @@ class DataItem(XdmfElement):
             dformat: Optional[DataItemFormat] = DataItemFormat.XML,
             parent: Optional[Element] = None,
             data: Optional[str] = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         :param reference: path to another :class:`DataItem`.
@@ -397,15 +402,16 @@ class DataItem(XdmfElement):
             self.text = data
 
     @property
-    def dimensions(self):
+    def dimensions(self) -> Tuple[int, ...]:
         if self._dimensions is None:
             raise AttributeError
 
         return self._dimensions
 
     @classmethod
-    def as_reference(cls, reference_name: str, *,
-            parent: Optional[Element] = None) -> "DataItem":
+    def as_reference(cls,
+                     reference_name: str, *,
+                     parent: Optional[Element] = None) -> "DataItem":
         """
         :param reference_name: a name or an absolute reference to another
             :class:`DataItem`. The name is just the ``Name`` attribute of
@@ -449,7 +455,7 @@ def _data_item_format_from_str(text: str) -> DataItemFormat:
 
 
 def _data_item_from_numpy(
-        ary: np.ndarray, *,
+        ary: "np.ndarray[Any, Any]", *,
         name: Optional[str] = None,
         parent: Optional[Element] = None,
         data: Optional[str] = None,
@@ -552,7 +558,7 @@ class Grid(XdmfElement):
             gtype: GridType = GridType.Uniform,
             ctype: Optional[CollectionType] = None,
             parent: Optional[Element] = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         """
@@ -640,7 +646,7 @@ class Topology(XdmfElement):
             number_of_elements: Optional[int] = None,
             dimensions: Optional[Tuple[int, ...]] = None,
             parent: Optional[Element] = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         """
@@ -866,7 +872,7 @@ class XInclude(XdmfElement):
 
 # {{{ data arrays
 
-def _ndarray_to_string(ary):
+def _ndarray_to_string(ary: Any) -> str:
     if not isinstance(ary, np.ndarray):
         raise TypeError(f"expected an 'ndarray', got '{type(ary).__name__}'")
 
@@ -890,7 +896,7 @@ def _ndarray_to_string(ary):
     return "\n" + bio.getvalue().decode()
 
 
-def _geometry_type_from_points(points):
+def _geometry_type_from_points(points: "DataArray") -> GeometryType:
     dims = points.shape[-1]
 
     if len(points.components) == 1:
@@ -948,7 +954,7 @@ class DataArray:
         self.atype = atype
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int, ...]:
         if len(self.components) == 1:
             return self.components[0].dimensions
         else:
@@ -971,7 +977,8 @@ class DataArray:
         return items
 
     @classmethod
-    def from_dataset(cls, dset,
+    def from_dataset(cls,
+            dset: Any,
             acenter: AttributeCenter = AttributeCenter.Node,
             atype: Optional[AttributeType] = None) -> "DataArray":
         filename = dset.file.filename
@@ -996,7 +1003,7 @@ class NumpyDataArray(DataArray):
 
     def __init__(
             self,
-            ary: np.ndarray, *,
+            ary: "np.ndarray[Any, Any]", *,
             acenter: Optional[AttributeCenter] = None,
             name: Optional[str] = None,
             ):
@@ -1049,7 +1056,7 @@ class XdmfGrid:
     def __init__(self, root: Grid):
         self.root = root
 
-    def getroot(self):
+    def getroot(self) -> Grid:
         return self.root
 
     def add_attribute(self, ary: DataArray, *, join: bool = True) -> Attribute:
@@ -1103,20 +1110,20 @@ class XdmfUnstructuredGrid(XdmfGrid):
 
         grid = Grid(parent=None, name=name)
 
-        nelements = np.prod(connectivity.shape[:-1])
+        nelements = int(np.prod(connectivity.shape[:-1]))
         if isinstance(topology_type, TopologyType):
             if topology_type == TopologyType.Polyline:
                 nodes_per_element = 2
             else:
                 nodes_per_element = None
 
-            topology = Topology(
+            topology: XdmfElement = Topology(
                     parent=grid,
                     ttype=topology_type,
                     nodes_per_element=nodes_per_element,
                     number_of_elements=nelements)
-        elif isinstance(topology, Topology):
-            topology = topology_type.replace({
+        elif isinstance(topology_type, Topology):
+            topology = topology_type.replace(**{
                 "parent": grid,
                 "number_of_elements": nelements
                 })
@@ -1171,7 +1178,7 @@ class XdmfWriter(ElementTree):
 
         super().__init__(root)
 
-    def write_pretty(self, filename):
+    def write_pretty(self, filename: str) -> None:
         """Produces a nicer-looking XML file with clean indentation."""
         # https://stackoverflow.com/a/1206856
         from xml.dom import minidom
@@ -1185,7 +1192,7 @@ class XdmfWriter(ElementTree):
         with open(filename, "wb") as fd:
             fd.write(dom.toprettyxml(indent="  ", encoding="utf-8"))
 
-    def write(self, filename):
+    def write(self, filename: str) -> None:  # type: ignore[override]
         """Write the the XDMF file."""
         super().write(
                 filename,
