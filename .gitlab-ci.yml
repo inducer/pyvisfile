@@ -7,6 +7,18 @@ Flake8:
   except:
   - tags
 
+Mypy:
+  script: |
+    EXTRA_INSTALL="numpy mypy pytest"
+    curl -L -O https://tiker.net/ci-support-v0
+    . ./ci-support-v0
+    build_py_project_in_venv
+    python -m mypy "$CI_PROJECT_NAME" test
+  tags:
+  - python3
+  except:
+  - tags
+
 Python 3:
   script: |
     sudo apt update
