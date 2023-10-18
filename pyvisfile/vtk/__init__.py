@@ -103,6 +103,8 @@ Building blocks
     :show-inheritance:
 .. autoclass:: StructuredGrid
     :show-inheritance:
+.. autoclass:: HyperTreeGrid
+    :show-inheritance:
 
 XML generators
 ^^^^^^^^^^^^^^
@@ -726,6 +728,69 @@ class StructuredGrid(Visitable):
         """Add cell data to the grid."""
         self.celldata.append(data_array)
 
+
+class HyperTreeGrid(Visitable):
+    """An implementation for the HyperTreeGrid structure in VTK.
+
+    This data structure is described in a series of blog posts
+    `here <https://www.kitware.com//hypertreegrid-in-vtk-an-introduction/>`__.
+    This new version is available starting with version 9.0 (and supported
+    by Paraview version 5.10).
+
+    There are multiple versions of the file format as well (based on the
+    reader and writer in VTK)
+
+    * ``"0.0"``: the original version
+    * ``"1.0"``: updated version with additional metadata for reading and writing
+      sections of the file.
+    * ``"2.0"``: updated format described in
+      `this PR <https://gitlab.kitware.com/vtk/vtk/-/merge_requests/7357>`__.
+
+    Only the v2.0 file format is supported here. In this format the data for
+    all the trees is concatenated into single arrays and indexed by additional
+    metadata.
+
+    .. note::
+
+        For the moment only a single tree is supported.
+
+    .. automethod:: __init__
+    """
+
+    generator_method = "gen_hypertree_grid"
+
+    def __init__(self,
+                 bounding_box: np.ndarray[Any, np.dtype[Any]],
+                 descriptors: DataArray,
+                 number_of_vertices_per_depth: DataArray,
+                 depth: int,
+                 ) -> None:
+        self.points = tuple(
+            DataArray(name, limits)
+            for name, limits in zip([
+                "XCoordinates",
+                "YCoordinates",
+                "ZCoordinates"
+                ], bounding_box, strict=True)
+            )
+
+        self.descriptors = descriptors
+        self.number_of_vertices_per_depth = number_of_vertices_per_depth
+        self.tree_ids = DataArray("TreeIds", np.array([0]))
+        self.depth_per_tree = DataArray("DepthPerTree", np.array([depth]))
+
+        self.cell_data: list[DataArray] = []
+
+    def vtk_extension(self) -> str:
+        return "htg"
+
+    def add_celldata(self, array: DataArray) -> None:
+        """Add cell data to the grid."""
+        self.cell_data.append(array)
+
+    def add_pointdata(self, array: DataArray) -> None:
+        raise NotImplementedError
+
 # }}}
 
 
@@ -803,6 +868,33 @@ class XMLGenerator:
 
 class InlineXMLGenerator(XMLGenerator):
     """An XML generator that uses inline :class:`DataArray` entries."""
+
+    def gen_hypertree_grid(self, htg: HyperTreeGrid) -> XMLElement:
+        root = XMLElement("HyperTreeGrid",
+                          BranchFactor=2,
+                          TransposedRootIndexing=0,
+                          Dimensions="2 2 2")
+
+        grid = XMLElement("Grid")
+        root.add_child(grid)
+
+        for coord in htg.points:
+            grid.add_child(self.rec(coord))
+
+        trees = XMLElement("Trees")
+        root.add_child(trees)
+
+        trees.add_child(self.rec(htg.descriptors))
+        trees.add_child(self.rec(htg.number_of_vertices_per_depth))
+        trees.add_child(self.rec(htg.tree_ids))
+        trees.add_child(self.rec(htg.depth_per_tree))
+
+        if htg.cell_data:
+            data = XMLElement("CellData")
+            for array in htg.cell_data:
+                data.add_child(self.rec(array))
+
+        return root
 
     def gen_unstructured_grid(self, ugrid: UnstructuredGrid) -> XMLElement:
         el = XMLElement("UnstructuredGrid")
