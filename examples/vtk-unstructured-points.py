@@ -1,3 +1,5 @@
+import pathlib
+
 import numpy as np
 
 from pyvisfile.vtk import (
@@ -5,32 +7,28 @@ from pyvisfile.vtk import (
     DataArray, UnstructuredGrid)
 
 
-n = 5000
-points = np.random.randn(n, 3)
+rng = np.random.default_rng(seed=42)
 
+n = 5000
+points = rng.normal(size=(n, 3))
 data = [
-        ("p", np.random.randn(n)),
-        ("vel", np.random.randn(3, n)),
-]
-file_name = "points.vtu"
-compressor = None
+        ("pressure", rng.normal(size=n)),
+        ("velocity", rng.normal(size=(3, n)))]
 
 grid = UnstructuredGrid(
         (n, DataArray("points", points, vector_format=VF_LIST_OF_VECTORS)),
         cells=np.arange(n, dtype=np.uint32),
-        cell_types=np.asarray([VTK_VERTEX] * n, dtype=np.uint8))
+        cell_types=np.array([VTK_VERTEX] * n, dtype=np.uint8))
 
 for name, field in data:
-    grid.add_pointdata(DataArray(name, field,
-        vector_format=VF_LIST_OF_COMPONENTS))
+    grid.add_pointdata(
+        DataArray(name, field, vector_format=VF_LIST_OF_COMPONENTS))
 
-from os.path import exists
+file_name = pathlib.Path("points.vtu")
+compressor = None
 
+if file_name.exists():
+    raise FileExistsError(f"Output file '{file_name}' already exists")
 
-if exists(file_name):
-    raise RuntimeError("output file '%s' already exists"
-        % file_name)
-
-outf = open(file_name, "w")
-AppendedDataXMLGenerator(compressor)(grid).write(outf)
-outf.close()
+with open(file_name, "w") as outf:
+    AppendedDataXMLGenerator(compressor)(grid).write(outf)
