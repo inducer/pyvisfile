@@ -109,6 +109,7 @@ def main():
             packages=find_packages(),
             ext_package="pyvisfile.silo",
             ext_modules=ext_modules,
+            package_data={"pyvisfile": ["py.typed"]},
 
             cmdclass={"build_ext": PybindBuildExtCommand},
             zip_safe=False)
