@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from typing import List, Sequence, Tuple, overload
+
 from pytools import (
     add_tuples, generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam)
 
@@ -32,11 +34,11 @@ The high-order elements are described in
 `this blog post <https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/>`_.
 The ordering of the element nodes is as follows:
 
-    1. the vertices (in an order that matches the linear elements,
-       e.g. :data:`~pyvisfile.vtk.VTK_TRIANGLE`).
-    2. the interior edge (or face in 2D) nodes, i.e. without the endpoints
-    3. the interior face (3D only) nodes, i.e. without the edge nodes.
-    4. the remaining interior nodes.
+1. the vertices (in an order that matches the linear elements,
+   e.g. :data:`~pyvisfile.vtk.VTK_TRIANGLE`).
+2. the interior edge (or face in 2D) nodes, i.e. without the endpoints
+3. the interior face (3D only) nodes, i.e. without the edge nodes.
+4. the remaining interior nodes.
 
 For simplices, the interior nodes are defined recursively by using the same
 rules. However, for box elements the interior nodes are just listed in
@@ -50,25 +52,38 @@ described `here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`_.
 
 .. autofunction:: vtk_lagrange_quad_node_tuples
 .. autofunction:: vtk_lagrange_quad_node_tuples_to_permutation
-"""     # noqa
+"""     # noqa: E501
 
 
 # {{{
 
-def add_tuple_to_list(ary, x):
+@overload
+def add_tuple_to_list(ary: Sequence[Tuple[int, int]],
+                      x: Tuple[int, int]) -> Sequence[Tuple[int, int]]:
+    ...
+
+
+@overload
+def add_tuple_to_list(ary: Sequence[Tuple[int, int, int]],
+                      x: Tuple[int, int, int]) -> Sequence[Tuple[int, int, int]]:
+    ...
+
+
+def add_tuple_to_list(ary: Sequence[Tuple[int, ...]],
+                      x: Tuple[int, ...]) -> Sequence[Tuple[int, ...]]:
     return [add_tuples(x, y) for y in ary]
 
 # }}}
 
 
-# {{{ VTK_LAGRANGE_${SIMPLEX} (i.e. CURVE/TRIANGLE/TETRAHEDRON)
+# {{{ VTK_LAGRANGE_CURVE / VTK_LAGRANGE_TRIANGLE / VTK_LAGRANGE_TETRAHEDRON
 
-def vtk_lagrange_curve_node_tuples(order):
+def vtk_lagrange_curve_node_tuples(order: int) -> Sequence[Tuple[int]]:
     return [(0,), (order,)] + [(i,) for i in range(1, order)]
 
 
-def vtk_lagrange_triangle_node_tuples(order):
-    nodes = []
+def vtk_lagrange_triangle_node_tuples(order: int) -> Sequence[Tuple[int, int]]:
+    nodes: List[Tuple[int, int]] = []
     offset = (0, 0)
 
     if order < 0:
@@ -113,7 +128,8 @@ def vtk_lagrange_triangle_node_tuples(order):
     return nodes
 
 
-def vtk_lagrange_tetrahedron_node_tuples(order):
+def vtk_lagrange_tetrahedron_node_tuples(
+        order: int) -> Sequence[Tuple[int, int, int]]:
     nodes = []
     offset = (0, 0, 0)
 
@@ -181,8 +197,10 @@ def vtk_lagrange_tetrahedron_node_tuples(order):
     return nodes
 
 
-def vtk_lagrange_simplex_node_tuples(dims, order, vtk_version=(2, 1),
-        is_consistent=None):
+def vtk_lagrange_simplex_node_tuples(
+        dims: int, order: int,
+        vtk_version: Tuple[int, int] = (2, 1)
+        ) -> Sequence[Tuple[int, ...]]:
     """
     :arg dims: dimension of the simplex, i.e. 1 corresponds to a curve, 2 to
         a triangle, etc.
@@ -193,9 +211,7 @@ def vtk_lagrange_simplex_node_tuples(dims, order, vtk_version=(2, 1),
         high-order elements changed between versions `2.1` and `2.2`.
 
     :return: a :class:`list` of ``dims``-dimensional tuples of integers
-        up to ``order`` in the ordering expected by VTK. This list can be
-        passed to :func:`vtk_lagrange_simplex_node_tuples_to_permutation`
-        to obtain a permutation from the order used by :mod:`modepy`.
+        up to ``order`` in the ordering expected by VTK.
     """
     if dims == 1:
         return vtk_lagrange_curve_node_tuples(order)
@@ -207,7 +223,14 @@ def vtk_lagrange_simplex_node_tuples(dims, order, vtk_version=(2, 1),
         raise ValueError(f"unsupported dimension: {dims}")
 
 
-def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):
+def vtk_lagrange_simplex_node_tuples_to_permutation(
+        node_tuples: Sequence[Tuple[int, ...]]
+        ) -> Sequence[int]:
+    """Construct a permutation from the simplex node ordering of VTK to that of
+    :mod:`modepy`.
+
+    :returns: a :class:`list` of indices in ``[0, len(node_tuples)]``.
+    """
     order = max([max(i) for i in node_tuples])
     dims = len(node_tuples[0])
 
@@ -222,10 +245,10 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(node_tuples):
 # }}}
 
 
-# {{{ VTK_LAGRANGE_${QUAD} (i.e. QUADRILATERAL/HEXAHEDRON)
+# {{{ VTK_LAGRANGE_CURVE / VTK_LAGRANGE_QUADRILATERAL / VTK_LAGRANGE_HEXAHEDRON
 
-def vtk_lagrange_quadrilateral_node_tuples(order):
-    nodes = []
+def vtk_lagrange_quadrilateral_node_tuples(order: int) -> Sequence[Tuple[int, int]]:
+    nodes: List[Tuple[int, int]] = []
 
     if order < 0:
         return nodes
@@ -268,8 +291,10 @@ def vtk_lagrange_quadrilateral_node_tuples(order):
     return nodes
 
 
-def vtk_lagrange_hexahedon_node_tuples(order, vtk_version=(2, 1)):
-    nodes = []
+def vtk_lagrange_hexahedon_node_tuples(
+        order: int,
+        vtk_version: Tuple[int, int] = (2, 1)) -> Sequence[Tuple[int, int, int]]:
+    nodes: List[Tuple[int, int, int]] = []
 
     if order < 0:
         return nodes
@@ -371,10 +396,13 @@ def vtk_lagrange_hexahedon_node_tuples(order, vtk_version=(2, 1)):
     return nodes
 
 
-def vtk_lagrange_quad_node_tuples(dims, order, vtk_version=(2, 1)):
+def vtk_lagrange_quad_node_tuples(
+        dims: int, order: int,
+        vtk_version: Tuple[int, int] = (2, 1),
+        ) -> Sequence[Tuple[int, ...]]:
     """
     :arg dims: dimension of the box, i.e. 1 corresponds to a curve, 2 to
-        a quadrilateral, etc.
+        a quadrilateral, and 3 to a hexahedron.
     :arg order: order of the polynomial representation, which also defines
         the number of nodes on the box.
     :arg vtk_version: a :class:`tuple` of two elements containing the version
@@ -382,9 +410,7 @@ def vtk_lagrange_quad_node_tuples(dims, order, vtk_version=(2, 1)):
         high-order elements changed between versions `2.1` and `2.2`.
 
     :return: a :class:`list` of ``dims``-dimensional tuples of integers
-        up to ``order`` in the ordering expected by VTK. This list can be
-        passed to :func:`vtk_lagrange_quad_node_tuples_to_permutation`
-        to obtain a permutation from the order used by :mod:`modepy`.
+        up to ``order`` in the ordering expected by VTK.
     """
     if dims == 1:
         return vtk_lagrange_curve_node_tuples(order)
@@ -396,7 +422,14 @@ def vtk_lagrange_quad_node_tuples(dims, order, vtk_version=(2, 1)):
         raise ValueError(f"unsupported dimension: {dims}")
 
 
-def vtk_lagrange_quad_node_tuples_to_permutation(node_tuples):
+def vtk_lagrange_quad_node_tuples_to_permutation(
+        node_tuples: Sequence[Tuple[int, ...]]
+        ) -> Sequence[int]:
+    """Construct a permutation from the quad node ordering of VTK to that of
+    :mod:`modepy`.
+
+    :returns: a :class:`list` of indices in ``[0, len(node_tuples)]``.
+    """
     order = max([max(i) for i in node_tuples])
     dims = len(node_tuples[0])
 
