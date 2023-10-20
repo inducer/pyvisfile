@@ -4,6 +4,7 @@ Usage Reference for :mod:`pyvisfile.vtk`
 .. automodule:: pyvisfile.vtk
 .. moduleauthor:: Andreas Kloeckner <inform@tiker.net>
 
+.. automodule:: pyvisfile.vtk.vtk_ordering
 
 Examples
 --------
