@@ -1,21 +1,21 @@
+import pathlib
+
 import numpy as np
 import pytest
 
 from pyvisfile.vtk import (
     VF_LIST_OF_COMPONENTS, VF_LIST_OF_VECTORS, VTK_VERTEX, AppendedDataXMLGenerator,
-    DataArray, UnstructuredGrid, write_structured_grid)
+    DataArray, ParallelXMLGenerator, UnstructuredGrid, write_structured_grid)
 
 
-@pytest.mark.parametrize("n", [5000, 0])
-def test_vtk_unstructured_points(n):
-    points = np.random.randn(n, 3)
+def make_unstructured_grid(n: int) -> UnstructuredGrid:
+    rng = np.random.default_rng(seed=42)
+    points = rng.normal(size=(n, 3))
 
     data = [
-            ("p", np.random.randn(n)),
-            ("vel", np.random.randn(3, n)),
+            ("pressure", rng.normal(size=n)),
+            ("velocity", rng.normal(size=(3, n))),
     ]
-    file_name = f"points_{n}.vtu"
-    compressor = None
 
     grid = UnstructuredGrid(
             (n, DataArray("points", points, vector_format=VF_LIST_OF_VECTORS)),
@@ -23,17 +23,23 @@ def test_vtk_unstructured_points(n):
             cell_types=np.asarray([VTK_VERTEX] * n, dtype=np.uint8))
 
     for name, field in data:
-        grid.add_pointdata(DataArray(name, field,
-            vector_format=VF_LIST_OF_COMPONENTS))
+        grid.add_pointdata(
+            DataArray(name, field, vector_format=VF_LIST_OF_COMPONENTS))
 
-    from os.path import exists
-    if exists(file_name):
-        raise RuntimeError("output file '%s' already exists"
-            % file_name)
+    return grid
 
-    outf = open(file_name, "w")
-    AppendedDataXMLGenerator(compressor)(grid).write(outf)
-    outf.close()
+
+@pytest.mark.parametrize("n", [5000, 0])
+def test_vtk_unstructured_points(n: int) -> None:
+    grid = make_unstructured_grid(n)
+    file_name = pathlib.Path(f"vtk-unstructured-{n:04d}.vtu")
+    compressor = None
+
+    if file_name.exists():
+        raise FileExistsError(f"Output file '{file_name}' already exists")
+
+    with open(file_name, "w") as outf:
+        AppendedDataXMLGenerator(compressor)(grid).write(outf)
 
 
 def test_vtk_structured_grid():
@@ -55,8 +61,27 @@ def test_vtk_structured_grid():
         np.cos(theta),
         ])
 
-    write_structured_grid("yo.vts", mesh,
-            point_data=[("phi", phi), ("vec", vec)])
+    write_structured_grid(
+        "vtk-structured.vts",
+        mesh,
+        point_data=[("phi", phi), ("vec", vec)])
+
+
+def test_vtk_parallel():
+    cwd = pathlib.Path(__file__).parent
+    file_name = cwd / "vtk-parallel.pvtu"
+
+    grid = make_unstructured_grid(1024)
+    pathnames = [f"vtk-parallel-piece-{i}.vtu" for i in range(5)]
+
+    if file_name.exists():
+        raise FileExistsError(f"Output file '{file_name}' already exists")
+
+    with open(file_name, "w") as outf:
+        ParallelXMLGenerator(pathnames)(grid).write(outf)
+
+    import filecmp
+    assert filecmp.cmp(file_name, cwd / "ref-vtk-parallel.pvtu")
 
 
 if __name__ == "__main__":

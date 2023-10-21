@@ -24,7 +24,9 @@ setuptools.pth
 distribute-*.tar.gz
 distribute-*.egg
 *.vtu
+*.pvtu
 *.vts
+*.pvts
 *.xmf
 .eggs
 
