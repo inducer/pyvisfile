@@ -14,8 +14,10 @@ authors:
   given-names: Matt
 - family-names: Wala
   given-names: Matt
+
 title: "pyvisfile"
 version: 2022.1.1
 doi: 10.5281/zenodo.6533976
 date-released: 2022-05-09
 url: "https://github.com/inducer/pyvisfile"
+license: MIT
