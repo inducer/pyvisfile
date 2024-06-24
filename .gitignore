@@ -31,3 +31,4 @@ distribute-*.egg
 .eggs
 
 .cache
+tmp

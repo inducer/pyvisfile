@@ -31,6 +31,12 @@
   throw py::error_already_set(); \
 }
 
+#define PYTHON_ERROR_ARGS(TYPE, REASON, ...) \
+{\
+  PyErr_Format(PyExc_##TYPE, REASON, __VA_ARGS__); \
+  throw py::error_already_set(); \
+}
+
 #define ENUM_VALUE(NAME) \
   value(#NAME, NAME)
 
@@ -73,19 +79,6 @@ PYBIND11_MAKE_OPAQUE(std::vector<int>);
 namespace
 {
   // {{{ helpers
-
-  // https://stackoverflow.com/a/26221725
-  template<typename ... Args>
-  char *string_format(const std::string& format, Args ... args)
-  {
-    size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1;
-    if (size <= 0)
-      throw std::runtime_error("Error during formatting.");
-
-    std::unique_ptr<char[]> buf(new char[size]);
-    snprintf(buf.get(), size, format.c_str(), args ...);
-    return buf.get();
-  }
 
   // https://stackoverflow.com/a/44175911
   class noncopyable {
@@ -1006,9 +999,10 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, string_format(
+            PYTHON_ERROR_ARGS(
+                  ValueError,
                   "field components of '%s' need to have matching lengths",
-                  vname));
+                  vname);
           vars.push_back((float *) v.data());
         }
 
@@ -1151,9 +1145,10 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, string_format(
+            PYTHON_ERROR_ARGS(
+                  ValueError,
                   "field components of '%s' need to have matching lengths",
-                  vname));
+                  vname);
 
           vars.push_back((float *) v.data());
         }
@@ -1251,9 +1246,10 @@ namespace
             first = false;
           }
           else if (vlength != int(v.size()))
-            PYTHON_ERROR(ValueError, string_format(
+            PYTHON_ERROR_ARGS(
+                  ValueError,
                   "field components of '%s' need to have matching lengths",
-                  vname));
+                  vname);
           vars.push_back((float *) v.data());
         }
 
