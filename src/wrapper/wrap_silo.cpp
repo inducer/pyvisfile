@@ -432,10 +432,10 @@ namespace
 
       if (first)
       {
-        result = (NPY_TYPES) PyArray_TYPE(var.ptr());
+        result = (NPY_TYPES) PyArray_TYPE((PyArrayObject *)var.ptr());
         first = false;
       }
-      else if (result != PyArray_TYPE(var.ptr()))
+      else if (result != PyArray_TYPE((PyArrayObject *)var.ptr()))
         PYTHON_ERROR(TypeError, "components of variable list have non-matching types");
     }
 
@@ -632,8 +632,9 @@ namespace
     py::handle result(PyArray_SimpleNewFromData(1, dims, \
           silo_typenum_to_numpy_typenum(curve.m_data->datatype), \
           curve.m_data->COORD)); \
-    PyArray_BASE(result.ptr()) = py_curve.ptr(); \
-    Py_INCREF(PyArray_BASE(result.ptr())); \
+    PyObject *ptr = PyArray_BASE((PyArrayObject *)result.ptr()); \
+    ptr = py_curve.ptr(); \
+    Py_INCREF(ptr); \
     return result; \
   }
 
@@ -701,8 +702,10 @@ namespace
       py::handle coord_array(PyArray_SimpleNewFromData(1, dims,
             silo_typenum_to_numpy_typenum(quadmesh.m_data->datatype),
             quadmesh.m_data->coords[i]));
-      PyArray_BASE(coord_array.ptr()) = py_quadmesh.ptr();
-      Py_INCREF(PyArray_BASE(coord_array.ptr()));
+
+      PyObject *ptr = PyArray_BASE((PyArrayObject *)coord_array.ptr());
+      ptr = py_quadmesh.ptr();
+      Py_INCREF(ptr);
       result.append(coord_array);
     }
 
@@ -786,8 +789,9 @@ namespace
           quadvar.m_data->ndims, dims, /*strides*/ NULL,
           quadvar.m_data->vals[i], ary_flags, /*obj*/NULL));
 
-      PyArray_BASE(val_array.ptr()) = py_quadvar.ptr();
-      Py_INCREF(PyArray_BASE(val_array.ptr()));
+      PyObject *ptr = PyArray_BASE((PyArrayObject *)val_array.ptr());
+      ptr = py_quadvar.ptr();
+      Py_INCREF(ptr);
       result.append(val_array);
     }
 
