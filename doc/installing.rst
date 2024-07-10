@@ -44,7 +44,7 @@ Step 1: Download and build libsilo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Download the `Silo source code
-<https://software.llnl.gov/Silo/ghpages/releases/releases.html>`_, version 4.6.1 or
+<https://software.llnl.gov/Silo/ghpages/releases/releases.html>`__, version 4.6.1 or
 newer. Then unpack, build and install it::
 
     $ tar xfz ~/download/silo-N.N.N.tar.gz
@@ -63,7 +63,7 @@ Common installation
 Step 2: Download and unpack PyVisfile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`Download PyVisfile <http://pypi.python.org/pypi/pyvisfile>`_ and unpack it::
+`Download PyVisfile <https://pypi.org/project/pyvisfile/>`__ and unpack it::
 
     $ tar xfz pyvisfile-VERSION.tar.gz
 

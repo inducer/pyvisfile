@@ -14,25 +14,26 @@ PyVisfile: Write VTK/Silo Visualization Files Efficiently
     :alt: Zenodo DOI for latest release
     :target: https://zenodo.org/badge/latestdoi/1575355
 
-Pyvisfile allows you to write a variety of visualization file formats,
+PyVisfile allows you to write a variety of visualization file formats,
 including
 
-* `Kitware's <http://www.kitware.com>`_
-  `XML-style <http://www.vtk.org/VTK/help/documentation.html>`_
-  `VTK <http://vtk.org>`_ data files. VTK files can be written without
+* `Kitware's <https://www.kitware.com>`__
+  `XML-style <https://vtk.org/documentation>`__
+  `VTK <https://vtk.org>`__ data files. VTK files can be written without
   additional software installed (e.g. VTK's Python bindings).
 
 * Silo visualization files, as used by the
-  `VisIt <https://wci.llnl.gov/codes/visit/>`_ large-scale visualization program.
-  To use pyvisfile to create Silo files, you need `libsilo
-  <https://wci.llnl.gov/codes/silo/>`_ as well as `pybind11
-  <https://pybind11.readthedocs.io/en/stable>`_.
+  `VisIt <https://visit-dav.github.io/visit-website/>`__
+  large-scale visualization program. To use PyVisfile to create Silo files,
+  you need `libsilo <https://software.llnl.gov/Silo/>`__.
 
-pyvisfile supports many mesh geometries, such as unstructured
+* `XDMF <https://www.xdmf.org/index.php/Main_Page>`__ data files.
+
+PyVisfile supports many mesh geometries, such as unstructured
 and rectangular structured meshes, particle meshes, as well as
-scalar and vector variables on them. In addition, pyvisfile allows the
+scalar and vector variables on them. In addition, PyVisfile allows the
 semi-automatic writing of parallelization-segmented visualization files
-in both Silo and VTK formats. For Silo files, pyvisfile also
+in both Silo and VTK formats. For Silo files, PyVisfile also
 supports the writing of expressions as visualization variables.
 
 Resources:
