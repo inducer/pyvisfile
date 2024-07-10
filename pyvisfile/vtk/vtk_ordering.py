@@ -54,7 +54,7 @@ described `here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`_.
 
 .. autofunction:: vtk_lagrange_quad_node_tuples
 .. autofunction:: vtk_lagrange_quad_node_tuples_to_permutation
-"""     # noqa: E501
+"""
 
 
 # {{{
