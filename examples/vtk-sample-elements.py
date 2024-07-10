@@ -7,7 +7,6 @@ To facilitate this comparison, and unlike the rest of the package, this example
 makes use of the VTK Python bindings.
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.linalg as la
 
@@ -15,8 +14,9 @@ import numpy.linalg as la
 try:
     import vtk
     from vtkmodules.util.numpy_support import vtk_to_numpy
-except ImportError:
-    raise ImportError("python bindings for VTK cannot be found") from None
+except ImportError as exc:
+    print(f"Python bindings for VTK cannot be found: {exc}")
+    raise SystemExit(0) from None
 
 
 VTK_LAGRANGE_SIMPLICES = [
@@ -32,6 +32,8 @@ VTK_LAGRANGE_QUADS = [
 
 
 def plot_node_ordering(filename, points, show=False):
+    import matplotlib.pyplot as plt
+
     if points.shape[0] == 1:
         points = np.hstack([points, np.zeros_like(points)])
 

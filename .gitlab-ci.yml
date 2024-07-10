@@ -1,17 +1,19 @@
-Flake8:
-  script:
-  - curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
-  - . ./prepare-and-run-flake8.sh "$CI_PROJECT_NAME" test examples
+Ruff:
+  script: |
+    pipx install ruff
+    ruff check
   tags:
-  - python3
+  - docker-runner
   except:
   - tags
 
 Mypy:
   script: |
-    EXTRA_INSTALL="numpy mypy pytest"
+    EXTRA_INSTALL="numpy pybind11 meson-python ninja mypy pytest"
+    PROJECT_INSTALL_FLAGS="--no-build-isolation"
     curl -L -O https://tiker.net/ci-support-v0
-    . ./ci-support-v0
+    . ci-support-v0
+
     build_py_project_in_venv
     python -m mypy "$CI_PROJECT_NAME" test
   tags:
@@ -21,14 +23,15 @@ Mypy:
 
 Python 3:
   script: |
+    EXTRA_INSTALL="numpy pybind11 meson-python ninja"
+    PROJECT_INSTALL_FLAGS="--no-build-isolation --config-settings setup-args=-Duse-silo=true"
+
     sudo apt update
     sudo apt install libsilo-dev
 
-    curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
-    . ./ci-support.sh
-    ./configure.py --use-silo
+    curl -L -O https://tiker.net/ci-support-v0
+    . ci-support-v0
 
-    EXTRA_INSTALL="numpy pybind11"
     build_py_project_in_venv
     test_py_project
   tags:
@@ -41,19 +44,17 @@ Python 3:
 
 Examples:
   script: |
+    EXTRA_INSTALL="numpy pybind11 meson-python ninja"
+    PROJECT_INSTALL_FLAGS="--no-build-isolation --config-settings setup-args=-Duse-silo=true"
+
     sudo apt update
     sudo apt install libsilo-dev
 
-    # not expected to run without matplotlib and vtk
-    rm examples/vtk-sample-elements.py
+    curl -L -O https://tiker.net/ci-support-v0
+    . ci-support-v0
 
-    curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
-    . ./ci-support.sh
-    ./configure.py --use-silo
-
-    EXTRA_INSTALL="numpy pybind11"
     build_py_project_in_venv
-    run_examples
+    run_examples --no-require-main
   tags:
   - docker-runner
   except:
@@ -61,14 +62,15 @@ Examples:
 
 Documentation:
   script: |
+    EXTRA_INSTALL="numpy pybind11 meson-python ninja"
+    PROJECT_INSTALL_FLAGS="--no-build-isolation --config-settings setup-args=-Duse-silo=true"
+
     sudo apt update
     sudo apt install libsilo-dev
 
-    curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
-    . ./ci-support.sh
-    ./configure.py --use-silo
+    curl -L -O https://tiker.net/ci-support-v0
+    . ci-support-v0
 
-    EXTRA_INSTALL="numpy pybind11"
     build_py_project_in_venv
     build_docs
     maybe_upload_docs

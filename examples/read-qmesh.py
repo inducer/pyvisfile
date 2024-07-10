@@ -1,4 +1,8 @@
-from pyvisfile.silo import DB_READ, SiloFile
+try:
+    from pyvisfile.silo import DB_READ, SiloFile
+except ImportError as exc:
+    print(f"Failed to import 'pyvisfile.silo': {exc}")
+    raise SystemExit(0) from None
 
 
 db = SiloFile("qmesh.silo", create=False, mode=DB_READ)
