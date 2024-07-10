@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 
 # {{{ mesh object thingy
@@ -400,6 +401,8 @@ def add_to_silo_file(
 
 
 def test_silo_unstructured():
+    pytest.importorskip("pyvisfile.silo")
+
     from pyvisfile.silo import SiloFile
 
     silo = SiloFile("out.silo")
