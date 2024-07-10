@@ -2,7 +2,11 @@
 
 import numpy
 
-import pyvisfile.silo as silo
+try:
+    from pyvisfile import silo
+except ImportError as exc:
+    print(f"Failed to import 'pyvisfile.silo': {exc}")
+    raise SystemExit(0) from None
 
 
 f = silo.SiloFile("qmesh.silo", mode=silo.DB_CLOBBER)
