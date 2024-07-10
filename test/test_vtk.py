@@ -4,8 +4,15 @@ import numpy as np
 import pytest
 
 from pyvisfile.vtk import (
-    VF_LIST_OF_COMPONENTS, VF_LIST_OF_VECTORS, VTK_VERTEX, AppendedDataXMLGenerator,
-    DataArray, ParallelXMLGenerator, UnstructuredGrid, write_structured_grid)
+    VF_LIST_OF_COMPONENTS,
+    VF_LIST_OF_VECTORS,
+    VTK_VERTEX,
+    AppendedDataXMLGenerator,
+    DataArray,
+    ParallelXMLGenerator,
+    UnstructuredGrid,
+    write_structured_grid,
+)
 
 
 def make_unstructured_grid(n: int) -> UnstructuredGrid:

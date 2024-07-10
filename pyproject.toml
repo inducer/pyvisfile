@@ -35,6 +35,18 @@ dependencies = [
     "pytools>=2022.1",
 ]
 
+[project.optional-dependencies]
+doc = [
+    "furo",
+    "sphinx>=4",
+    "sphinx-copybutton",
+]
+test = [
+    "mypy",
+    "pytest",
+    "ruff",
+]
+
 [project.urls]
 Documentation = "https://documen.tician.de/pyvisfile"
 Homepage = "https://mathema.tician.de/software/pyvisfile"
@@ -54,20 +66,11 @@ pytools = [
     "py.typed",
 ]
 
-[tool.isort]
-known_firstparty = "pytools"
-known_local_folder = "pyvisfile"
-line_length = 85
-lines_after_imports = 2
-combine_as_imports = true
-multi_line_output = 4
+[tool.ruff]
+preview = true
 
-[tool.flake8]
-max-line-length = 85
-inline-quotes = "double"
-docstring-quotes = "double"
-multiline-quotes = "double"
-select = [
+[tool.ruff.lint]
+extend-select = [
     "B", # flake8-bugbear
     "C", # flake8-comprehensions
     "E", # pycodestyle
@@ -78,17 +81,27 @@ select = [
 ]
 extend-ignore = [
     "B028", # no explicit stacklevel in warnings
-    "E123", # closing bracket does not match indentation
-    "E126", # continuation line over-indented
-    "E127", # continuation line over-indented
-    "E128", # continuation line under-indented
+    "C90",  # McCabe complexity
     "E226", # missing whitespace around arithmetic operator
     "E241", # multiple spaces after comma
     "E242", # tab after comma
     "E265", # comment should have a space
     "E402", # module level import not at the top of file
-    "W503", # line break before a binary operator
 ]
+exclude = [
+    "aksetup_helper.py",
+]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "double"
+multiline-quotes = "double"
+
+[tool.ruff.lint.isort]
+known-first-party = ["pytools"]
+known-local-folder = ["pyfmmlib"]
+lines-after-imports = 2
+combine-as-imports = true
 
 [tool.mypy]
 python_version = "3.8"
