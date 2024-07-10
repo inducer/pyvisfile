@@ -1,0 +1,101 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "pybind11>=2.5",
+    "setuptools>=63",
+]
+
+[project]
+name = "pyvisfile"
+version = "2022.1.1"
+description = "Large-scale Visualization Data Storage"
+readme = "README.rst"
+license = { text = "MIT" }
+authors = [ { name = "Andreas Kloeckner", email = "inform@tiker.net" } ]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: C++",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "numpy",
+    "pytools>=2022.1",
+]
+
+[project.urls]
+Documentation = "https://documen.tician.de/pyvisfile"
+Homepage = "https://mathema.tician.de/software/pyvisfile"
+Repository = "https://github.com/inducer/pyvisfile"
+
+[tool.setuptools.packages.find]
+include = [
+    "pyvisfile*",
+]
+
+[tool.setuptools.package-dir]
+# https://github.com/Infleqtion/client-superstaq/pull/715
+"" = "."
+
+[tool.setuptools.package-data]
+pytools = [
+    "py.typed",
+]
+
+[tool.isort]
+known_firstparty = "pytools"
+known_local_folder = "pyvisfile"
+line_length = 85
+lines_after_imports = 2
+combine_as_imports = true
+multi_line_output = 4
+
+[tool.flake8]
+max-line-length = 85
+inline-quotes = "double"
+docstring-quotes = "double"
+multiline-quotes = "double"
+select = [
+    "B", # flake8-bugbear
+    "C", # flake8-comprehensions
+    "E", # pycodestyle
+    "F", # pyflakes
+    "N", # pep8-naming
+    "Q", # flake8-quotes
+    "W", # pycodestyle
+]
+extend-ignore = [
+    "B028", # no explicit stacklevel in warnings
+    "E123", # closing bracket does not match indentation
+    "E126", # continuation line over-indented
+    "E127", # continuation line over-indented
+    "E128", # continuation line under-indented
+    "E226", # missing whitespace around arithmetic operator
+    "E241", # multiple spaces after comma
+    "E242", # tab after comma
+    "E265", # comment should have a space
+    "E402", # module level import not at the top of file
+    "W503", # line break before a binary operator
+]
+
+[tool.mypy]
+python_version = "3.8"
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pyvisfile.silo._internal.*",
+]
+ignore_missing_imports = true
