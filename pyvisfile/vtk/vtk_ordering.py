@@ -33,7 +33,7 @@ VTK High-Order Lagrange Elements
 --------------------------------
 
 The high-order elements are described in
-`this blog post <https://blog.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/>`_.
+`this blog post <https://www.kitware.com//modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/>`__.
 The ordering of the element nodes is as follows:
 
 1. the vertices (in an order that matches the linear elements,
@@ -47,7 +47,7 @@ rules. However, for box elements the interior nodes are just listed in
 order, with the last coordinate moving slowest.
 
 To a large extent, the VTK ordering matches the ordering used by ``gmsh`` and
-described `here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`_.
+described `here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`__.
 
 .. autofunction:: vtk_lagrange_simplex_node_tuples
 .. autofunction:: vtk_lagrange_simplex_node_tuples_to_permutation

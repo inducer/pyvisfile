@@ -761,10 +761,10 @@ class XMLGenerator:
             * ``"1.0"`` added support for 64-bit indices and offsets, as
               described `here <https://www.paraview.org/Wiki/VTK_XML_Formats>`__.
             * ``"2.0"`` added support for ghost array data, as
-              described `here <https://blog.kitware.com/ghost-and-blanking-visibility-changes/>`__.
+              described `here <https://www.kitware.com//ghost-and-blanking-visibility-changes/>`__.
             * ``"2.1"``: added support for writing additional information
               attached to a :class:`DataArray` using
-              `information keys <https://vtk.org/doc/nightly/html/IOXMLInformationFormat.html>`__.
+              `information keys <https://docs.vtk.org/en/latest/design_documents/IOXMLInformationFormat.html>`__.
             * ``"2.2"``: changed the node numbering of the hexahedron, as
               described `here <https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6678>`__.
         """
