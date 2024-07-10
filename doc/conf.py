@@ -2,6 +2,7 @@ from datetime import datetime
 from importlib import metadata
 from urllib.request import urlopen
 
+
 _conf_url = \
         "https://raw.githubusercontent.com/inducer/sphinxconfig/main/sphinxconfig.py"
 with urlopen(_conf_url) as _inf:

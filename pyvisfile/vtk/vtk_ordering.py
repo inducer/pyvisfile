@@ -23,7 +23,9 @@ THE SOFTWARE.
 from typing import List, Sequence, Tuple, overload
 
 from pytools import (
-    add_tuples, generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam)
+    add_tuples,
+    generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam,
+)
 
 
 __doc__ = """
@@ -231,7 +233,7 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(
 
     :returns: a :class:`list` of indices in ``[0, len(node_tuples)]``.
     """
-    order = max([max(i) for i in node_tuples])
+    order = max(max(i) for i in node_tuples)
     dims = len(node_tuples[0])
 
     node_to_index = {
@@ -430,7 +432,7 @@ def vtk_lagrange_quad_node_tuples_to_permutation(
 
     :returns: a :class:`list` of indices in ``[0, len(node_tuples)]``.
     """
-    order = max([max(i) for i in node_tuples])
+    order = max(max(i) for i in node_tuples)
     dims = len(node_tuples[0])
 
     from itertools import product

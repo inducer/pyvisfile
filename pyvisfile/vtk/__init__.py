@@ -24,8 +24,7 @@ THE SOFTWARE.
 
 import pathlib
 from abc import ABC, abstractmethod
-from typing import (
-    Any, ByteString, ClassVar, List, Optional, TextIO, Tuple, Union, cast)
+from typing import Any, ByteString, ClassVar, List, Optional, TextIO, Tuple, Union, cast
 
 import numpy as np
 

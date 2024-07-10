@@ -16,7 +16,7 @@ try:
     import vtk
     from vtkmodules.util.numpy_support import vtk_to_numpy
 except ImportError:
-    raise ImportError("python bindings for VTK cannot be found")
+    raise ImportError("python bindings for VTK cannot be found") from None
 
 
 VTK_LAGRANGE_SIMPLICES = [
@@ -131,7 +131,8 @@ def create_sample_element(cell_type, order=3, visualize=True):
     if cell_type in VTK_LAGRANGE_SIMPLICES:
         from pyvisfile.vtk.vtk_ordering import (
             vtk_lagrange_simplex_node_tuples,
-            vtk_lagrange_simplex_node_tuples_to_permutation)
+            vtk_lagrange_simplex_node_tuples_to_permutation,
+        )
 
         node_tuples = vtk_lagrange_simplex_node_tuples(dim, order,
             vtk_version=vtk_version)
@@ -142,7 +143,8 @@ def create_sample_element(cell_type, order=3, visualize=True):
     elif cell_type in VTK_LAGRANGE_QUADS:
         from pyvisfile.vtk.vtk_ordering import (
             vtk_lagrange_quad_node_tuples,
-            vtk_lagrange_quad_node_tuples_to_permutation)
+            vtk_lagrange_quad_node_tuples_to_permutation,
+        )
 
         node_tuples = vtk_lagrange_quad_node_tuples(dim, order,
             vtk_version=vtk_version)
