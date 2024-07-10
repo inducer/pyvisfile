@@ -6,11 +6,13 @@ from aksetup_helper import NumpyExtension
 class PyUblasExtension(NumpyExtension):
     def get_module_include_path(self, name):
         from pkg_resources import Requirement, resource_filename
-        return resource_filename(Requirement.parse(name), "%s/include" % name)
+        return resource_filename(Requirement.parse(name), f"{name}/include")
 
     def get_additional_include_dirs(self):
-        return (NumpyExtension.get_additional_include_dirs(self)
-                + [self.get_module_include_path("pyublas")])
+        return [
+            *NumpyExtension.get_additional_include_dirs(self),
+            self.get_module_include_path("pyublas")
+        ]
 
 
 def get_config_schema():
@@ -18,7 +20,8 @@ def get_config_schema():
         ConfigSchema, IncludeDir, Libraries, LibraryDir, StringListOption, Switch,
         make_boost_base_options)
 
-    return ConfigSchema(make_boost_base_options() + [
+    return ConfigSchema([
+        *make_boost_base_options(),
         Switch("USE_SILO", False, "Compile libsilo interface"),
 
         IncludeDir("SILO", []),
@@ -55,7 +58,7 @@ def main():
 
         ext_modules.append(ExtensionUsingNumpy("_internal",
             ["src/wrapper/wrap_silo.cpp"],
-            include_dirs=[get_pybind_include()] + extra_include_dirs,
+            include_dirs=[get_pybind_include(), *extra_include_dirs],
             library_dirs=extra_library_dirs,
             libraries=extra_libraries,
             extra_compile_args=conf["CXXFLAGS"],

@@ -696,7 +696,7 @@ class StructuredGrid(Visitable):
         self.mesh = mesh
 
         self.ndims = mesh.shape[0]
-        transpose_arg = tuple(range(1, 1+self.ndims)) + (0,)
+        transpose_arg = (*range(1, 1 + self.ndims), 0)
         mesh = mesh.transpose(transpose_arg).copy()
 
         self.shape = mesh.shape[:-1][::-1]
@@ -767,7 +767,7 @@ class XMLGenerator:
               `information keys <https://vtk.org/doc/nightly/html/IOXMLInformationFormat.html>`__.
             * ``"2.2"``: changed the node numbering of the hexahedron, as
               described `here <https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6678>`__.
-        """     # noqa
+        """
 
         if compressor == "zlib":
             try:

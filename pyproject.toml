@@ -71,13 +71,16 @@ preview = true
 
 [tool.ruff.lint]
 extend-select = [
-    "B", # flake8-bugbear
-    "C", # flake8-comprehensions
-    "E", # pycodestyle
-    "F", # pyflakes
-    "N", # pep8-naming
-    "Q", # flake8-quotes
-    "W", # pycodestyle
+    "B",    # flake8-bugbear
+    "C",    # flake8-comprehensions
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "G",    # flake8-logging-format
+    "N",    # pep8-naming
+    "Q",    # flake8-quotes
+    "RUF",  # ruff
+    "UP",   # pyupgrade
+    "W",    # pycodestyle
 ]
 extend-ignore = [
     "B028", # no explicit stacklevel in warnings

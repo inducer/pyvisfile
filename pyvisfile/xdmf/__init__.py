@@ -419,7 +419,7 @@ class DataItem(XdmfElement):
             another :class:`DataItem` needs to be references, or there are
             multiple domains, use an absolute reference path, as defined
             in the `XDMF docs <https://www.xdmf.org/index.php/XDMF_Model_and_Format>`__.
-        """     # noqa: E501
+        """
 
         if not reference_name.startswith("/"):
             reference = f"/Xdmf/Domain/DataItem[@Name='{reference_name}']"
@@ -499,7 +499,7 @@ def _join_data_items(
     for more information.
 
     :returns: the newly created :class:`DataItem` that joins the input items.
-    """     # noqa: E501
+    """
 
     if len(items) == 1:
         item = items[0]
@@ -508,7 +508,7 @@ def _join_data_items(
         if not is_single_valued(item.dimensions for item in items):
             raise ValueError("items must have the same dimension")
 
-        dimensions = (len(items),) + items[0].dimensions
+        dimensions = (len(items), *items[0].dimensions)
         ids = ", ".join(f"${i}" for i in range(dimensions[0]))
 
         item = DataItem(
@@ -958,7 +958,7 @@ class DataArray:
         if len(self.components) == 1:
             return self.components[0].dimensions
         else:
-            return (len(self.components),) + self.components[0].dimensions
+            return (len(self.components), *self.components[0].dimensions)
 
     def as_data_item(self, *,
             parent: Optional[Element] = None) -> Tuple[DataItem, ...]:

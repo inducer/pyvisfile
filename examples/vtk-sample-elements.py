@@ -66,7 +66,7 @@ def plot_node_ordering(filename, points, show=False):
     for i, p in enumerate(points.T):
         ax.text(*p, str(i), color="k", fontsize=12)
 
-    print("output: %s.png" % filename)
+    print(f"output: {filename}.png")
     fig.savefig(filename)
     if show:
         plt.show(block=True)
@@ -82,7 +82,7 @@ def create_sample_element(cell_type, order=3, visualize=True):
     cell_type = cell_type.upper()
     vtk_cell_type = getattr(vtk, cell_type, None)
     if vtk_cell_type is None:
-        raise ValueError("unknown cell type: '%s'" % cell_type)
+        raise ValueError(f"unknown cell type: '{cell_type}'")
 
     source = vtk.vtkCellTypeSource()
     source.SetCellType(vtk_cell_type)
@@ -105,9 +105,9 @@ def create_sample_element(cell_type, order=3, visualize=True):
     if visualize:
         filename = f"{basename}.vtu"
 
-        print("vtk xml version:", vtk_version)
-        print("cell type: %s" % cell_type)
-        print("output: %s" % filename)
+        print(f"vtk xml version: {vtk_version}")
+        print(f"cell type: {cell_type}")
+        print(f"output: {filename}")
 
         writer = vtk.vtkXMLUnstructuredGridWriter()
         writer.SetFileName(filename)
