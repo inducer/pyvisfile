@@ -1,0 +1,5 @@
+.ci export-ignore
+.github/ export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.gitlab-ci.yml export-ignore

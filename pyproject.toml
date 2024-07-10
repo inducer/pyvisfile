@@ -1,8 +1,10 @@
 [build-system]
-build-backend = "setuptools.build_meta"
+build-backend = "mesonpy"
 requires = [
+    "meson-python",
+    "ninja",
+    "numpy",
     "pybind11>=2.5",
-    "setuptools>=63",
 ]
 
 [project]
@@ -52,20 +54,6 @@ Documentation = "https://documen.tician.de/pyvisfile"
 Homepage = "https://mathema.tician.de/software/pyvisfile"
 Repository = "https://github.com/inducer/pyvisfile"
 
-[tool.setuptools.packages.find]
-include = [
-    "pyvisfile*",
-]
-
-[tool.setuptools.package-dir]
-# https://github.com/Infleqtion/client-superstaq/pull/715
-"" = "."
-
-[tool.setuptools.package-data]
-pytools = [
-    "py.typed",
-]
-
 [tool.ruff]
 preview = true
 
@@ -90,9 +78,6 @@ extend-ignore = [
     "E242", # tab after comma
     "E265", # comment should have a space
     "E402", # module level import not at the top of file
-]
-exclude = [
-    "aksetup_helper.py",
 ]
 
 [tool.ruff.lint.flake8-quotes]
