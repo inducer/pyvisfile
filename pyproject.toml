@@ -1,15 +1,12 @@
 [build-system]
-build-backend = "mesonpy"
+build-backend = "setuptools.build_meta"
 requires = [
-    "meson-python",
-    "ninja",
-    "numpy",
-    "pybind11>=2.5",
+    "setuptools>=63",
 ]
 
 [project]
 name = "pyvisfile"
-version = "2022.1.1"
+version = "2024.1"
 description = "Large-scale Visualization Data Storage"
 readme = "README.rst"
 license = { text = "MIT" }
@@ -47,6 +44,11 @@ test = [
     "mypy",
     "pytest",
     "ruff",
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "pyvisfile*",
 ]
 
 [project.urls]
@@ -94,9 +96,3 @@ combine-as-imports = true
 [tool.mypy]
 python_version = "3.8"
 warn_unused_ignores = true
-
-[[tool.mypy.overrides]]
-module = [
-    "pyvisfile.silo._internal.*",
-]
-ignore_missing_imports = true

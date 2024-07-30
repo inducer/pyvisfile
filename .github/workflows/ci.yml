@@ -38,13 +38,6 @@ jobs:
             env:
                 OS_NAME: ${{ matrix.os }}
             run: |
-                EXTRA_INSTALL="numpy pybind11 meson-python ninja"
-                PROJECT_INSTALL_FLAGS="--no-build-isolation"
-                if [[ "$OS_NAME" == ubuntu-* ]]; then
-                    ./.ci/install-silo-on-github.sh
-                    PROJECT_INSTALL_FLAGS+=" --config-settings setup-args=-Duse-silo=true"
-                fi
-
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
 
@@ -62,8 +55,7 @@ jobs:
                 python-version: '3.x'
         -   name: "Main Script"
             run: |
-                EXTRA_INSTALL="numpy pybind11 meson-python ninja mypy pytest"
-                PROJECT_INSTALL_FLAGS="--no-build-isolation"
+                EXTRA_INSTALL="mypy pytest"
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
@@ -88,13 +80,6 @@ jobs:
             env:
                 OS_NAME: ${{ matrix.os }}
             run: |
-                EXTRA_INSTALL="numpy pybind11 meson-python ninja"
-                PROJECT_INSTALL_FLAGS="--no-build-isolation"
-                if [[ "$OS_NAME" == ubuntu-* ]]; then
-                    ./.ci/install-silo-on-github.sh
-                    PROJECT_INSTALL_FLAGS+=" --config-settings setup-args=-Duse-silo=true"
-                fi
-
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
 
@@ -112,10 +97,6 @@ jobs:
                 python-version: '3.x'
         -   name: "Main Script"
             run: |
-                EXTRA_INSTALL="numpy pybind11 meson-python ninja"
-                PROJECT_INSTALL_FLAGS="--no-build-isolation --config-settings setup-args=-Duse-silo=true"
-                ./.ci/install-silo-on-github.sh
-
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
 

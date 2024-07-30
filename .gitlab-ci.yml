@@ -9,7 +9,7 @@ Ruff:
 
 Mypy:
   script: |
-    EXTRA_INSTALL="numpy pybind11 meson-python ninja mypy pytest"
+    EXTRA_INSTALL="numpy  mypy pytest"
     PROJECT_INSTALL_FLAGS="--no-build-isolation"
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -23,12 +23,6 @@ Mypy:
 
 Python 3:
   script: |
-    EXTRA_INSTALL="numpy pybind11 meson-python ninja"
-    PROJECT_INSTALL_FLAGS="--no-build-isolation --config-settings setup-args=-Duse-silo=true"
-
-    sudo apt update
-    sudo apt install libsilo-dev
-
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
 
@@ -44,12 +38,6 @@ Python 3:
 
 Examples:
   script: |
-    EXTRA_INSTALL="numpy pybind11 meson-python ninja"
-    PROJECT_INSTALL_FLAGS="--no-build-isolation --config-settings setup-args=-Duse-silo=true"
-
-    sudo apt update
-    sudo apt install libsilo-dev
-
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
 
@@ -62,12 +50,6 @@ Examples:
 
 Documentation:
   script: |
-    EXTRA_INSTALL="numpy pybind11 meson-python ninja"
-    PROJECT_INSTALL_FLAGS="--no-build-isolation --config-settings setup-args=-Duse-silo=true"
-
-    sudo apt update
-    sudo apt install libsilo-dev
-
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
 
