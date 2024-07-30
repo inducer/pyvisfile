@@ -1,0 +1,2 @@
+include test/ref-*.pvtu
+include CITATION.cff
