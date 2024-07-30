@@ -8,7 +8,6 @@ build
 siteconf.py
 doc/hedge-notes.pdf
 *.vtk
-*.silo
 *.session
 dump.py
 *.orig

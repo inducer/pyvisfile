@@ -1,4 +1,4 @@
-PyVisfile: Write VTK/Silo Visualization Files Efficiently
+PyVisfile: Write VTK/XDMF Visualization Files Efficiently
 ---------------------------------------------------------
 
 .. image:: https://gitlab.tiker.net/inducer/pyvisfile/badges/main/pipeline.svg
@@ -22,19 +22,13 @@ including
   `VTK <https://vtk.org>`__ data files. VTK files can be written without
   additional software installed (e.g. VTK's Python bindings).
 
-* Silo visualization files, as used by the
-  `VisIt <https://visit-dav.github.io/visit-website/>`__
-  large-scale visualization program. To use PyVisfile to create Silo files,
-  you need `libsilo <https://software.llnl.gov/Silo/>`__.
-
 * `XDMF <https://www.xdmf.org/index.php/Main_Page>`__ data files.
 
 PyVisfile supports many mesh geometries, such as unstructured
 and rectangular structured meshes, particle meshes, as well as
 scalar and vector variables on them. In addition, PyVisfile allows the
 semi-automatic writing of parallelization-segmented visualization files
-in both Silo and VTK formats. For Silo files, PyVisfile also
-supports the writing of expressions as visualization variables.
+in both VTK and XDMF formats.
 
 Resources:
 
