@@ -76,7 +76,7 @@ def plot_node_ordering(filename, points, show=False):
 
 def create_sample_element(cell_type, order=3, visualize=True):
     from distutils.version import LooseVersion
-    if LooseVersion(vtk.VTK_VERSION) > "8.2.0":
+    if LooseVersion(vtk.VTK_VERSION) > "8.2.0":  # noqa: SIM108
         vtk_version = (2, 2)
     else:
         vtk_version = (2, 1)

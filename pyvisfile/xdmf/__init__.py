@@ -1032,11 +1032,7 @@ class NumpyDataArray(DataArray):
             parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
         items = super().as_data_item(parent=parent)
 
-        if self.ary.dtype.char == "O":
-            ary = tuple(self.ary)
-        else:
-            ary = (self.ary,)
-
+        ary = tuple(self.ary) if self.ary.dtype.char == "O" else (self.ary,)
         for item, iary in zip(items, ary):
             item.text = _ndarray_to_string(iary)
 
@@ -1112,11 +1108,7 @@ class XdmfUnstructuredGrid(XdmfGrid):
 
         nelements = int(np.prod(connectivity.shape[:-1]))
         if isinstance(topology_type, TopologyType):
-            if topology_type == TopologyType.Polyline:
-                nodes_per_element = 2
-            else:
-                nodes_per_element = None
-
+            nodes_per_element = 2 if topology_type == TopologyType.Polyline else None
             topology: XdmfElement = Topology(
                     parent=grid,
                     ttype=topology_type,
