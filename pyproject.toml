@@ -78,6 +78,7 @@ extend-select = [
     "N",    # pep8-naming
     "Q",    # flake8-quotes
     "RUF",  # ruff
+    "SIM",  # flake8-simplify
     "UP",   # pyupgrade
     "W",    # pycodestyle
 ]

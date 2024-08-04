@@ -732,15 +732,12 @@ def make_vtkfile(filetype: str,
                  compressor: Optional[str] = None,
                  version: str = "0.1") -> XMLElement:
     import sys
-    if sys.byteorder == "little":
-        bo = "LittleEndian"
-    else:
-        bo = "BigEndian"
 
     kwargs = {}
     if compressor == "zlib":
         kwargs["compressor"] = "vtkZLibDataCompressor"
 
+    bo = "LittleEndian" if sys.byteorder == "little" else "BigEndian"
     return XMLElement("VTKFile",
             type=filetype, version=version, byte_order=bo, **kwargs)
 
