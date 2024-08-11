@@ -1018,10 +1018,8 @@ class NumpyDataArray(DataArray):
             if not is_single_valued(iary.shape for iary in ary):
                 raise ValueError("'ary' components must have the same size")
 
-            items = tuple([
-                    _data_item_from_numpy(iary, name=f"{name}_{i}")
-                    for i, iary in enumerate(ary)
-                    ])
+            items = tuple(_data_item_from_numpy(iary, name=f"{name}_{i}")
+                    for i, iary in enumerate(ary))
         else:
             items = (_data_item_from_numpy(ary, name=name),)
 
