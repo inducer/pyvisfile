@@ -62,7 +62,7 @@ def plot_node_ordering(filename, points, show=False):
 
         ax.view_init(15, 45)
     else:
-        raise ValueError("dimension not supported: %d" % points.shape[0])
+        raise ValueError(f"dimension not supported: {points.shape[0]}")
 
     ax.grid()
     for i, p in enumerate(points.T):
