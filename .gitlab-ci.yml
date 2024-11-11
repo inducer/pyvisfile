@@ -1,60 +1,60 @@
 Ruff:
-  script: |
-    pipx install ruff
-    ruff check
-  tags:
-  - docker-runner
-  except:
-  - tags
+    script: |
+        pipx install ruff
+        ruff check
+    tags:
+        - docker-runner
+    except:
+        - tags
 
 Mypy:
-  script: |
-    EXTRA_INSTALL="numpy  mypy pytest"
-    PROJECT_INSTALL_FLAGS="--no-build-isolation"
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
+    script: |
+        EXTRA_INSTALL="numpy  mypy pytest"
+        PROJECT_INSTALL_FLAGS="--no-build-isolation"
+        curl -L -O https://tiker.net/ci-support-v0
+        . ci-support-v0
 
-    build_py_project_in_venv
-    python -m mypy "$CI_PROJECT_NAME" test
-  tags:
-  - python3
-  except:
-  - tags
+        build_py_project_in_venv
+        python -m mypy "$CI_PROJECT_NAME" test
+    tags:
+        - python3
+    except:
+        - tags
 
 Python 3:
-  script: |
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
+    script: |
+        curl -L -O https://tiker.net/ci-support-v0
+        . ci-support-v0
 
-    build_py_project_in_venv
-    test_py_project
-  tags:
-  - docker-runner
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
+        build_py_project_in_venv
+        test_py_project
+    tags:
+        - docker-runner
+    except:
+        - tags
+    artifacts:
+        reports:
+            junit: test/pytest.xml
 
 Examples:
-  script: |
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
+    script: |
+        curl -L -O https://tiker.net/ci-support-v0
+        . ci-support-v0
 
-    build_py_project_in_venv
-    run_examples --no-require-main
-  tags:
-  - docker-runner
-  except:
-  - tags
+        build_py_project_in_venv
+        run_examples --no-require-main
+    tags:
+        - docker-runner
+    except:
+        - tags
 
 Documentation:
-  script: |
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
+    script: |
+        curl -L -O https://tiker.net/ci-support-v0
+        . ci-support-v0
 
-    build_py_project_in_venv
-    build_docs
-    maybe_upload_docs
-  tags:
-  - docker-runner
+        build_py_project_in_venv
+        build_docs
+        maybe_upload_docs
+    tags:
+        - docker-runner
