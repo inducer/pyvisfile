@@ -20,7 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from typing import List, Sequence, Tuple, overload
+from collections.abc import Sequence
+from typing import overload
 
 from pytools import (
     add_tuples,
@@ -60,19 +61,19 @@ described `here <https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering>`__.
 # {{{
 
 @overload
-def add_tuple_to_list(ary: Sequence[Tuple[int, int]],
-                      x: Tuple[int, int]) -> Sequence[Tuple[int, int]]:
+def add_tuple_to_list(ary: Sequence[tuple[int, int]],
+                      x: tuple[int, int]) -> Sequence[tuple[int, int]]:
     ...
 
 
 @overload
-def add_tuple_to_list(ary: Sequence[Tuple[int, int, int]],
-                      x: Tuple[int, int, int]) -> Sequence[Tuple[int, int, int]]:
+def add_tuple_to_list(ary: Sequence[tuple[int, int, int]],
+                      x: tuple[int, int, int]) -> Sequence[tuple[int, int, int]]:
     ...
 
 
-def add_tuple_to_list(ary: Sequence[Tuple[int, ...]],
-                      x: Tuple[int, ...]) -> Sequence[Tuple[int, ...]]:
+def add_tuple_to_list(ary: Sequence[tuple[int, ...]],
+                      x: tuple[int, ...]) -> Sequence[tuple[int, ...]]:
     return [add_tuples(x, y) for y in ary]
 
 # }}}
@@ -80,12 +81,12 @@ def add_tuple_to_list(ary: Sequence[Tuple[int, ...]],
 
 # {{{ VTK_LAGRANGE_CURVE / VTK_LAGRANGE_TRIANGLE / VTK_LAGRANGE_TETRAHEDRON
 
-def vtk_lagrange_curve_node_tuples(order: int) -> Sequence[Tuple[int]]:
+def vtk_lagrange_curve_node_tuples(order: int) -> Sequence[tuple[int]]:
     return [(0,), (order,)] + [(i,) for i in range(1, order)]
 
 
-def vtk_lagrange_triangle_node_tuples(order: int) -> Sequence[Tuple[int, int]]:
-    nodes: List[Tuple[int, int]] = []
+def vtk_lagrange_triangle_node_tuples(order: int) -> Sequence[tuple[int, int]]:
+    nodes: list[tuple[int, int]] = []
     offset = (0, 0)
 
     if order < 0:
@@ -131,7 +132,7 @@ def vtk_lagrange_triangle_node_tuples(order: int) -> Sequence[Tuple[int, int]]:
 
 
 def vtk_lagrange_tetrahedron_node_tuples(
-        order: int) -> Sequence[Tuple[int, int, int]]:
+        order: int) -> Sequence[tuple[int, int, int]]:
     nodes = []
     offset = (0, 0, 0)
 
@@ -201,8 +202,8 @@ def vtk_lagrange_tetrahedron_node_tuples(
 
 def vtk_lagrange_simplex_node_tuples(
         dims: int, order: int,
-        vtk_version: Tuple[int, int] = (2, 1)
-        ) -> Sequence[Tuple[int, ...]]:
+        vtk_version: tuple[int, int] = (2, 1)
+        ) -> Sequence[tuple[int, ...]]:
     """
     :arg dims: dimension of the simplex, i.e. 1 corresponds to a curve, 2 to
         a triangle, etc.
@@ -226,7 +227,7 @@ def vtk_lagrange_simplex_node_tuples(
 
 
 def vtk_lagrange_simplex_node_tuples_to_permutation(
-        node_tuples: Sequence[Tuple[int, ...]]
+        node_tuples: Sequence[tuple[int, ...]]
         ) -> Sequence[int]:
     """Construct a permutation from the simplex node ordering of VTK to that of
     :mod:`modepy`.
@@ -249,8 +250,8 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(
 
 # {{{ VTK_LAGRANGE_CURVE / VTK_LAGRANGE_QUADRILATERAL / VTK_LAGRANGE_HEXAHEDRON
 
-def vtk_lagrange_quadrilateral_node_tuples(order: int) -> Sequence[Tuple[int, int]]:
-    nodes: List[Tuple[int, int]] = []
+def vtk_lagrange_quadrilateral_node_tuples(order: int) -> Sequence[tuple[int, int]]:
+    nodes: list[tuple[int, int]] = []
 
     if order < 0:
         return nodes
@@ -295,8 +296,8 @@ def vtk_lagrange_quadrilateral_node_tuples(order: int) -> Sequence[Tuple[int, in
 
 def vtk_lagrange_hexahedon_node_tuples(
         order: int,
-        vtk_version: Tuple[int, int] = (2, 1)) -> Sequence[Tuple[int, int, int]]:
-    nodes: List[Tuple[int, int, int]] = []
+        vtk_version: tuple[int, int] = (2, 1)) -> Sequence[tuple[int, int, int]]:
+    nodes: list[tuple[int, int, int]] = []
 
     if order < 0:
         return nodes
@@ -400,8 +401,8 @@ def vtk_lagrange_hexahedon_node_tuples(
 
 def vtk_lagrange_quad_node_tuples(
         dims: int, order: int,
-        vtk_version: Tuple[int, int] = (2, 1),
-        ) -> Sequence[Tuple[int, ...]]:
+        vtk_version: tuple[int, int] = (2, 1),
+        ) -> Sequence[tuple[int, ...]]:
     """
     :arg dims: dimension of the box, i.e. 1 corresponds to a curve, 2 to
         a quadrilateral, and 3 to a hexahedron.
@@ -425,7 +426,7 @@ def vtk_lagrange_quad_node_tuples(
 
 
 def vtk_lagrange_quad_node_tuples_to_permutation(
-        node_tuples: Sequence[Tuple[int, ...]]
+        node_tuples: Sequence[tuple[int, ...]]
         ) -> Sequence[int]:
     """Construct a permutation from the quad node ordering of VTK to that of
     :mod:`modepy`.

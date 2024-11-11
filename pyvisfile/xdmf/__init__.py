@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 import enum
 import os
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 from xml.etree.ElementTree import Element, ElementTree
 
 import numpy as np
@@ -140,7 +140,7 @@ Writing
 # {{{ utils
 
 def _stringify(obj: Any) -> str:
-    if isinstance(obj, (list, tuple)):
+    if isinstance(obj, list | tuple):
         return " ".join(str(c) for c in obj)
     return str(obj)
 
@@ -158,9 +158,9 @@ class XdmfElement(Element):
 
     def __init__(
             self,
-            parent: Optional[Element],
+            parent: Element | None,
             tag: str,
-            attrib: Dict[str, Any]) -> None:
+            attrib: dict[str, Any]) -> None:
         super().__init__(tag, attrib={
             k: _stringify(v) for k, v in attrib.items() if v is not None
             })
@@ -238,7 +238,7 @@ class AttributeType(enum.Enum):
     GlobalId = 205
 
     @staticmethod
-    def from_shape(shape: Tuple[int, ...]) -> "AttributeType":
+    def from_shape(shape: tuple[int, ...]) -> "AttributeType":
         # https://github.com/nschloe/meshio/blob/37673c8fb938ad73d92fb3171dee3eb193b5e7ac/meshio/xdmf/common.py#L162
         if len(shape) == 1 or (len(shape) == 2 and shape[1] == 1):
             return AttributeType.Scalar
@@ -274,10 +274,10 @@ class Attribute(XdmfElement):
 
     def __init__(
             self, *,
-            name: Optional[str] = None,
+            name: str | None = None,
             atype: AttributeType = AttributeType.Scalar,
             acenter: AttributeCenter = AttributeCenter.Node,
-            parent: Optional[Element] = None,
+            parent: Element | None = None,
             ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
@@ -364,17 +364,17 @@ class DataItem(XdmfElement):
 
     def __init__(
             self, *,
-            dimensions: Optional[Tuple[int, ...]] = None,
-            name: Optional[str] = None,
-            itype: Optional[DataItemType] = DataItemType.Uniform,
-            ntype: Optional[DataItemNumberType] = DataItemNumberType.Float,
-            precision: Optional[int] = 4,
-            reference: Optional[str] = None,
-            function: Optional[str] = None,
-            endian: Optional[DataItemEndian] = DataItemEndian.Native,
-            dformat: Optional[DataItemFormat] = DataItemFormat.XML,
-            parent: Optional[Element] = None,
-            data: Optional[str] = None,
+            dimensions: tuple[int, ...] | None = None,
+            name: str | None = None,
+            itype: DataItemType | None = DataItemType.Uniform,
+            ntype: DataItemNumberType | None = DataItemNumberType.Float,
+            precision: int | None = 4,
+            reference: str | None = None,
+            function: str | None = None,
+            endian: DataItemEndian | None = DataItemEndian.Native,
+            dformat: DataItemFormat | None = DataItemFormat.XML,
+            parent: Element | None = None,
+            data: str | None = None,
             ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
@@ -402,7 +402,7 @@ class DataItem(XdmfElement):
             self.text = data
 
     @property
-    def dimensions(self) -> Tuple[int, ...]:
+    def dimensions(self) -> tuple[int, ...]:
         if self._dimensions is None:
             raise AttributeError
 
@@ -411,7 +411,7 @@ class DataItem(XdmfElement):
     @classmethod
     def as_reference(cls,
                      reference_name: str, *,
-                     parent: Optional[Element] = None) -> "DataItem":
+                     parent: Element | None = None) -> "DataItem":
         """
         :param reference_name: a name or an absolute reference to another
             :class:`DataItem`. The name is just the ``Name`` attribute of
@@ -456,10 +456,10 @@ def _data_item_format_from_str(text: str) -> DataItemFormat:
 
 def _data_item_from_numpy(
         ary: "np.ndarray[Any, Any]", *,
-        name: Optional[str] = None,
-        parent: Optional[Element] = None,
-        data: Optional[str] = None,
-        dformat: Optional[DataItemFormat] = None) -> DataItem:
+        name: str | None = None,
+        parent: Element | None = None,
+        data: str | None = None,
+        dformat: DataItemFormat | None = None) -> DataItem:
     """Create a :class:`DataItem` from a given :class:`~numpy.ndarray`.
 
     .. note::
@@ -487,8 +487,8 @@ def _data_item_from_numpy(
 
 
 def _join_data_items(
-        items: Tuple[DataItem, ...], *,
-        parent: Optional[Element] = None) -> DataItem:
+        items: tuple[DataItem, ...], *,
+        parent: Element | None = None) -> DataItem:
     r"""Joins several :class:`DataItem`\ s using a :attr:`DataItemType.Function`
     as::
 
@@ -554,10 +554,10 @@ class Grid(XdmfElement):
 
     def __init__(
             self, *,
-            name: Optional[str] = None,
+            name: str | None = None,
             gtype: GridType = GridType.Uniform,
-            ctype: Optional[CollectionType] = None,
-            parent: Optional[Element] = None,
+            ctype: CollectionType | None = None,
+            parent: Element | None = None,
             ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
@@ -642,10 +642,10 @@ class Topology(XdmfElement):
     def __init__(
             self, *,
             ttype: TopologyType,
-            nodes_per_element: Optional[int] = None,
-            number_of_elements: Optional[int] = None,
-            dimensions: Optional[Tuple[int, ...]] = None,
-            parent: Optional[Element] = None,
+            nodes_per_element: int | None = None,
+            number_of_elements: int | None = None,
+            dimensions: tuple[int, ...] | None = None,
+            parent: Element | None = None,
             ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
@@ -753,9 +753,9 @@ class Geometry(XdmfElement):
 
     def __init__(
             self, *,
-            name: Optional[str] = None,
+            name: str | None = None,
             gtype: GeometryType = GeometryType.XYZ,
-            parent: Optional[Element] = None,
+            parent: Element | None = None,
             ):
         """
         :param parent: if provided, *self* is appended to the element.
@@ -779,7 +779,7 @@ class Time(XdmfElement):
     def __init__(
             self, *,
             value: str,
-            parent: Optional[Element] = None,
+            parent: Element | None = None,
             ):
         """
         :param parent: if provided, *self* is appended to the element.
@@ -801,8 +801,8 @@ class Domain(XdmfElement):
 
     def __init__(
             self, *,
-            name: Optional[str] = None,
-            parent: Optional[Element] = None,
+            name: str | None = None,
+            parent: Element | None = None,
             ):
         """
         :param parent: if provided, *self* is appended to the element.
@@ -826,7 +826,7 @@ class Information(XdmfElement):
             self, *,
             name: str,
             value: str,
-            parent: Optional[Element] = None,
+            parent: Element | None = None,
             ):
         """
         :param parent: if provided, *self* is appended to the element.
@@ -849,9 +849,9 @@ class XInclude(XdmfElement):
 
     def __init__(
             self, *,
-            href: Optional[str],
-            xpointer: Optional[str] = None,
-            parent: Optional[Element] = None,
+            href: str | None,
+            xpointer: str | None = None,
+            parent: Element | None = None,
             ):
         """
         :param parent: if provided, *self* is appended to the element.
@@ -924,10 +924,10 @@ class DataArray:
 
     def __init__(
             self,
-            components: Tuple[DataItem, ...], *,
-            name: Optional[str] = None,
-            acenter: Optional[AttributeCenter] = None,
-            atype: Optional[AttributeType] = None,
+            components: tuple[DataItem, ...], *,
+            name: str | None = None,
+            acenter: AttributeCenter | None = None,
+            atype: AttributeType | None = None,
             ):
         r"""
         :param components: a description of each component of an array.
@@ -954,14 +954,14 @@ class DataArray:
         self.atype = atype
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         if len(self.components) == 1:
             return self.components[0].dimensions
         else:
             return (len(self.components), *self.components[0].dimensions)
 
     def as_data_item(self, *,
-            parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
+            parent: Element | None = None) -> tuple[DataItem, ...]:
         r"""Finalize the :class:`DataArray` and construct :class:`DataItem`\ s
         to be written to a file.
         """
@@ -980,7 +980,7 @@ class DataArray:
     def from_dataset(cls,
             dset: Any,
             acenter: AttributeCenter = AttributeCenter.Node,
-            atype: Optional[AttributeType] = None) -> "DataArray":
+            atype: AttributeType | None = None) -> "DataArray":
         filename = dset.file.filename
         data = f"{filename}:{dset.name}"
         name = dset.name.split("/")[-1]
@@ -1004,8 +1004,8 @@ class NumpyDataArray(DataArray):
     def __init__(
             self,
             ary: "np.ndarray[Any, Any]", *,
-            acenter: Optional[AttributeCenter] = None,
-            name: Optional[str] = None,
+            acenter: AttributeCenter | None = None,
+            name: str | None = None,
             ):
         """
         :param ary: if this is an :class:`object` array, each entry is considered
@@ -1027,11 +1027,11 @@ class NumpyDataArray(DataArray):
         self.ary = ary
 
     def as_data_item(self, *,
-            parent: Optional[Element] = None) -> Tuple[DataItem, ...]:
+            parent: Element | None = None) -> tuple[DataItem, ...]:
         items = super().as_data_item(parent=parent)
 
         ary = tuple(self.ary) if self.ary.dtype.char == "O" else (self.ary,)
-        for item, iary in zip(items, ary):
+        for item, iary in zip(items, ary, strict=True):
             item.text = _ndarray_to_string(iary)
 
         return items
@@ -1092,9 +1092,9 @@ class XdmfUnstructuredGrid(XdmfGrid):
     def __init__(self,
             points: DataArray,
             connectivity: DataArray, *,
-            topology_type: Union[Topology, TopologyType],
-            name: Optional[str] = None,
-            geometry_type: Optional[GeometryType] = None):
+            topology_type: Topology | TopologyType,
+            name: str | None = None,
+            geometry_type: GeometryType | None = None):
         if geometry_type is None:
             geometry_type = _geometry_type_from_points(points)
 
@@ -1140,9 +1140,9 @@ class XdmfWriter(ElementTree):
     """
 
     def __init__(self,
-            grids: Tuple[XdmfGrid, ...], *,
-            arrays: Optional[Tuple[DataArray, ...]] = None,
-            tags: Optional[Tuple[Element, ...]] = None):
+            grids: tuple[XdmfGrid, ...], *,
+            arrays: tuple[DataArray, ...] | None = None,
+            tags: tuple[Element, ...] | None = None):
         r"""
         :param grids: a :class:`tuple` of grids to be added to the
             top :class:`Domain`. Currently only a single domain is supported.
