@@ -15,12 +15,13 @@ def test_unstructured_vertex_grid(ambient_dim: int,
     """Test constructing a vertex grid with different ways to define the
     points and connectivity.
     """
+    rng = np.random.default_rng(seed=42)
 
     # {{{ set up connectivity
 
     from pyvisfile.xdmf import _data_item_from_numpy
     connectivity_ary = np.arange(npoints, dtype=np.uint32)
-    points_ary = np.random.rand(ambient_dim, npoints)
+    points_ary = rng.random(size=(ambient_dim, npoints))
 
     if dformat == "xml":
         connectivity: DataArray = NumpyDataArray(connectivity_ary, name="connectivity")
