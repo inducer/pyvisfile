@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 __copyright__ = "Copyright (C) 2020 Alexandru Fikl"
 
 __license__ = """
@@ -177,7 +179,7 @@ class XdmfElement(Element):
 
         return name
 
-    def replace(self, **kwargs: Any) -> "XdmfElement":
+    def replace(self, **kwargs: Any) -> XdmfElement:
         """Duplicate the current tag with updated attributes from *kwargs*."""
         parent = kwargs.pop("parent", self.parent)
         tag = kwargs.pop("tag", self.tag)
@@ -238,7 +240,7 @@ class AttributeType(enum.Enum):
     GlobalId = 205
 
     @staticmethod
-    def from_shape(shape: tuple[int, ...]) -> "AttributeType":
+    def from_shape(shape: tuple[int, ...]) -> AttributeType:
         # https://github.com/nschloe/meshio/blob/37673c8fb938ad73d92fb3171dee3eb193b5e7ac/meshio/xdmf/common.py#L162
         if len(shape) == 1 or (len(shape) == 2 and shape[1] == 1):
             return AttributeType.Scalar
@@ -310,7 +312,7 @@ class DataItemNumberType(enum.Enum):
     Float = enum.auto()
 
     @staticmethod
-    def from_dtype(dtype: "np.dtype[Any]") -> "DataItemNumberType":
+    def from_dtype(dtype: np.dtype[Any]) -> DataItemNumberType:
         if dtype.kind == "i":
             return DataItemNumberType.Int
         elif dtype.kind == "u":
@@ -339,7 +341,7 @@ class DataItemEndian(enum.Enum):
     Native = 52
 
     @staticmethod
-    def from_system() -> "DataItemEndian":
+    def from_system() -> DataItemEndian:
         import sys
         if sys.byteorder == "little":
             return DataItemEndian.Little
@@ -411,7 +413,7 @@ class DataItem(XdmfElement):
     @classmethod
     def as_reference(cls,
                      reference_name: str, *,
-                     parent: Element | None = None) -> "DataItem":
+                     parent: Element | None = None) -> DataItem:
         """
         :param reference_name: a name or an absolute reference to another
             :class:`DataItem`. The name is just the ``Name`` attribute of
@@ -455,7 +457,7 @@ def _data_item_format_from_str(text: str) -> DataItemFormat:
 
 
 def _data_item_from_numpy(
-        ary: "np.ndarray[Any, Any]", *,
+        ary: np.ndarray[Any, np.dtype[Any]], *,
         name: str | None = None,
         parent: Element | None = None,
         data: str | None = None,
@@ -896,7 +898,7 @@ def _ndarray_to_string(ary: Any) -> str:
     return "\n" + bio.getvalue().decode()
 
 
-def _geometry_type_from_points(points: "DataArray") -> GeometryType:
+def _geometry_type_from_points(points: DataArray) -> GeometryType:
     dims = points.shape[-1]
 
     if len(points.components) == 1:
@@ -980,7 +982,7 @@ class DataArray:
     def from_dataset(cls,
             dset: Any,
             acenter: AttributeCenter = AttributeCenter.Node,
-            atype: AttributeType | None = None) -> "DataArray":
+            atype: AttributeType | None = None) -> DataArray:
         filename = dset.file.filename
         data = f"{filename}:{dset.name}"
         name = dset.name.split("/")[-1]
@@ -1003,7 +1005,7 @@ class NumpyDataArray(DataArray):
 
     def __init__(
             self,
-            ary: "np.ndarray[Any, Any]", *,
+            ary: np.ndarray[Any, np.dtype[Any]], *,
             acenter: AttributeCenter | None = None,
             name: str | None = None,
             ):
