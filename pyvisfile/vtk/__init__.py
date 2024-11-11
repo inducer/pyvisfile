@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Generic support for new-style (XML) VTK visualization data files."""
 
 __copyright__ = "Copyright (C) 2007 Andreas Kloeckner"
@@ -258,7 +260,7 @@ class XMLElement(XMLElementBase):
         self.tag = tag
         self.attributes = attributes
 
-    def copy(self, children: list[Child] | None = None) -> "XMLElement":
+    def copy(self, children: list[Child] | None = None) -> XMLElement:
         """Make a copy of the element with new children."""
         if children is None:
             children = self.children
@@ -456,7 +458,7 @@ class Visitable:
     #: Name of the method called in :meth:`invoke_visitor`.
     generator_method: ClassVar[str]
 
-    def invoke_visitor(self, visitor: "XMLGenerator") -> XMLElement:
+    def invoke_visitor(self, visitor: XMLGenerator) -> XMLElement:
         """Visit the current object with the given *visitor* and generate the
         corresponding XML element.
         """
@@ -589,7 +591,7 @@ class DataArray(Visitable):
 
         return self.encoded_buffer
 
-    def encode(self, compressor: str | None, xml_element: "XMLElement") -> int:
+    def encode(self, compressor: str | None, xml_element: XMLElement) -> int:
         """Encode the underlying buffer with the given compressor and add it
         to the *xml_element*.
 
@@ -620,10 +622,10 @@ class UnstructuredGrid(Visitable):
 
     def __init__(self,
                  points: tuple[int, DataArray],
-                 cells: Union[
-                     "np.ndarray[Any, Any]",
-                     tuple[int, DataArray, DataArray]],
-                 cell_types: Union["np.ndarray[Any, Any]", DataArray]) -> None:
+                 cells: (
+                     np.ndarray[Any, np.dtype[Any]]
+                     | tuple[int, DataArray, DataArray]),
+                 cell_types: np.ndarray[Any, np.dtype[Any]] | DataArray) -> None:
         """
         :arg points: a tuple containing the point count and a :class:`DataArray`
             with the actual coordinates.
@@ -660,7 +662,7 @@ class UnstructuredGrid(Visitable):
         self.pointdata: list[DataArray] = []
         self.celldata: list[DataArray] = []
 
-    def copy(self) -> "UnstructuredGrid":
+    def copy(self) -> UnstructuredGrid:
         return UnstructuredGrid(
                 (self.point_count, self.points),
                 (self.cell_count, self.cell_connectivity, self.cell_offsets),
@@ -690,7 +692,7 @@ class StructuredGrid(Visitable):
 
     generator_method = "gen_structured_grid"
 
-    def __init__(self, mesh: "np.ndarray[Any, Any]") -> None:
+    def __init__(self, mesh: np.ndarray[Any, np.dtype[Any]]) -> None:
         """
         :arg mesh: has shape ``(ndims, nx, ny, nz)``, depending on the dimension.
         """
@@ -709,7 +711,7 @@ class StructuredGrid(Visitable):
         self.pointdata: list[DataArray] = []
         self.celldata: list[DataArray] = []
 
-    def copy(self) -> "StructuredGrid":
+    def copy(self) -> StructuredGrid:
         return StructuredGrid(self.mesh)
 
     def vtk_extension(self) -> str:
@@ -954,9 +956,9 @@ class ParallelXMLGenerator(XMLGenerator):
 
 def write_structured_grid(
         file_name: str | pathlib.Path,
-        mesh: "np.ndarray[Any, Any]",
-        cell_data: list[tuple[str, "np.ndarray[Any, Any]"]] | None = None,
-        point_data: list[tuple[str, "np.ndarray[Any, Any]"]] | None = None,
+        mesh: np.ndarray[Any, np.dtype[Any]],
+        cell_data: list[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
+        point_data: list[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
         overwrite: bool = False) -> None:
     """Write a structure grid to *filename*.
 
@@ -979,7 +981,7 @@ def write_structured_grid(
 
     from pytools.obj_array import obj_array_vectorize
 
-    def do_reshape(fld: "np.ndarray[Any, Any]") -> "np.ndarray[Any, Any]":
+    def do_reshape(fld: np.ndarray[Any, Any]) -> np.ndarray[Any, np.dtype[Any]]:
         return fld.T.copy().reshape(-1)
 
     for name, field in cell_data:
