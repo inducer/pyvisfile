@@ -2,26 +2,29 @@ import numpy as np
 import pytest
 
 from pytools.obj_array import make_obj_array
+from pyvisfile.xdmf import DataArray, NumpyDataArray
 
 
 # {{{ test_unstructured_vertex_grid
 
 @pytest.mark.parametrize("ambient_dim", [2, 3])
 @pytest.mark.parametrize("dformat", ["xml", "hdf", "binary"])
-def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
+def test_unstructured_vertex_grid(ambient_dim: int,
+                                  dformat: str,
+                                  npoints: int = 64) -> None:
     """Test constructing a vertex grid with different ways to define the
     points and connectivity.
     """
 
     # {{{ set up connectivity
 
-    from pyvisfile.xdmf import DataArray, NumpyDataArray, _data_item_from_numpy
-    connectivity = np.arange(npoints, dtype=np.uint32)
-    points = np.random.rand(ambient_dim, npoints)
+    from pyvisfile.xdmf import _data_item_from_numpy
+    connectivity_ary = np.arange(npoints, dtype=np.uint32)
+    points_ary = np.random.rand(ambient_dim, npoints)
 
     if dformat == "xml":
-        connectivity = NumpyDataArray(connectivity, name="connectivity")
-        points = NumpyDataArray(points.T, name="points")
+        connectivity: DataArray = NumpyDataArray(connectivity_ary, name="connectivity")
+        points: DataArray = NumpyDataArray(points_ary.T, name="points")
     elif dformat in ["hdf", "binary"]:
         if dformat == "hdf":
             cdata = "geometry.h5:/Grid/Connectivity"
@@ -31,12 +34,12 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
             pdata = "points.out"
 
         connectivity = DataArray((
-            _data_item_from_numpy(connectivity,
+            _data_item_from_numpy(connectivity_ary,
                 name="connectivity",
                 data=cdata),
             ))
         points = DataArray((
-            _data_item_from_numpy(points.T,
+            _data_item_from_numpy(points_ary.T,
                 name="points",
                 data=pdata),
             ))
@@ -66,7 +69,10 @@ def test_unstructured_vertex_grid(ambient_dim, dformat, npoints=64):
 
 # {{{ test_unstructured_simplex_grid
 
-def _simplex_box_connectivity(*, npoints, nelements, nvertices):
+def _simplex_box_connectivity(*,
+                              npoints: tuple[int, ...],
+                              nelements: int,
+                              nvertices: int) -> NumpyDataArray:
     # NOTE: largely copied from meshmode/mesh/generation.py::generate_box_mesh
     ambient_dim = len(npoints)
 
@@ -112,12 +118,11 @@ def _simplex_box_connectivity(*, npoints, nelements, nvertices):
 
     assert ielement == nelements
 
-    from pyvisfile.xdmf import NumpyDataArray
     return NumpyDataArray(connectivity, name="connectivity")
 
 
 @pytest.mark.parametrize("ambient_dim", [2, 3])
-def test_unstructured_simplex_grid(ambient_dim, nelements=16):
+def test_unstructured_simplex_grid(ambient_dim: int, nelements: int = 16) -> None:
     """Test constructing a grid with a more complicated topology."""
 
     from pyvisfile.xdmf import TopologyType
@@ -138,12 +143,12 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=16):
     x = np.linspace(-1.0, 1.0, nelements + 1)
 
     npoints = len(x)
-    points = np.empty((ambient_dim,) + (npoints,) * ambient_dim)
+    points_ary = np.empty((ambient_dim,) + (npoints,) * ambient_dim)
     for idim in range(ambient_dim):
-        points[idim] = x.reshape((npoints,) + (1,) * (ambient_dim - 1 - idim))
+        points_ary[idim] = x.reshape((npoints,) + (1,) * (ambient_dim - 1 - idim))
 
     from pyvisfile.xdmf import NumpyDataArray
-    points = NumpyDataArray(points.reshape(ambient_dim, -1).T, name="points")
+    points = NumpyDataArray(points_ary.reshape(ambient_dim, -1).T, name="points")
 
     from pyvisfile.xdmf import _XDMF_ELEMENT_NODE_COUNT
     connectivity = _simplex_box_connectivity(
@@ -162,7 +167,9 @@ def test_unstructured_simplex_grid(ambient_dim, nelements=16):
 
     velocity = points.ary + np.array([0, 1, 2][:ambient_dim]).reshape(1, -1)
     velocity = NumpyDataArray(velocity, name="velocity")
-    vorticity = NumpyDataArray(make_obj_array(velocity.ary), name="vorticity")
+    vorticity = NumpyDataArray(
+        make_obj_array(velocity.ary),
+        name="vorticity")
 
     # }}}
 

@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 import pathlib
 from abc import ABC, abstractmethod
-from collections.abc import ByteString
+from collections.abc import ByteString, Sequence
 from typing import Any, ClassVar, TextIO, Union, cast
 
 import numpy as np
@@ -260,7 +260,7 @@ class XMLElement(XMLElementBase):
         self.tag = tag
         self.attributes = attributes
 
-    def copy(self, children: list[Child] | None = None) -> XMLElement:
+    def copy(self, children: Sequence[Child] | None = None) -> XMLElement:
         """Make a copy of the element with new children."""
         if children is None:
             children = self.children
@@ -917,7 +917,7 @@ class ParallelXMLGenerator(XMLGenerator):
     .. automethod:: __init__
     """
 
-    def __init__(self, pathnames: list[str | pathlib.Path]) -> None:
+    def __init__(self, pathnames: Sequence[str | pathlib.Path]) -> None:
         """
         :arg pathnames: a list of paths to indivitual VTK files containing
             different pieces of a grid.
@@ -957,8 +957,8 @@ class ParallelXMLGenerator(XMLGenerator):
 def write_structured_grid(
         file_name: str | pathlib.Path,
         mesh: np.ndarray[Any, np.dtype[Any]],
-        cell_data: list[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
-        point_data: list[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
+        cell_data: Sequence[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
+        point_data: Sequence[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
         overwrite: bool = False) -> None:
     """Write a structure grid to *filename*.
 
