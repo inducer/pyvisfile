@@ -49,8 +49,8 @@ def test_vtk_unstructured_points(n: int) -> None:
         AppendedDataXMLGenerator(compressor)(grid).write(outf)
 
 
-def test_vtk_structured_grid():
-    angle_mesh = np.mgrid[1:2:10j, 0:2*np.pi:20j, 0:np.pi:30j]
+def test_vtk_structured_grid() -> None:
+    angle_mesh = np.mgrid[1:2:10j, 0:2*np.pi:20j, 0:np.pi:30j]  # type: ignore[misc]
 
     r = angle_mesh[0, np.newaxis]
     phi = angle_mesh[1, np.newaxis]
@@ -74,7 +74,7 @@ def test_vtk_structured_grid():
         point_data=[("phi", phi), ("vec", vec)])
 
 
-def test_vtk_parallel():
+def test_vtk_parallel() -> None:
     cwd = pathlib.Path(__file__).parent
     file_name = cwd / "vtk-parallel.pvtu"
 
