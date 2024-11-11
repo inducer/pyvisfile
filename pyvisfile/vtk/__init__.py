@@ -24,7 +24,8 @@ THE SOFTWARE.
 
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Any, ByteString, ClassVar, List, Optional, TextIO, Tuple, Union, cast
+from collections.abc import ByteString
+from typing import Any, ClassVar, TextIO, Union, cast
 
 import numpy as np
 
@@ -238,7 +239,7 @@ class XMLElementBase:
     """
 
     def __init__(self) -> None:
-        self.children: List[Child] = []
+        self.children: list[Child] = []
 
     def add_child(self, child: Child) -> None:
         """Append a new child to the current element."""
@@ -257,7 +258,7 @@ class XMLElement(XMLElementBase):
         self.tag = tag
         self.attributes = attributes
 
-    def copy(self, children: Optional[List[Child]] = None) -> "XMLElement":
+    def copy(self, children: list[Child] | None = None) -> "XMLElement":
         """Make a copy of the element with new children."""
         if children is None:
             children = self.children
@@ -297,7 +298,7 @@ class XMLRoot(XMLElementBase):
     .. automethod:: write
     """
 
-    def __init__(self, child: Optional[Child] = None) -> None:
+    def __init__(self, child: Child | None = None) -> None:
         super().__init__()
         if child:
             self.add_child(child)
@@ -338,7 +339,7 @@ class EncodedBuffer(ABC):
         """An identifier for the binary encoding used."""
 
     @abstractmethod
-    def compressor(self) -> Optional[str]:
+    def compressor(self) -> str | None:
         """An identifier for the compressor used or *None*."""
 
     @abstractmethod
@@ -365,7 +366,7 @@ class BinaryEncodedBuffer(EncodedBuffer):
     def encoder(self) -> str:
         return "binary"
 
-    def compressor(self) -> Optional[str]:
+    def compressor(self) -> str | None:
         return None
 
     def raw_buffer(self) -> ByteString:
@@ -392,7 +393,7 @@ class Base64EncodedBuffer(EncodedBuffer):
     def encoder(self) -> str:
         return "base64"
 
-    def compressor(self) -> Optional[str]:
+    def compressor(self) -> str | None:
         return None
 
     def raw_buffer(self) -> ByteString:
@@ -426,7 +427,7 @@ class Base64ZLibEncodedBuffer(EncodedBuffer):
     def encoder(self) -> str:
         return "base64"
 
-    def compressor(self) -> Optional[str]:
+    def compressor(self) -> str | None:
         return "zlib"
 
     def raw_buffer(self) -> ByteString:
@@ -486,7 +487,7 @@ class DataArray(Visitable):
                  container: Any,
                  vector_padding: int = 3,
                  vector_format: int = VF_LIST_OF_COMPONENTS,
-                 components: Optional[int] = None) -> None:
+                 components: int | None = None) -> None:
         """
         :arg name: name of the data array.
         :arg container: a :class:`numpy.ndarray` or another :class:`DataArray`.
@@ -499,7 +500,7 @@ class DataArray(Visitable):
         self.name = name
 
         if isinstance(container, DataArray):
-            self.type: Optional[str] = container.type
+            self.type: str | None = container.type
             self.components: int = container.components
             self.encoded_buffer: EncodedBuffer = container.encoded_buffer
             return
@@ -555,7 +556,7 @@ class DataArray(Visitable):
 
     def get_encoded_buffer(self,
                            encoder: str,
-                           compressor: Optional[str] = None) -> EncodedBuffer:
+                           compressor: str | None = None) -> EncodedBuffer:
         """Re-encode the underlying buffer of the current :class:`DataArray`.
 
         :arg encoder: new encoder name.
@@ -588,7 +589,7 @@ class DataArray(Visitable):
 
         return self.encoded_buffer
 
-    def encode(self, compressor: Optional[str], xml_element: "XMLElement") -> int:
+    def encode(self, compressor: str | None, xml_element: "XMLElement") -> int:
         """Encode the underlying buffer with the given compressor and add it
         to the *xml_element*.
 
@@ -618,10 +619,10 @@ class UnstructuredGrid(Visitable):
     generator_method = "gen_unstructured_grid"
 
     def __init__(self,
-                 points: Tuple[int, DataArray],
+                 points: tuple[int, DataArray],
                  cells: Union[
                      "np.ndarray[Any, Any]",
-                     Tuple[int, DataArray, DataArray]],
+                     tuple[int, DataArray, DataArray]],
                  cell_types: Union["np.ndarray[Any, Any]", DataArray]) -> None:
         """
         :arg points: a tuple containing the point count and a :class:`DataArray`
@@ -656,8 +657,8 @@ class UnstructuredGrid(Visitable):
 
         self.cell_types = DataArray("types", cell_types)
 
-        self.pointdata: List[DataArray] = []
-        self.celldata: List[DataArray] = []
+        self.pointdata: list[DataArray] = []
+        self.celldata: list[DataArray] = []
 
     def copy(self) -> "UnstructuredGrid":
         return UnstructuredGrid(
@@ -705,8 +706,8 @@ class StructuredGrid(Visitable):
                 "points", mesh,
                 vector_format=VF_LIST_OF_VECTORS)
 
-        self.pointdata: List[DataArray] = []
-        self.celldata: List[DataArray] = []
+        self.pointdata: list[DataArray] = []
+        self.celldata: list[DataArray] = []
 
     def copy(self) -> "StructuredGrid":
         return StructuredGrid(self.mesh)
@@ -729,7 +730,7 @@ class StructuredGrid(Visitable):
 # {{{ vtk xml writers
 
 def make_vtkfile(filetype: str,
-                 compressor: Optional[str] = None,
+                 compressor: str | None = None,
                  version: str = "0.1") -> XMLElement:
     import sys
 
@@ -748,8 +749,8 @@ class XMLGenerator:
     .. automethod:: __call__
     """
     def __init__(self,
-                 compressor: Optional[str] = None,
-                 vtk_file_version: Optional[str] = None) -> None:
+                 compressor: str | None = None,
+                 vtk_file_version: str | None = None) -> None:
         """
         :arg vtk_file_version: a string ``"x.y"`` with the desired VTK
             XML file format version. Relevant versions are as follows:
@@ -879,8 +880,8 @@ class AppendedDataXMLGenerator(InlineXMLGenerator):
     will index into it. Additional compression can be added to the appended data.
     """
 
-    def __init__(self, compressor: Optional[str] = None,
-                 vtk_file_version: Optional[str] = None) -> None:
+    def __init__(self, compressor: str | None = None,
+                 vtk_file_version: str | None = None) -> None:
         super().__init__(compressor=compressor, vtk_file_version=vtk_file_version)
 
         self.base64_len = 0
@@ -914,7 +915,7 @@ class ParallelXMLGenerator(XMLGenerator):
     .. automethod:: __init__
     """
 
-    def __init__(self, pathnames: List[Union[str, pathlib.Path]]) -> None:
+    def __init__(self, pathnames: list[str | pathlib.Path]) -> None:
         """
         :arg pathnames: a list of paths to indivitual VTK files containing
             different pieces of a grid.
@@ -952,10 +953,10 @@ class ParallelXMLGenerator(XMLGenerator):
 
 
 def write_structured_grid(
-        file_name: Union[str, pathlib.Path],
+        file_name: str | pathlib.Path,
         mesh: "np.ndarray[Any, Any]",
-        cell_data: Optional[List[Tuple[str, "np.ndarray[Any, Any]"]]] = None,
-        point_data: Optional[List[Tuple[str, "np.ndarray[Any, Any]"]]] = None,
+        cell_data: list[tuple[str, "np.ndarray[Any, Any]"]] | None = None,
+        point_data: list[tuple[str, "np.ndarray[Any, Any]"]] | None = None,
         overwrite: bool = False) -> None:
     """Write a structure grid to *filename*.
 
