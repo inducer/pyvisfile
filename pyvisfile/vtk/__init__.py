@@ -943,8 +943,8 @@ class ParallelXMLGenerator(XMLGenerator):
         cells.add_child(self.rec(ugrid.cell_offsets))
         cells.add_child(self.rec(ugrid.cell_types))
 
-        for pn in self.pathnames:
-            el.add_child(XMLElement("Piece", Source=pn))
+        for pathname in self.pathnames:
+            el.add_child(XMLElement("Piece", Source=pathname))
 
         return el
 

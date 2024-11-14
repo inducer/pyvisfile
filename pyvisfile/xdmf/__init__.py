@@ -333,7 +333,7 @@ class DataItemFormat(enum.Enum):
 
 
 class DataItemEndian(enum.Enum):
-    """Endianess of the data stored in the item."""
+    """Endianness of the data stored in the item."""
     # NOTE: integer ids taken from
     # https://gitlab.kitware.com/xdmf/xdmf/-/blob/04a84bab0eb1568e0f1a27c8fb60c6931efda003/core/XdmfBinaryController.hpp#L211
     Big = 50
@@ -631,7 +631,7 @@ class TopologyType(enum.IntEnum):
     # structured from XdfmRectilinearGrid.cpp
     RectMesh2D = 0x1101     # Mesh with perpendicular axes
     RectMesh3D = 0x1101
-    # stuctured from XdmfRegularGrid.cpp
+    # structured from XdmfRegularGrid.cpp
     CoRectMesh2D = 0x1102   # Mesh with equally spaced perpendicular axes
     CoRectMesh3D = 0x1102
 
