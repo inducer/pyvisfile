@@ -25,10 +25,7 @@ THE SOFTWARE.
 from collections.abc import Sequence
 from typing import overload
 
-from pytools import (
-    add_tuples,
-    generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam,
-)
+from pytools import generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam
 
 
 __doc__ = """
@@ -76,7 +73,7 @@ def add_tuple_to_list(ary: Sequence[tuple[int, int, int]],
 
 def add_tuple_to_list(ary: Sequence[tuple[int, ...]],
                       x: tuple[int, ...]) -> Sequence[tuple[int, ...]]:
-    return [add_tuples(x, y) for y in ary]
+    return [tuple([xv + yv for xv, yv in zip(x, y, strict=True)]) for y in ary]  # noqa: C409
 
 # }}}
 
@@ -128,7 +125,7 @@ def vtk_lagrange_triangle_node_tuples(order: int) -> Sequence[tuple[int, int]]:
         nodes += add_tuple_to_list(faces, offset)
 
         order = order - 3
-        offset = add_tuples(offset, (1, 1))
+        offset = (offset[0] + 1, offset[1] + 1)
 
     return nodes
 
@@ -197,7 +194,7 @@ def vtk_lagrange_tetrahedron_node_tuples(
         nodes += add_tuple_to_list(faces, offset)
 
         order = order - 4
-        offset = add_tuples(offset, (1, 1, 1))
+        offset = (offset[0] + 1, offset[1] + 1, offset[2] + 1)
 
     return nodes
 
@@ -241,7 +238,7 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(
 
     node_to_index = {
             node_tuple: i
-            for i, node_tuple in enumerate(gnitstam(order, dims))
+            for i, node_tuple in enumerate(gnitstam(order, dims))  # type: ignore[no-untyped-call]
             }
 
     assert len(node_tuples) == len(node_to_index)

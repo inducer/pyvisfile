@@ -62,7 +62,7 @@ def test_vtk_structured_grid() -> None:
         ))
 
     from pytools.obj_array import make_obj_array
-    vec = make_obj_array([
+    vec = make_obj_array([      # type: ignore[no-untyped-call]
         np.sin(theta)*np.cos(phi),
         np.sin(theta)*np.sin(phi),
         np.cos(theta),

@@ -985,11 +985,11 @@ def write_structured_grid(
         return fld.T.copy().reshape(-1)
 
     for name, field in cell_data:
-        reshaped_fld = obj_array_vectorize(do_reshape, field)
+        reshaped_fld = obj_array_vectorize(do_reshape, field)  # type: ignore[no-untyped-call]
         grid.add_pointdata(DataArray(name, reshaped_fld))
 
     for name, field in point_data:
-        reshaped_fld = obj_array_vectorize(do_reshape, field)
+        reshaped_fld = obj_array_vectorize(do_reshape, field)  # type: ignore[no-untyped-call]
         grid.add_pointdata(DataArray(name, reshaped_fld))
 
     if not overwrite and file_name.exists():
