@@ -169,7 +169,7 @@ def test_unstructured_simplex_grid(ambient_dim: int, nelements: int = 16) -> Non
     velocity = points.ary + np.array([0, 1, 2][:ambient_dim]).reshape(1, -1)
     velocity = NumpyDataArray(velocity, name="velocity")
     vorticity = NumpyDataArray(
-        make_obj_array(velocity.ary),
+        make_obj_array(velocity.ary),  # type: ignore[no-untyped-call]
         name="vorticity")
 
     # }}}

@@ -106,4 +106,6 @@ combine-as-imports = true
 
 [tool.mypy]
 python_version = "3.10"
+strict = true
+hide_error_codes = false
 warn_unused_ignores = true
