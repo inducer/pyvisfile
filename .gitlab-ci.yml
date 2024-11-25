@@ -10,7 +10,6 @@ Ruff:
 Mypy:
     script: |
         EXTRA_INSTALL="numpy  mypy pytest"
-        PROJECT_INSTALL_FLAGS="--no-build-isolation"
         curl -L -O https://tiker.net/ci-support-v0
         . ci-support-v0
 
