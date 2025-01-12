@@ -238,7 +238,7 @@ def vtk_lagrange_simplex_node_tuples_to_permutation(
 
     node_to_index = {
             node_tuple: i
-            for i, node_tuple in enumerate(gnitstam(order, dims))  # type: ignore[no-untyped-call]
+            for i, node_tuple in enumerate(gnitstam(order, dims))
             }
 
     assert len(node_tuples) == len(node_to_index)
