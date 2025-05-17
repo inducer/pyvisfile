@@ -983,6 +983,11 @@ class DataArray:
             dset: Any,
             acenter: AttributeCenter = AttributeCenter.Node,
             atype: AttributeType | None = None) -> DataArray:
+        """Create a :class:`DataArray` from an HDF5 ``Dataset``.
+
+        :arg dset: an object that resembles an HDF5 dataset. We only access the
+            fields *dtype*, *shape*, *name* and *file*.
+        """
         filename = dset.file.filename
         data = f"{filename}:{dset.name}"
         name = dset.name.split("/")[-1]
