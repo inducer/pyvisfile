@@ -129,7 +129,9 @@ Writing
 -------
 
 .. autoclass:: DataArray
+    :members:
 .. autoclass:: NumpyDataArray
+    :members:
 
 .. autoclass:: XdmfGrid
 .. autoclass:: XdmfUnstructuredGrid
@@ -918,11 +920,7 @@ def _geometry_type_from_points(points: DataArray) -> GeometryType:
 
 
 class DataArray:
-    r"""An array represented as a list of :class:`DataItem`\ s.
-
-    .. automethod:: __init__
-    .. automethod:: as_data_item
-    """
+    r"""An array represented as a list of :class:`DataItem`\ s."""
 
     def __init__(
             self,
@@ -957,6 +955,7 @@ class DataArray:
 
     @property
     def shape(self) -> tuple[int, ...]:
+        """The shape of the data array."""
         if len(self.components) == 1:
             return self.components[0].dimensions
         else:
