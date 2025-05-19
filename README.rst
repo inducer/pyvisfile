@@ -4,10 +4,10 @@ PyVisfile: Write VTK/XDMF Visualization Files Efficiently
 .. image:: https://gitlab.tiker.net/inducer/pyvisfile/badges/main/pipeline.svg
     :alt: Gitlab Build Status
     :target: https://gitlab.tiker.net/inducer/pyvisfile/commits/main
-.. image:: https://github.com/inducer/pyvisfile/workflows/CI/badge.svg?branch=main&event=push
+.. image:: https://github.com/inducer/pyvisfile/actions/workflows/ci.yml/badge.svg
     :alt: Github Build Status
-    :target: https://github.com/inducer/pyvisfile/actions?query=branch%3Amain+workflow%3ACI+event%3Apush
-.. image:: https://badge.fury.io/py/pyvisfile.png
+    :target: https://github.com/inducer/pyvisfile/actions/workflows/ci.yml
+.. image:: https://badge.fury.io/py/pyvisfile.svg
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyvisfile/
 .. image:: https://zenodo.org/badge/1575355.svg
