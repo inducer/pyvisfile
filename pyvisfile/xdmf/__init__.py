@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 import enum
 import os
-from typing import Any
+from typing import Any, TypeVar
 from xml.etree.ElementTree import Element, ElementTree
 
 import numpy as np
@@ -1138,6 +1138,14 @@ class XdmfUnstructuredGrid(XdmfGrid):
 
 # {{{ writer
 
+T = TypeVar("T")
+
+
+def not_none(obj: T | None) -> T:
+    assert obj is not None
+    return obj
+
+
 class XdmfWriter(ElementTree):
     """
     .. automethod:: __init__
@@ -1180,7 +1188,7 @@ class XdmfWriter(ElementTree):
         from xml.dom import minidom
         from xml.etree.ElementTree import tostring
         dom = minidom.parseString(tostring(
-            self.getroot(),
+            not_none(self.getroot()),
             encoding="utf-8",
             short_empty_elements=False,
             ))
