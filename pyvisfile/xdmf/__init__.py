@@ -1196,7 +1196,7 @@ class XdmfWriter(ElementTree):
         with open(filename, "wb") as fd:
             fd.write(dom.toprettyxml(indent="  ", encoding="utf-8"))
 
-    def write(self, filename: str) -> None:  # type: ignore[override]
+    def write(self, filename: str) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Write the the XDMF file."""
         super().write(
                 filename,

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing_extensions import Buffer
 
 """Generic support for new-style (XML) VTK visualization data files."""
 
@@ -553,7 +554,7 @@ class DataArray(Visitable):
         if not container.flags.c_contiguous:
             container = container.copy()
 
-        buf = memoryview(container)
+        buf = memoryview(cast("Buffer", container))
         self.encoded_buffer = BinaryEncodedBuffer(buf)
 
     def get_encoded_buffer(self,

@@ -7,14 +7,14 @@ Ruff:
     except:
         - tags
 
-Mypy:
+basedpyright:
     script: |
-        EXTRA_INSTALL="numpy  mypy pytest"
+        EXTRA_INSTALL="numpy basedpyright pytest"
         curl -L -O https://tiker.net/ci-support-v0
         . ci-support-v0
 
         build_py_project_in_venv
-        python -m mypy "$CI_PROJECT_NAME" test
+        basedpyright
     tags:
         - python3
     except:
