@@ -51,8 +51,7 @@ jobs:
                 build_py_project_in_venv
                 test_py_project
 
-    mypy:
-        name: Mypy
+    basedpyright:
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v4
@@ -62,13 +61,13 @@ jobs:
                 python-version: '3.x'
         -   name: "Main Script"
             run: |
-                EXTRA_INSTALL="mypy pytest"
+                EXTRA_INSTALL="basedpyright numpy pytest"
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
 
                 build_py_project_in_venv
-                python -m mypy "$(basename $GITHUB_REPOSITORY)" test
+                basedpyright
 
     examples:
         name: Examples on Py${{ matrix.python-version }} ${{ matrix.os }}
