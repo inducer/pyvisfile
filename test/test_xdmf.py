@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from pytools.obj_array import make_obj_array
 from pyvisfile.xdmf import DataArray, NumpyDataArray
+import pytools.obj_array as obj_array
 
 
 # {{{ test_unstructured_vertex_grid
@@ -169,7 +169,7 @@ def test_unstructured_simplex_grid(ambient_dim: int, nelements: int = 16) -> Non
     velocity = points.ary + np.array([0, 1, 2][:ambient_dim]).reshape(1, -1)
     velocity = NumpyDataArray(velocity, name="velocity")
     vorticity = NumpyDataArray(
-        make_obj_array(velocity.ary),  # type: ignore[no-untyped-call]
+        obj_array.new_1d(velocity.ary),
         name="vorticity")
 
     # }}}
