@@ -49,6 +49,15 @@ Documentation = "https://documen.tician.de/pyvisfile"
 Homepage = "https://mathema.tician.de/software/pyvisfile"
 Repository = "https://github.com/inducer/pyvisfile"
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.git*",
+  "/doc/_build",
+  "/.editorconfig",
+  "/run-*.sh",
+  "/.basedpyright",
+]
+
 [tool.ruff]
 preview = true
 
@@ -88,6 +97,7 @@ known-first-party = ["pytools"]
 known-local-folder = ["pyfmmlib"]
 lines-after-imports = 2
 combine-as-imports = true
+required-imports = ["from __future__ import annotations"]
 
 [tool.typos.default]
 extend-ignore-re = [
