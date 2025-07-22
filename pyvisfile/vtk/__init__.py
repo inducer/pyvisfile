@@ -123,6 +123,13 @@ Convenience functions
 ---------------------
 
 .. autofunction:: write_structured_grid
+
+Type aliases
+------------
+
+.. class:: Child
+
+    A type alias, union of :class:`str` and :class:`XMLElement`.
 """
 
 # {{{ types
