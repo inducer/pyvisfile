@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing_extensions import Buffer
 
 """Generic support for new-style (XML) VTK visualization data files."""
 
@@ -29,6 +28,7 @@ from typing_extensions import Buffer
 import pathlib
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, TextIO, Union, cast, TYPE_CHECKING
+import pytools.obj_array as obj_array
 
 import numpy as np
 
@@ -472,7 +472,7 @@ class Visitable:
                 f"{type(visitor).__name__} does not support {type(self)}"
                 )
 
-        return cast(XMLElement, method(self))
+        return cast("XMLElement", method(self))
 
 
 class DataArray(Visitable):
@@ -983,17 +983,15 @@ def write_structured_grid(
 
     grid = StructuredGrid(mesh)
 
-    from pytools.obj_array import obj_array_vectorize
-
     def do_reshape(fld: np.ndarray[Any, Any]) -> np.ndarray[Any, np.dtype[Any]]:
         return fld.T.copy().reshape(-1)
 
     for name, field in cell_data:
-        reshaped_fld = obj_array_vectorize(do_reshape, field)  # type: ignore[no-untyped-call]
+        reshaped_fld = obj_array.vectorize(do_reshape, field)  # type: ignore[no-untyped-call]
         grid.add_pointdata(DataArray(name, reshaped_fld))
 
     for name, field in point_data:
-        reshaped_fld = obj_array_vectorize(do_reshape, field)  # type: ignore[no-untyped-call]
+        reshaped_fld = obj_array.vectorize(do_reshape, field)  # type: ignore[no-untyped-call]
         grid.add_pointdata(DataArray(name, reshaped_fld))
 
     if not overwrite and file_name.exists():

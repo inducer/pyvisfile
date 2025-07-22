@@ -13,6 +13,7 @@ from pyvisfile.vtk import (
     UnstructuredGrid,
     write_structured_grid,
 )
+import pytools.obj_array as obj_array
 
 
 def make_unstructured_grid(n: int) -> UnstructuredGrid:
@@ -61,8 +62,7 @@ def test_vtk_structured_grid() -> None:
         r*np.cos(theta),
         ))
 
-    from pytools.obj_array import make_obj_array
-    vec = make_obj_array([      # type: ignore[no-untyped-call]
+    vec = obj_array.new_1d([
         np.sin(theta)*np.cos(phi),
         np.sin(theta)*np.sin(phi),
         np.cos(theta),
