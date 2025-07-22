@@ -22,10 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from collections.abc import Sequence
-from typing import overload
+from typing import overload, TYPE_CHECKING
 
 from pytools import generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 __doc__ = """

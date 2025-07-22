@@ -66,6 +66,7 @@ extend-select = [
     "SIM",  # flake8-simplify
     "UP",   # pyupgrade
     "W",    # pycodestyle
+    "TC",
 ]
 extend-ignore = [
     "B028", # no explicit stacklevel in warnings

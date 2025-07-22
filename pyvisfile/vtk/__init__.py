@@ -25,12 +25,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from typing_extensions import Buffer
 import pathlib
 from abc import ABC, abstractmethod
-from collections.abc import ByteString, Sequence
-from typing import Any, ClassVar, TextIO, Union, cast
+from typing import Any, ClassVar, TextIO, Union, cast, TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from collections.abc import ByteString, Sequence
 
 
 __doc__ = """
