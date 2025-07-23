@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 
 from pyvisfile.vtk import write_structured_grid

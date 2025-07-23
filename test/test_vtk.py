@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import pathlib
 
 import numpy as np
 import pytest
+
+import pytools.obj_array as obj_array
 
 from pyvisfile.vtk import (
     VF_LIST_OF_COMPONENTS,
@@ -13,7 +17,6 @@ from pyvisfile.vtk import (
     UnstructuredGrid,
     write_structured_grid,
 )
-import pytools.obj_array as obj_array
 
 
 def make_unstructured_grid(n: int) -> UnstructuredGrid:

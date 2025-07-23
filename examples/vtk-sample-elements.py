@@ -6,6 +6,7 @@ and implementing additional element types.
 To facilitate this comparison, and unlike the rest of the package, this example
 makes use of the VTK Python bindings.
 """
+from __future__ import annotations
 
 import numpy as np
 import numpy.linalg as la

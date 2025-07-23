@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import numpy as np
 import pytest
 
-from pyvisfile.xdmf import DataArray, NumpyDataArray
 import pytools.obj_array as obj_array
+
+from pyvisfile.xdmf import DataArray, NumpyDataArray
 
 
 # {{{ test_unstructured_vertex_grid

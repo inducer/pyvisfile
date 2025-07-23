@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 __copyright__ = "Copyright (C) 2020 Alexandru Fikl"
 
 __license__ = """
@@ -22,9 +23,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from typing import overload, TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 from pytools import generate_nonnegative_integer_tuples_summing_to_at_most as gnitstam
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
