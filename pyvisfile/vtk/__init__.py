@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 import pathlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, ClassVar, TextIO, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TextIO, TypeAlias, cast
 
 import numpy as np
 from typing_extensions import Buffer
@@ -242,7 +242,7 @@ VF_LIST_OF_VECTORS = 1
 
 # Ah, the joys of home-baked non-compliant XML goodness.
 
-Child = Union[str, "XMLElement"]
+Child: TypeAlias = "str | XMLElement"
 
 
 class XMLElementBase:
