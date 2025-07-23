@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from datetime import datetime
 from importlib import metadata
 from urllib.request import urlopen
+
 
 _conf_url = "https://tiker.net/sphinxconfig-v0.py"
 with urlopen(_conf_url) as _inf:
@@ -11,8 +14,8 @@ release = metadata.version("pyvisfile")
 version = ".".join(release.split(".")[:2])
 
 intersphinx_mapping = {
-        "modepy": ("https://documen.tician.de/modepy", None),
-        "numpy": ("https://numpy.org/doc/stable/", None),
-        "python": ("https://docs.python.org/3/", None),
-        "pytools": ("https://documen.tician.de/pytools", None),
+    "modepy": ("https://documen.tician.de/modepy", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "pytools": ("https://documen.tician.de/pytools", None),
 }

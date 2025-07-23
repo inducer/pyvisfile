@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 """Generic support for new-style (XML) VTK visualization data files."""
 
 __copyright__ = "Copyright (C) 2007 Andreas Kloeckner"
@@ -24,13 +25,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from typing_extensions import Buffer
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, TextIO, Union, cast, TYPE_CHECKING
-import pytools.obj_array as obj_array
+from typing import TYPE_CHECKING, Any, ClassVar, TextIO, Union, cast
 
 import numpy as np
+from typing_extensions import Buffer
+
+import pytools.obj_array as obj_array
+
 
 if TYPE_CHECKING:
     from collections.abc import ByteString, Sequence
