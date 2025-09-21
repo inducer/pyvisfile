@@ -560,7 +560,7 @@ class DataArray(Visitable):
         else:
             self.components = 1
 
-        self.type = NUMPY_TO_VTK_TYPES.get(container.dtype.type, None)
+        self.type = NUMPY_TO_VTK_TYPES.get(container.dtype.type)
         if self.type is None:
             raise TypeError(f"Unsupported array dtype: '{container.dtype}'")
 
