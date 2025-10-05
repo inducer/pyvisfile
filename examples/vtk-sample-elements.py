@@ -119,7 +119,7 @@ def create_sample_element(cell_type, order=3, visualize=True):
         writer.SetInputData(grid)
         writer.Write()
 
-    # NOTE: vtkCellTypeSource always tesselates a square and the way it does
+    # NOTE: vtkCellTypeSource always tessellates a square and the way it does
     # that to get tetrahedra changed in
     #   https://gitlab.kitware.com/vtk/vtk/-/merge_requests/6529
     if LooseVersion(vtk.VTK_VERSION) > "8.2.0" \
