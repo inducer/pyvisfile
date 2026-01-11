@@ -79,13 +79,14 @@ extend-select = [
     "W",    # pycodestyle
 ]
 extend-ignore = [
-    "B028", # no explicit stacklevel in warnings
-    "C90",  # McCabe complexity
-    "E226", # missing whitespace around arithmetic operator
-    "E241", # multiple spaces after comma
-    "E242", # tab after comma
-    "E265", # comment should have a space
-    "E402", # module level import not at the top of file
+    "B028",   # no explicit stacklevel in warnings
+    "C90",    # McCabe complexity
+    "E226",   # missing whitespace around arithmetic operator
+    "E241",   # multiple spaces after comma
+    "E242",   # tab after comma
+    "E265",   # comment should have a space
+    "E402",   # module level import not at the top of file
+    "RUF067", # no code in __init__ *shrug*
 ]
 
 [tool.ruff.lint.flake8-quotes]
