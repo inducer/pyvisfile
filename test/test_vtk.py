@@ -5,7 +5,7 @@ import pathlib
 import numpy as np
 import pytest
 
-import pytools.obj_array as obj_array
+from pytools import obj_array
 
 from pyvisfile.vtk import (
     VF_LIST_OF_COMPONENTS,
