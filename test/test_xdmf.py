@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-import pytools.obj_array as obj_array
+from pytools import obj_array
 
 from pyvisfile.xdmf import DataArray, NumpyDataArray
 

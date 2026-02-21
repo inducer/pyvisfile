@@ -30,13 +30,13 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar, TextIO, TypeAlias, cast
 
 import numpy as np
-from typing_extensions import Buffer
+from typing_extensions import Buffer, override
 
-import pytools.obj_array as obj_array
+from pytools import obj_array
 
 
 if TYPE_CHECKING:
-    from collections.abc import ByteString, Sequence
+    from collections.abc import ByteString, Sequence  # noqa: PYI057
 
 
 __doc__ = """
@@ -379,15 +379,19 @@ class BinaryEncodedBuffer(EncodedBuffer):
     def __init__(self, buffer: ByteString) -> None:
         self.buffer = buffer
 
+    @override
     def encoder(self) -> str:
         return "binary"
 
+    @override
     def compressor(self) -> str | None:
         return None
 
+    @override
     def raw_buffer(self) -> ByteString:
         return self.buffer
 
+    @override
     def add_to_xml_element(self, xml_element: XMLElement) -> int:
         raise NotImplementedError
 
@@ -963,9 +967,8 @@ class ParallelXMLGenerator(XMLGenerator):
         return el
 
     def gen_data_array(self, data: DataArray) -> XMLElement:
-        el = XMLElement("PDataArray", type=data.type, Name=data.name,
+        return XMLElement("PDataArray", type=data.type, Name=data.name,
                 NumberOfComponents=data.components)
-        return el
 
 
 def write_structured_grid(

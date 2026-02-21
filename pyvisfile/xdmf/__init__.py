@@ -882,7 +882,7 @@ def _ndarray_to_string(ary: Any) -> str:
         raise TypeError(f"expected an 'ndarray', got '{type(ary).__name__}'")
 
     ntype = DataItemNumberType.from_dtype(ary.dtype)
-    if ntype == DataItemNumberType.Int or ntype == DataItemNumberType.UInt:
+    if ntype in (DataItemNumberType.Int, DataItemNumberType.UInt):
         fmt = "%d"
     elif ntype == DataItemNumberType.Float:
         if ary.dtype.itemsize == 8:
@@ -1120,10 +1120,7 @@ class XdmfUnstructuredGrid(XdmfGrid):
                     nodes_per_element=nodes_per_element,
                     number_of_elements=nelements)
         elif isinstance(topology_type, Topology):
-            topology = topology_type.replace(**{
-                "parent": grid,
-                "number_of_elements": nelements
-                })
+            topology = topology_type.replace(parent=grid, number_of_elements=nelements)
         else:
             raise TypeError(f"unsupported type: {type(topology_type).__name__}")
 
