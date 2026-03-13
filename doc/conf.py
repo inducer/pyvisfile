@@ -26,7 +26,15 @@ intersphinx_mapping = {
 }
 
 
+nitpick_ignore_regex = [
+    # NOTE: optype does not have Sphinx compatible documentation
+    ["py:class", r"op.*"],
+    ["py:class", r"onp.*"],
+]
+
 sphinxconfig_missing_reference_aliases: dict[str, str] = {
+    "np.floating": "obj:numpy.floating",
+    "np.integer": "obj:numpy.integer",
     "np.dtype": "class:numpy.dtype",
     "np.ndarray": "class:numpy.ndarray",
 }
