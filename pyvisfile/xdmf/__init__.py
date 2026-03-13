@@ -944,7 +944,7 @@ class DataArray:
                 name = components[0].name
             else:
                 # NOTE: assumes component names are {name}_{suffix}
-                name = os.path.commonprefix([
+                name = os.path.commonpath([
                     c.name for c in components
                     ]).strip("_")
 
