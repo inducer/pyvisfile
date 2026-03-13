@@ -61,7 +61,7 @@ jobs:
                 python-version: '3.x'
         -   name: "Main Script"
             run: |
-                EXTRA_INSTALL="basedpyright numpy pytest"
+                EXTRA_INSTALL="basedpyright numpy pytest optype"
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
