@@ -580,6 +580,7 @@ class DataArray(Visitable):
                         np.zeros((shape[0], vector_padding-shape[1]),
                                  dtype=container.dtype))
                     ), order="C")
+                shape = container.shape
             self.components = shape[1]
         else:
             self.components = 1
