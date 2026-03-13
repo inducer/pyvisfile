@@ -38,6 +38,8 @@ from pytools import obj_array
 if TYPE_CHECKING:
     from collections.abc import ByteString, Sequence  # noqa: PYI057
 
+    import optype as op
+    import optype.numpy as onp
 
 __doc__ = """
 
@@ -531,6 +533,7 @@ class DataArray(Visitable):
             raise ValueError(
                 f"Cannot convert object of type '{type(container)}' to DataArray")
 
+        assert isinstance(container, np.ndarray)
         if vector_format not in (VF_LIST_OF_COMPONENTS, VF_LIST_OF_VECTORS):
             raise ValueError(f"Unknown vector format: {vector_format}")
 
@@ -547,20 +550,21 @@ class DataArray(Visitable):
             if vector_format == VF_LIST_OF_COMPONENTS:
                 container = container.T.copy()
 
-            if len(container.shape) != 2:
+            assert isinstance(container, np.ndarray)
+            shape = cast("tuple[int, ...]", container.shape)
+
+            if len(shape) != 2:
                 raise ValueError("numpy vectors of rank>2 are not supported")
             if container.size and container.strides[1] != container.itemsize:
                 raise ValueError("2D numpy arrays must be row-major")
 
-            if vector_padding > container.shape[1]:
+            if vector_padding > shape[1]:
                 container = np.asarray(np.hstack((
                         container,
-                        np.zeros((
-                            container.shape[0],
-                            vector_padding-container.shape[1],
-                            ),
-                            container.dtype))), order="C")
-            self.components = container.shape[1]
+                        np.zeros((shape[0], vector_padding-shape[1]),
+                                 dtype=container.dtype))
+                    ), order="C")
+            self.components = shape[1]
         else:
             self.components = 1
 
@@ -641,9 +645,9 @@ class UnstructuredGrid(Visitable):
     def __init__(self,
                  points: tuple[int, DataArray],
                  cells: (
-                     np.ndarray[Any, np.dtype[Any]]
+                     onp.ArrayND[np.integer[Any]]
                      | tuple[int, DataArray, DataArray]),
-                 cell_types: np.ndarray[Any, np.dtype[Any]] | DataArray) -> None:
+                 cell_types: onp.Array1D[np.integer[Any]] | DataArray) -> None:
         """
         :arg points: a tuple containing the point count and a :class:`DataArray`
             with the actual coordinates.
@@ -710,7 +714,13 @@ class StructuredGrid(Visitable):
 
     generator_method = "gen_structured_grid"
 
-    def __init__(self, mesh: np.ndarray[Any, np.dtype[Any]]) -> None:
+    mesh: onp.ArrayND[np.floating[Any]]
+    ndims: int
+    shape: tuple[int, ...]
+
+    points: DataArray
+
+    def __init__(self, mesh: onp.ArrayND[np.floating[Any]]) -> None:
         """
         :arg mesh: has shape ``(ndims, nx, ny, nz)``, depending on the dimension.
         """
@@ -973,9 +983,9 @@ class ParallelXMLGenerator(XMLGenerator):
 
 def write_structured_grid(
         file_name: str | pathlib.Path,
-        mesh: np.ndarray[Any, np.dtype[Any]],
-        cell_data: Sequence[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
-        point_data: Sequence[tuple[str, np.ndarray[Any, np.dtype[Any]]]] | None = None,
+        mesh: onp.ArrayND[np.floating[Any]],
+        cell_data: Sequence[tuple[str, onp.ArrayND[np.floating[Any]]]] | None = None,
+        point_data: Sequence[tuple[str, onp.ArrayND[np.floating[Any]]]] | None = None,
         overwrite: bool = False) -> None:
     """Write a structure grid to *filename*.
 
@@ -996,7 +1006,7 @@ def write_structured_grid(
 
     grid = StructuredGrid(mesh)
 
-    def do_reshape(fld: np.ndarray[Any, Any]) -> np.ndarray[Any, np.dtype[Any]]:
+    def do_reshape(fld: onp.ArrayND[np.floating[Any]]) -> onp.Array1D[np.floating[Any]]:
         return fld.T.copy().reshape(-1)
 
     for name, field in cell_data:

@@ -38,6 +38,9 @@ doc = [
     "sphinx>=4",
     "sphinx-copybutton",
 ]
+typing = [
+    "optype",
+]
 test = [
     "mypy",
     "pytest",
