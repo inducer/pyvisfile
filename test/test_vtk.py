@@ -54,7 +54,7 @@ def test_vtk_unstructured_points(n: int) -> None:
 
 
 def test_vtk_structured_grid() -> None:
-    angle_mesh = np.mgrid[1:2:10j, 0:2*np.pi:20j, 0:np.pi:30j]  # type: ignore[misc]
+    angle_mesh = np.mgrid[1:2:10j, 0:2*np.pi:20j, 0:np.pi:30j]
 
     r = angle_mesh[0, np.newaxis]
     phi = angle_mesh[1, np.newaxis]
