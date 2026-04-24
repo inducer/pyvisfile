@@ -25,10 +25,11 @@ THE SOFTWARE.
 
 import enum
 import os
-from typing import Any, TypeVar
+from typing import Any, Protocol
 from xml.etree.ElementTree import Element, ElementTree
 
 import numpy as np
+from typing_extensions import override
 
 
 __doc__ = """
@@ -129,6 +130,13 @@ XInclude
 Writing
 -------
 
+.. autoclass:: FileLike
+    :members:
+    :undoc-members:
+.. autoclass:: DatasetLike
+    :members:
+    :undoc-members:
+
 .. autoclass:: DataArray
     :members:
 .. autoclass:: NumpyDataArray
@@ -144,8 +152,8 @@ Writing
 
 # {{{ utils
 
-def _stringify(obj: Any) -> str:
-    if isinstance(obj, list | tuple):
+def _stringify(obj: object) -> str:
+    if isinstance(obj, (list, tuple)):
         return " ".join(str(c) for c in obj)
     return str(obj)
 
@@ -170,7 +178,7 @@ class XdmfElement(Element):
             k: _stringify(v) for k, v in attrib.items() if v is not None
             })
 
-        self.parent = parent
+        self.parent: Element | None = parent
         if parent is not None:
             parent.append(self)
 
@@ -184,8 +192,8 @@ class XdmfElement(Element):
 
     def replace(self, **kwargs: Any) -> XdmfElement:
         """Duplicate the current tag with updated attributes from *kwargs*."""
-        parent = kwargs.pop("parent", self.parent)
-        tag = kwargs.pop("tag", self.tag)
+        parent: Element | None = kwargs.pop("parent", self.parent)
+        tag: str = kwargs.pop("tag", self.tag)
 
         attrib = self.attrib.copy()
         attrib.update(kwargs)
@@ -389,7 +397,7 @@ class DataItem(XdmfElement):
             usually a path to a binary file.
         """
 
-        self._dimensions = dimensions
+        self._dimensions: tuple[int, ...] | None = dimensions
 
         super().__init__(parent, "DataItem", {
             "Name": name,
@@ -404,7 +412,7 @@ class DataItem(XdmfElement):
             })
 
         if data is not None:
-            self.text = data
+            self.text: str | None = data
 
     @property
     def dimensions(self) -> tuple[int, ...]:
@@ -459,8 +467,16 @@ def _data_item_format_from_str(text: str) -> DataItemFormat:
         raise ValueError("cannot determine format from text")
 
 
+class ArrayLike(Protocol):
+    @property
+    def shape(self) -> tuple[int, ...]: ...
+
+    @property
+    def dtype(self) -> np.dtype[Any]: ...
+
+
 def _data_item_from_numpy(
-        ary: np.ndarray[Any, np.dtype[Any]], *,
+        ary: ArrayLike, *,
         name: str | None = None,
         parent: Element | None = None,
         data: str | None = None,
@@ -761,7 +777,7 @@ class Geometry(XdmfElement):
             name: str | None = None,
             gtype: GeometryType = GeometryType.XYZ,
             parent: Element | None = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         """
@@ -785,7 +801,7 @@ class Time(XdmfElement):
             self, *,
             value: str,
             parent: Element | None = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         """
@@ -808,7 +824,7 @@ class Domain(XdmfElement):
             self, *,
             name: str | None = None,
             parent: Element | None = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         """
@@ -832,7 +848,7 @@ class Information(XdmfElement):
             name: str,
             value: str,
             parent: Element | None = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         """
@@ -857,7 +873,7 @@ class XInclude(XdmfElement):
             href: str | None,
             xpointer: str | None = None,
             parent: Element | None = None,
-            ):
+            ) -> None:
         """
         :param parent: if provided, *self* is appended to the element.
         :param xpointer: path inside the file represented by *href*.
@@ -877,7 +893,7 @@ class XInclude(XdmfElement):
 
 # {{{ data arrays
 
-def _ndarray_to_string(ary: Any) -> str:
+def _ndarray_to_string(ary: object) -> str:
     if not isinstance(ary, np.ndarray):
         raise TypeError(f"expected an 'ndarray', got '{type(ary).__name__}'")
 
@@ -920,8 +936,32 @@ def _geometry_type_from_points(points: DataArray) -> GeometryType:
             raise ValueError(f"unsupported dimension: '{dims}'")
 
 
+# NOTE: when changing these protocols, check that they still work with h5py at
+# least. For example, in `meshmode/discretization/visualization.py`
+
+class FileLike(Protocol):
+    """A :class:`~typing.Protocol` for a minimal interface of ``h5py.File``."""
+    @property
+    def filename(self) -> str: ...
+
+
+class DatasetLike(ArrayLike, Protocol):
+    """A :class:`~typing.Protocol` for a minimal interface of ``h5py.Dataset``."""
+
+    @property
+    def name(self) -> str | None: ...
+
+    @property
+    def file(self) -> FileLike: ...
+
+
 class DataArray:
     r"""An array represented as a list of :class:`DataItem`\ s."""
+
+    components: tuple[DataItem, ...]
+    name: str
+    acenter: AttributeCenter | None
+    atype: AttributeType | None
 
     def __init__(
             self,
@@ -929,7 +969,7 @@ class DataArray:
             name: str | None = None,
             acenter: AttributeCenter | None = None,
             atype: AttributeType | None = None,
-            ):
+            ) -> None:
         r"""
         :param components: a description of each component of an array.
         :param name: name of the array. This name will be used if the array
@@ -980,7 +1020,7 @@ class DataArray:
 
     @classmethod
     def from_dataset(cls,
-            dset: Any,
+            dset: DatasetLike,
             acenter: AttributeCenter = AttributeCenter.Node,
             atype: AttributeType | None = None) -> DataArray:
         """Create a :class:`DataArray` from an HDF5 ``Dataset``.
@@ -988,6 +1028,9 @@ class DataArray:
         :arg dset: an object that resembles an HDF5 dataset. We only access the
             fields *dtype*, *shape*, *name* and *file*.
         """
+        if dset.name is None:
+            raise ValueError(f"cannot create {cls.__name__} for anonymous datasets")
+
         filename = dset.file.filename
         data = f"{filename}:{dset.name}"
         name = dset.name.split("/")[-1]
@@ -1010,10 +1053,10 @@ class NumpyDataArray(DataArray):
 
     def __init__(
             self,
-            ary: np.ndarray[Any, np.dtype[Any]], *,
+            ary: np.ndarray[tuple[int, ...], np.dtype[Any]], *,
             acenter: AttributeCenter | None = None,
             name: str | None = None,
-            ):
+            ) -> None:
         """
         :param ary: if this is an :class:`object` array, each entry is considered
             a different component and will consist of a separate
@@ -1025,14 +1068,16 @@ class NumpyDataArray(DataArray):
             if not is_single_valued(iary.shape for iary in ary):
                 raise ValueError("'ary' components must have the same size")
 
-            items = tuple(_data_item_from_numpy(iary, name=f"{name}_{i}")
+            items = tuple(
+                    _data_item_from_numpy(iary, name=f"{name}_{i}")
                     for i, iary in enumerate(ary))
         else:
             items = (_data_item_from_numpy(ary, name=name),)
 
         super().__init__(items, name=name, acenter=acenter)
-        self.ary = ary
+        self.ary: np.ndarray[tuple[int, ...], np.dtype[Any]] = ary
 
+    @override
     def as_data_item(self, *,
             parent: Element | None = None) -> tuple[DataItem, ...]:
         items = super().as_data_item(parent=parent)
@@ -1054,8 +1099,8 @@ class XdmfGrid:
     .. automethod:: add_attribute
     """
 
-    def __init__(self, root: Grid):
-        self.root = root
+    def __init__(self, root: Grid) -> None:
+        self.root: Grid = root
 
     def getroot(self) -> Grid:
         return self.root
@@ -1101,7 +1146,7 @@ class XdmfUnstructuredGrid(XdmfGrid):
             connectivity: DataArray, *,
             topology_type: Topology | TopologyType,
             name: str | None = None,
-            geometry_type: GeometryType | None = None):
+            geometry_type: GeometryType | None = None) -> None:
         if geometry_type is None:
             geometry_type = _geometry_type_from_points(points)
 
@@ -1136,14 +1181,6 @@ class XdmfUnstructuredGrid(XdmfGrid):
 
 # {{{ writer
 
-T = TypeVar("T")
-
-
-def not_none(obj: T | None) -> T:
-    assert obj is not None
-    return obj
-
-
 class XdmfWriter(ElementTree):
     """
     .. automethod:: __init__
@@ -1154,7 +1191,7 @@ class XdmfWriter(ElementTree):
     def __init__(self,
             grids: tuple[XdmfGrid, ...], *,
             arrays: tuple[DataArray, ...] | None = None,
-            tags: tuple[Element, ...] | None = None):
+            tags: tuple[Element, ...] | None = None) -> None:
         r"""
         :param grids: a :class:`tuple` of grids to be added to the
             top :class:`Domain`. Currently only a single domain is supported.
@@ -1185,15 +1222,20 @@ class XdmfWriter(ElementTree):
         # https://stackoverflow.com/a/1206856
         from xml.dom import minidom
         from xml.etree.ElementTree import tostring
+
+        root = self.getroot()
+        assert root is not None
+
         dom = minidom.parseString(tostring(
-            not_none(self.getroot()),
-            encoding="utf-8",
+            root,
+            encoding="unicode",
             short_empty_elements=False,
             ))
 
         with open(filename, "wb") as fd:
             fd.write(dom.toprettyxml(indent="  ", encoding="utf-8"))
 
+    @override
     def write(self, filename: str) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Write the the XDMF file."""
         super().write(
