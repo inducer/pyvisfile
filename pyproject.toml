@@ -42,7 +42,7 @@ typing = [
     "optype",
 ]
 test = [
-    "mypy",
+    "basedpyright",
     "pytest",
     "ruff",
 ]
