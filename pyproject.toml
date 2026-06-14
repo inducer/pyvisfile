@@ -39,7 +39,7 @@ doc = [
     "sphinx-copybutton",
 ]
 typing = [
-    "optype",
+    "optype<0.18",
 ]
 test = [
     "basedpyright",
@@ -145,6 +145,7 @@ exclude = [
     ".env",
     ".conda-root",
     "examples",
+    "build",
 ]
 
 [[tool.basedpyright.executionEnvironments]]
