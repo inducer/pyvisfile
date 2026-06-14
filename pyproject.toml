@@ -39,7 +39,8 @@ doc = [
     "sphinx-copybutton",
 ]
 typing = [
-    "optype",
+    # NOTE: 0.18 requires Python 3.12
+    "optype<0.18",
 ]
 test = [
     "basedpyright",
