@@ -77,7 +77,7 @@ def add_tuple_to_list(ary: Sequence[tuple[int, int, int]],
 
 def add_tuple_to_list(ary: Sequence[tuple[int, ...]],
                       x: tuple[int, ...]) -> Sequence[tuple[int, ...]]:
-    return [tuple([xv + yv for xv, yv in zip(x, y, strict=True)]) for y in ary]  # noqa: C409
+    return [tuple([xv + yv for xv, yv in zip(x, y, strict=True)]) for y in ary]
 
 # }}}
 
