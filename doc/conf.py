@@ -41,4 +41,4 @@ sphinxconfig_missing_reference_aliases: dict[str, str] = {
 
 
 def setup(app: Sphinx) -> None:
-    app.connect("missing-reference", process_autodoc_missing_reference)  # noqa: F821
+    app.connect("missing-reference", process_autodoc_missing_reference)  # ruff:ignore[undefined-name]
