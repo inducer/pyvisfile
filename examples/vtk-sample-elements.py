@@ -48,7 +48,7 @@ def plot_node_ordering(filename, points, show=False):
         ax.set_ylim([-0.1, 1.1])
         ax.set_ylabel("$y$")
     elif points.shape[0] == 3:
-        from mpl_toolkits.mplot3d import art3d  # noqa: F401
+        from mpl_toolkits.mplot3d import art3d  # ruff:ignore[unused-import]
 
         fig = plt.figure(figsize=(8, 8), dpi=300)
         ax = fig.gca(projection="3d")
@@ -77,7 +77,7 @@ def plot_node_ordering(filename, points, show=False):
 
 def create_sample_element(cell_type, order=3, visualize=True):
     from distutils.version import LooseVersion
-    if LooseVersion(vtk.VTK_VERSION) > "8.2.0":  # noqa: SIM108
+    if LooseVersion(vtk.VTK_VERSION) > "8.2.0":  # ruff:ignore[if-else-block-instead-of-if-exp]
         vtk_version = (2, 2)
     else:
         vtk_version = (2, 1)

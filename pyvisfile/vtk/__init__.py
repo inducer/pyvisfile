@@ -36,7 +36,7 @@ from pytools import obj_array
 
 
 if TYPE_CHECKING:
-    from collections.abc import ByteString, Sequence  # noqa: PYI057
+    from collections.abc import ByteString, Sequence  # ruff:ignore[byte-string-usage]
 
     import optype as op
     import optype.numpy as onp
@@ -831,7 +831,7 @@ class XMLGenerator:
 
         if compressor == "zlib":
             try:
-                import zlib  # noqa: F401
+                import zlib  # ruff:ignore[unused-import]
             except ImportError:
                 compressor = None
         elif compressor is None:
