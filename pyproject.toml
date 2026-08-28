@@ -82,14 +82,15 @@ extend-select = [
     "W",    # pycodestyle
 ]
 extend-ignore = [
-    "C90",    # McCabe complexity
-    "no-explicit-stacklevel",
+    "complex-structure",
     "missing-whitespace-around-arithmetic-operator",
-    "multiple-spaces-after-comma",
-    "tab-after-comma",
-    "no-space-after-block-comment",
     "module-import-not-at-top-of-file",
+    "multiple-spaces-after-comma",
+    "no-explicit-stacklevel",
+    "no-space-after-block-comment",
     "non-empty-init-module",
+    "pytest-parameter-with-default-argument",
+    "tab-after-comma",
     "type-check-without-type-error",
 ]
 
